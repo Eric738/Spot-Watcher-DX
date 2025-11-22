@@ -1,6 +1,6 @@
 # 📡 Spot Watcher DX Ultimate
 
-![Version](https://img.shields.io/badge/version-v7.0-blue) ![Python](https://img.shields.io/badge/python-3.x-yellow) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-v7.1-blue) ![Python](https://img.shields.io/badge/python-3.x-yellow) ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Spot Watcher DX** est une application web autonome conçue pour les **Radioamateurs**. Elle se connecte au réseau DX Cluster mondial via Telnet, analyse les spots en temps réel, et les affiche sur un tableau de bord moderne et réactif.
 
