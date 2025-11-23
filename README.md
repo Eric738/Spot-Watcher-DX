@@ -26,7 +26,7 @@ Pour que l'interface Web fonctionne, **la structure des dossiers doit être resp
 ├── templates/           # ⚠️ DOSSIER OBLIGATOIRE pour Flask
 │   └── index.html       # L'interface Web (HTML/JS/CSS)
 │
-├── apercu.png          # Capture d'écran pour le README (optionnel)
+├── capture.png          # Capture d'écran pour le README (optionnel)
 ├── cty.dat              # Base de données pays (téléchargé automatiquement)
 └── README.md            # Ce fichier
 🚀 Installation
