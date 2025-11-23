@@ -33,9 +33,23 @@
         .ticker-item { display: inline-block; padding: 0 2rem; color: #00ffff; font-family: 'Consolas', monospace; font-weight: bold; font-size: 1.1em; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* --- WATCHLIST ALERT --- */
-        .watchlist-hit { background-color: #FFD700 !important; color: #000000 !important; font-weight: 900; border: 2px solid #fff; }
-        .watchlist-hit a { color: #000000 !important; text-decoration: underline; }
+        /* --- WATCHLIST ALERT (CORRIGÉ POUR FORCER LE JAUNE) --- */
+        /* On cible spécifiquement la ligne ET les cellules pour écraser le gris de Bootstrap */
+        tr.watchlist-hit, 
+        tr.watchlist-hit > td {
+            background-color: #FFD700 !important; /* JAUNE OR */
+            color: #000000 !important; /* TEXTE NOIR */
+            font-weight: bold;
+            box-shadow: none !important;
+            border-color: #000 !important; /* Bordure noire discrète */
+        }
+        
+        /* On force les liens en noir aussi */
+        tr.watchlist-hit a { 
+            color: #000000 !important; 
+            text-decoration: underline; 
+            font-weight: 900;
+        }
 
         /* --- UI --- */
         #map { height: 500px; width: 100%; border-radius: 0 0 8px 8px; }
@@ -181,8 +195,15 @@
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
     let markers = L.layerGroup().addTo(map);
     
-    // --- WATCHLIST ---
-    let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
+    // --- WATCHLIST (CLIENT SIDE) ---
+    let watchlist = [];
+    try {
+        watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
+    } catch(e) { 
+        watchlist = []; 
+        console.log("Erreur lecture watchlist, reset.");
+    }
+
     function addWatch() {
         const val = document.getElementById('watch-input').value.toUpperCase().trim();
         if (val && !watchlist.includes(val)) {
@@ -193,11 +214,14 @@
         document.getElementById('watch-input').value = '';
     }
     function updateWatchlistUI() {
-        const c = document.getElementById('watchlist-badges'); c.innerHTML = '';
-        document.getElementById('watchlist-count').innerText = watchlist.length;
-        watchlist.forEach(call => {
-            c.innerHTML += `<span class="badge bg-warning text-dark cursor-pointer" onclick="removeWatch('${call}')">${call} <i class="fa fa-times"></i></span>`;
-        });
+        const c = document.getElementById('watchlist-badges'); 
+        if(c) {
+            c.innerHTML = '';
+            document.getElementById('watchlist-count').innerText = watchlist.length;
+            watchlist.forEach(call => {
+                c.innerHTML += `<span class="badge bg-warning text-dark cursor-pointer" onclick="removeWatch('${call}')">${call} <i class="fa fa-times"></i></span>`;
+            });
+        }
     }
     window.removeWatch = (call) => {
         watchlist = watchlist.filter(x => x !== call);
@@ -217,24 +241,39 @@
     async function fetchData() {
         try {
             const res = await fetch('/spots.json');
+            if(!res.ok) throw new Error("Erreur HTTP " + res.status);
+            
             const allSpots = await res.json();
             
+            // Si pas de spots, on ne fait rien (attente du buffer)
+            if(!Array.isArray(allSpots)) return;
+
+            // Mise à jour Ticker
             fetch('/rss.json').then(r=>r.json()).then(d => {
                 if(d.ticker) document.getElementById('rss-content').innerText = d.ticker;
-            });
+            }).catch(e => {});
 
             const fBand = document.getElementById('filter-band').value;
             const fMode = document.getElementById('filter-mode').value;
             const filtered = allSpots.filter(s => (fBand === 'ALL' || s.band === fBand) && (fMode === 'ALL' || s.mode === fMode));
 
-            const tbody = document.getElementById('spots-body'); tbody.innerHTML = '';
+            const tbody = document.getElementById('spots-body'); 
+            tbody.innerHTML = '';
             markers.clearLayers();
             document.getElementById('spot-count').innerText = filtered.length;
 
             filtered.forEach(s => {
-                let isW = watchlist.some(w => s.dx_call.includes(w));
+                // Logique "safe" : on vérifie si l'info vient du serveur (webapp.py) ou du navigateur
+                let isWantedByServer = (s.is_wanted === true);
+                let isWantedByClient = false;
+                if(s.dx_call) {
+                    isWantedByClient = watchlist.some(w => s.dx_call.includes(w));
+                }
+                
+                let isW = isWantedByServer || isWantedByClient;
                 let rowClass = isW ? 'watchlist-hit' : '';
                 
+                // Construction de la ligne
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="${rowClass}">
                         <td>${s.time}</td>
@@ -244,10 +283,14 @@
                     </tr>
                 `);
 
+                // Ajout marker map
                 if(s.lat !== 0) {
                     let col = isW ? '#FFD700' : '#0dcaf0'; 
                     let rad = isW ? 8 : 3;
-                    L.circleMarker([s.lat, s.lon], { radius: rad, color: col, fillColor: col, fillOpacity: 0.8 }).addTo(markers)
+                    let zIdx = isW ? 1000 : 0;
+                    
+                    L.circleMarker([s.lat, s.lon], { radius: rad, color: col, fillColor: col, fillOpacity: 0.8, zIndexOffset: zIdx })
+                     .addTo(markers)
                      .bindPopup(`
                         <div style="text-align:center; color: black;">
                             <strong style="font-size:1.2em">${s.dx_call}</strong><br>
@@ -261,16 +304,23 @@
             updateChart(allSpots);
             updateWanted();
 
-        } catch(e) { console.log(e); }
+        } catch(e) { 
+            console.log("Erreur Fetch:", e); 
+        }
     }
 
     async function updateWanted() {
-        const res = await fetch('/wanted.json');
-        const data = await res.json();
-        const l = document.getElementById('top-dxcc-list'); l.innerHTML = '';
-        data.forEach(([c, n], i) => {
-            l.innerHTML += `<li class="list-group-item bg-transparent text-inherit d-flex justify-content-between py-1 border-secondary"><span>${i+1}. ${c}</span> <span class="badge bg-primary rounded-pill">${n}</span></li>`;
-        });
+        try {
+            const res = await fetch('/wanted.json');
+            const data = await res.json();
+            const l = document.getElementById('top-dxcc-list'); 
+            if(l) {
+                l.innerHTML = '';
+                data.forEach(([c, n], i) => {
+                    l.innerHTML += `<li class="list-group-item bg-transparent text-inherit d-flex justify-content-between py-1 border-secondary"><span>${i+1}. ${c}</span> <span class="badge bg-primary rounded-pill">${n}</span></li>`;
+                });
+            }
+        } catch(e) {}
     }
 
     function updateChart(spots) {
@@ -278,38 +328,41 @@
         bandLabels.forEach(l => counts[l] = 0);
         spots.forEach(s => {
             if(counts.hasOwnProperty(s.band)) counts[s.band]++;
-            else counts['QO-100']++; // Fallback si bande inconnue (rare) pour ne pas crasher
+            else counts['QO-100']++; 
         });
         
         const data = bandLabels.map(l => counts[l]);
         
         if(bandChart) bandChart.destroy();
-        bandChart = new Chart(document.getElementById('bandChart'), {
-            type: 'bar',
-            data: { 
-                labels: bandLabels, 
-                datasets: [{ 
-                    label:'Spots', 
-                    data: data, 
-                    backgroundColor: bandColors, 
-                    borderWidth: 0 
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: {display:false} }, 
-                scales: { 
-                    y: {grid:{color:'#333'}, beginAtZero: true}, 
-                    x: {grid:{display:false}} 
-                } 
-            }
-        });
+        const ctx = document.getElementById('bandChart');
+        if(ctx) {
+            bandChart = new Chart(ctx, {
+                type: 'bar',
+                data: { 
+                    labels: bandLabels, 
+                    datasets: [{ 
+                        label:'Spots', 
+                        data: data, 
+                        backgroundColor: bandColors, 
+                        borderWidth: 0 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: {display:false} }, 
+                    scales: { 
+                        y: {grid:{color:'#333'}, beginAtZero: true}, 
+                        x: {grid:{display:false}} 
+                    } 
+                }
+            });
+        }
     }
 
     setInterval(() => document.getElementById('utc-clock').innerText = new Date().toISOString().split('T')[1].split('.')[0] + ' UTC', 1000);
     setInterval(fetchData, 5000);
-    fetchData();
+    fetchData(); // Premier appel
 </script>
 </body>
 </html>

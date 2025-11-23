@@ -4,13 +4,13 @@ import threading
 import json
 import os
 import urllib.request
-import feedparser  # <--- NOUVELLE LIBRAIRIE (pense au pip install feedparser)
+import feedparser
 from collections import deque, Counter
 from flask import Flask, render_template, jsonify
 
 # --- CONFIGURATION ---
-APP_VERSION = "v7.1-RSS"
-BUILD_DATE = "22/11/2025"
+APP_VERSION = "v7.2-Watchlist"
+BUILD_DATE = "23/11/2025"
 
 # LISTE DES CLUSTERS (Failover)
 CLUSTERS = [
@@ -19,16 +19,18 @@ CLUSTERS = [
     ("gb7mbc.spud.club", 8000)# Secours 2
 ]
 
-# NOUVEAU : TES SOURCES RSS
 RSS_URLS = [
     "https://feeds.feedburner.com/dxzone/dx",
     "https://feeds.feedburner.com/dxzone/hamradio"
 ]
 
-MY_CALL = "F1SMV"             # TON INDICATIF
+# --- TA WATCHLIST (Mets ici les indicatifs que tu veux voir en JAUNE) ---
+WATCHLIST = ["VP6A", "FT4YM", "3B8M", "TX5S"] 
+
+MY_CALL = "F1SMV"             
 KEEP_ALIVE = 60    
-SPOT_LIFETIME_DISPLAY = 900   # 15 minutes
-SPOT_LIFETIME_STATS = 86400   # 24 heures
+SPOT_LIFETIME_DISPLAY = 900   
+SPOT_LIFETIME_STATS = 86400   
 
 CTY_URL = "https://www.country-files.com/cty/cty.dat"
 CTY_FILE = "cty.dat"
@@ -144,13 +146,8 @@ def lookup_country(callsign):
 
 # --- 3. WORKERS ---
 def info_worker():
-    """
-    Récupère les infos solaires (NOAA) ET les news RSS (FeedBurner)
-    """
     while True:
         messages = []
-        
-        # 1. Récupération Solaire (NOAA) - On garde ta base
         try:
             req = urllib.request.Request("https://services.swpc.noaa.gov/text/wwv.txt", headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=10) as r:
@@ -161,26 +158,17 @@ def info_worker():
             print(f"Erreur NOAA: {e}")
             messages.append("SOLAR: N/A")
         
-        # 2. Récupération RSS (DX Zone) - NOUVEAU
         print("--- Mise à jour des flux RSS ---")
         for url in RSS_URLS:
             try:
                 feed = feedparser.parse(url)
-                # On prend les 3 premiers articles pour ne pas saturer le ticker
                 for entry in feed.entries[:3]:
-                    titre = entry.title
-                    # Petit nettoyage si besoin
-                    messages.append(f"NEWS: {titre}")
+                    messages.append(f"NEWS: {entry.title}")
             except Exception as e:
                 print(f"Erreur RSS ({url}): {e}")
 
-        # 3. Infos Système
         messages.append(f"DX WATCHER {APP_VERSION} ONLINE")
-        
-        # On joint tout avec le séparateur
         ticker_info["text"] = "   +++   ".join(messages)
-        
-        # Mise à jour toutes les 15 minutes (900s) pour ne pas spammer les serveurs
         time.sleep(900)
 
 def telnet_worker():
@@ -220,7 +208,6 @@ def telnet_worker():
                             
                             try: f_raw = float(freq_str)
                             except: f_raw = 0.0
-                            
                             f_mhz = f_raw / 1000.0 
 
                             band = "Other"
@@ -243,6 +230,9 @@ def telnet_worker():
                             if "FT8" in comment or "FT4" in comment: mode = "FT8"
                             elif "CW" in comment: mode = "CW"
                             elif "RTTY" in comment or "PSK" in comment: mode = "DIGI"
+                            
+                            # --- LOGIQUE WATCHLIST ---
+                            is_wanted = dx_call in WATCHLIST
 
                             spot = {
                                 "time": time.strftime("%H:%M", time.gmtime()),
@@ -253,7 +243,8 @@ def telnet_worker():
                                 "mode": mode,
                                 "country": country, 
                                 "lat": lat, 
-                                "lon": lon
+                                "lon": lon,
+                                "is_wanted": is_wanted # On envoie l'info au HTML
                             }
                             spots_buffer.append(spot)
 
@@ -268,7 +259,6 @@ def telnet_worker():
         except Exception as e:
             print(f"--- Échec connexion {host}: {e}")
         
-        print("--- Basculement vers le cluster suivant dans 5s... ---")
         time.sleep(5)
         cluster_index = (cluster_index + 1) % len(CLUSTERS)
 
