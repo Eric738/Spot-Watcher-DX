@@ -3,6 +3,8 @@
 Un moniteur de DX Cluster en temps réel pour Radioamateurs, écrit en Python.
 Il se connecte aux clusters via Telnet, analyse les spots, et les affiche sur un tableau de bord Web moderne avec cartographie, infos solaires, flux RSS et alertes vocales.
 
+![Aperçu du Dashboard](capture.png)
+
 ## ✨ Fonctionnalités
 
 *   **Connexion Telnet Robuste :** Connexion permanente avec reconnexion automatique et gestion de "Failover" (bascule sur un serveur de secours si le principal tombe).
@@ -24,6 +26,7 @@ Pour que l'interface Web fonctionne, **la structure des dossiers doit être resp
 ├── templates/           # ⚠️ DOSSIER OBLIGATOIRE pour Flask
 │   └── index.html       # L'interface Web (HTML/JS/CSS)
 │
+├── capture.png          # Capture d'écran pour le README (optionnel)
 ├── cty.dat              # Base de données pays (téléchargé automatiquement)
 └── README.md            # Ce fichier
 🚀 Installation
@@ -70,5 +73,5 @@ Le script utilise le port 8000 par défaut. Si ce port est pris par une autre ap
 📜 Crédits & Version
 Version : v7.2-HYBRID
 Date : 23/11/2025
-Pensé par F1SMV Eric réalisé par GIMINI 3
+Pensé apr F1SMV réalisé par GIMINI 3
 Licence : Open Source - Pour usage radioamateur.
