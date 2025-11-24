@@ -3,125 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DX Watcher Ultimate version 7.3 ultimate</title>
+    <title>DX Neural AI v1</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- THEMES --- */
-        body.theme-matrix { background-color: #000 !important; color: #0f0 !important; font-family: 'Courier New', monospace; }
-        body.theme-matrix .card, body.theme-matrix .navbar { background-color: #000 !important; border-color: #0f0 !important; color: #0f0 !important; }
-        body.theme-matrix a { color: #0f0 !important; }
+        /* --- STYLE GLOBAL --- */
+        body { background-color: #212529; color: #f8f9fa; }
         
-        body.theme-cyber { background-color: #050510; color: #0ff; }
-        body.theme-cyber .card { border: 1px solid #f0f; box-shadow: 0 0 10px #f0f; }
-        
-        body.theme-amber { background-color: #1a1a1a; color: #ffbf00; font-family: 'Courier New', monospace; }
-        body.theme-amber .card { border-color: #ffbf00; }
-
-        body.theme-ocean { background-color: #001f3f; color: #7fdbff; }
-        body.theme-ocean .card { background-color: #002850; border-color: #0074d9; }
-
-        body.theme-light { background-color: #f8f9fa; color: #212529; }
-        body.theme-light .card { background-color: #fff; border-color: #dee2e6; color: #000; }
-        body.theme-light .navbar { background-color: #0d6efd !important; }
-
-        /* --- TICKER --- */
-        .ticker-wrap { width: 100%; background-color: #111; overflow: hidden; height: 35px; line-height: 35px; border-bottom: 1px solid #333; }
+        /* TICKER */
+        .ticker-wrap { width: 100%; background-color: #111; overflow: hidden; height: 35px; line-height: 35px; }
         .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 60s linear infinite; }
-        .ticker-item { display: inline-block; padding: 0 2rem; color: #00ffff; font-family: 'Consolas', monospace; font-weight: bold; font-size: 1.1em; }
-        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        .ticker-item { color: #00ffff; font-family: 'Consolas', monospace; font-weight: bold; }
+        @keyframes ticker { 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* --- WATCHLIST ALERT --- */
-        tr.watchlist-hit, 
-        tr.watchlist-hit > td {
-            background-color: #FFD700 !important; /* JAUNE OR */
-            color: #000000 !important; /* TEXTE NOIR */
-            font-weight: bold;
-            box-shadow: none !important;
-            border-color: #000 !important;
-        }
-        tr.watchlist-hit a { 
-            color: #000000 !important; 
-            text-decoration: underline; 
-            font-weight: 900;
-        }
-
-        /* --- UI --- */
+        /* HIGHLIGHTS */
+        tr.watchlist-hit { background-color: #FFD700 !important; color: #000 !important; font-weight: bold; }
+        tr.watchlist-hit a { color: #000 !important; }
+        
+        /* MAP & UI */
         #map { height: 500px; width: 100%; border-radius: 0 0 8px 8px; }
         .spot-row { font-family: 'Consolas', monospace; font-size: 0.9rem; }
-        
-        /* NO SCROLLBAR */
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* AUDIO BTN ANIMATION */
-        .audio-active { animation: pulse-red 2s infinite; color: #ff4444 !important; }
-        @keyframes pulse-red { 0% { text-shadow: 0 0 0px #ff0000; } 50% { text-shadow: 0 0 10px #ff0000; } 100% { text-shadow: 0 0 0px #ff0000; } }
+        /* AUDIO ANIMATION */
+        .audio-active { animation: pulse 2s infinite; color: #ff4444 !important; }
+        @keyframes pulse { 50% { text-shadow: 0 0 10px #f00; } }
     </style>
 </head>
-<body class="theme-default">
+<body>
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary py-1">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-            <i class="fa-solid fa-radar me-2"></i> 
+        <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+            <i class="fa-solid fa-microchip me-2 text-info"></i> 
             <div>
-                Spot Watcher DX
-                <div style="font-size: 0.6rem; color: #aaa; line-height: 1;">{{ version }} | {{ date }}</div>
+                DX WATCHER <span class="text-warning">NEURAL AI</span>
+                <div style="font-size: 0.6rem; color: #aaa;">{{ version }}</div>
             </div>
         </a>
-        
-        <div class="d-flex align-items-center ms-auto">
-            <div class="dropdown me-3">
-                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fa-solid fa-paintbrush"></i> Thème
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('default')">🌑 Défaut</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('matrix')">🟢 Matrix</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('cyber')">🟣 Cyberpunk</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('ocean')">🔵 Océan</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('amber')">🟠 Ambre</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setTheme('light')">☀️ Light</a></li>
-                </ul>
-            </div>
-            <span class="navbar-text text-white small">
-                <i class="fa-regular fa-clock"></i> <span id="utc-clock">00:00:00 UTC</span> | {{ my_call }}
-            </span>
+        <div class="ms-auto text-white small">
+            <i class="fa-regular fa-clock"></i> <span id="utc-clock">00:00 UTC</span> | {{ my_call }}
         </div>
     </div>
 </nav>
 
 <!-- TICKER -->
-<div class="ticker-wrap">
-    <div class="ticker"><div class="ticker-item" id="rss-content">Chargement des données solaires...</div></div>
-</div>
+<div class="ticker-wrap"><div class="ticker"><div class="ticker-item" id="rss-content">Initialisation du Neural Engine...</div></div></div>
 
 <div class="container-fluid mt-3">
     <div class="row">
         <!-- GAUCHE -->
         <div class="col-lg-8">
-            <div class="card mb-3 shadow-sm border-0">
-                <div class="card-body p-0"><div id="map"></div></div>
-            </div>
+            <!-- Carte -->
+            <div class="card mb-3 border-0"><div class="card-body p-0"><div id="map"></div></div></div>
             
             <div class="row">
+                <!-- Graphique -->
                 <div class="col-md-6">
-                    <div class="card mb-3 shadow-sm bg-dark text-light border-secondary">
-                        <div class="card-header fw-bold border-secondary"><i class="fa-solid fa-chart-column"></i> Activité par Bande</div>
+                    <div class="card mb-3 bg-dark text-light border-secondary">
+                        <div class="card-header fw-bold"><i class="fa-solid fa-chart-column"></i> Propagation par Bande</div>
                         <div class="card-body" style="height:250px"><canvas id="bandChart"></canvas></div>
                     </div>
                 </div>
+                <!-- Ranking IA -->
                 <div class="col-md-6">
-                    <div class="card mb-3 shadow-sm bg-dark text-light border-secondary">
-                        <div class="card-header fw-bold border-secondary d-flex justify-content-between">
-                            <span><i class="fa-solid fa-globe"></i> Top DXCC (24h)</span>
-                            <span class="badge bg-danger">HOT</span>
+                    <div class="card mb-3 bg-dark text-light border-secondary">
+                        <div class="card-header fw-bold d-flex justify-content-between">
+                            <span><i class="fa-solid fa-trophy text-warning"></i> Neural Ranking</span>
+                            <span class="badge bg-danger">LIVE AI</span>
                         </div>
-                        <ul class="list-group list-group-flush small" id="top-dxcc-list" style="overflow-y: auto; height: 250px;"></ul>
+                        <ul class="list-group list-group-flush small" id="neural-list" style="overflow-y: auto; height: 250px;"></ul>
                     </div>
                 </div>
             </div>
@@ -131,63 +85,30 @@
         <div class="col-lg-4">
             <!-- Watchlist -->
             <div class="card mb-3 border-warning shadow-sm" style="background: #222;">
-                <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
-                    <span><i class="fa-solid fa-binoculars"></i> Watchlist</span>
-                    <div>
-                        <!-- BOUTON AUDIO -->
-                        <button class="btn btn-sm btn-dark border-secondary me-2" id="btn-audio" onclick="toggleAudio()" title="Activer les alertes vocales">
-                            <i class="fa-solid fa-volume-xmark" id="icon-audio"></i>
-                        </button>
-                        <span class="badge bg-dark text-warning border border-warning" id="watchlist-count">0</span>
-                    </div>
+                <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between">
+                    <span><i class="fa-solid fa-eye"></i> Watchlist</span>
+                    <button class="btn btn-sm btn-dark" id="btn-audio" onclick="toggleAudio()"><i class="fa-solid fa-volume-xmark" id="icon-audio"></i></button>
                 </div>
                 <div class="card-body p-2">
                     <div class="input-group input-group-sm mb-2">
-                        <input type="text" id="watch-input" class="form-control bg-dark text-white border-secondary" placeholder="Ajouter Call (ex: TR8)">
-                        <button class="btn btn-warning" onclick="addWatch()">OK</button>
+                        <input type="text" id="watch-input" class="form-control bg-dark text-white" placeholder="Call...">
+                        <button class="btn btn-warning" onclick="addWatch()">+</button>
                     </div>
                     <div id="watchlist-badges" class="d-flex flex-wrap gap-1"></div>
                 </div>
             </div>
 
             <!-- Spots Table -->
-            <div class="card shadow-sm h-100 bg-dark border-secondary">
-                <div class="card-header border-secondary">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-white fw-bold"><i class="fa-solid fa-list"></i> Live Spots</span>
-                        <span class="badge bg-success" id="spot-count">0</span>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <select id="filter-band" class="form-select form-select-sm bg-secondary text-white border-0" onchange="fetchData()">
-                                <option value="ALL">Toutes Bandes</option>
-                                <option value="160m">160m</option><option value="80m">80m</option><option value="40m">40m</option>
-                                <option value="30m">30m</option><option value="20m">20m</option><option value="17m">17m</option>
-                                <option value="15m">15m</option><option value="12m">12m</option><option value="10m">10m</option>
-                                <option value="6m">6m</option><option value="2m">2m</option><option value="70cm">70cm</option>
-                                <option value="QO-100">QO-100</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <!-- LISTE DES MODES MISE A JOUR -->
-                            <select id="filter-mode" class="form-select form-select-sm bg-secondary text-white border-0" onchange="fetchData()">
-                                <option value="ALL">Tous Modes</option>
-                                <option value="FT8">FT8</option>
-                                <option value="FT4">FT4</option>
-                                <option value="CW">CW</option>
-                                <option value="SSB">SSB</option>
-                                <option value="RTTY">RTTY</option>
-                                <option value="PSK">PSK</option>
-                                <option value="MFSK">MFSK</option>
-                                <option value="JS8">JS8</option>
-                            </select>
-                        </div>
-                    </div>
+            <div class="card h-100 bg-dark border-secondary">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="text-white fw-bold">Live Spots</span>
+                    <span class="badge bg-success" id="spot-count">0</span>
                 </div>
-
                 <div class="table-responsive no-scrollbar" style="height: 500px; overflow-y: auto;">
                     <table class="table table-dark table-hover table-sm spot-row mb-0">
-                        <thead class="sticky-top bg-secondary"><tr><th>UTC</th><th>DX Call</th><th>Freq</th><th>Pays</th></tr></thead>
+                        <thead class="sticky-top bg-secondary">
+                            <tr><th>UTC</th><th>Call</th><th>Freq</th><th>Pays</th><th class="text-end">AI</th></tr>
+                        </thead>
                         <tbody id="spots-body"></tbody>
                     </table>
                 </div>
@@ -201,180 +122,141 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // --- THEME MANAGER ---
-    function setTheme(themeName) {
-        document.body.className = 'theme-' + themeName;
-        localStorage.setItem('dxTheme', themeName);
-        if(themeName === 'light') document.documentElement.setAttribute('data-bs-theme', 'light');
-        else document.documentElement.setAttribute('data-bs-theme', 'dark');
+    // --- AUDIO & CONFIG ---
+    let audioEnabled=false, spokenSpots=[], watchlist=JSON.parse(localStorage.getItem('watchlist')||'[]');
+    function toggleAudio() {
+        audioEnabled=!audioEnabled;
+        document.getElementById('icon-audio').className = audioEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+        document.getElementById('btn-audio').classList.toggle('audio-active');
     }
-    setTheme(localStorage.getItem('dxTheme') || 'default');
+    function speak(txt) { if(audioEnabled) window.speechSynthesis.speak(new SpeechSynthesisUtterance(txt)); }
 
-    // --- MAP ---
-    const map = L.map('map').setView([20, 0], 2);
+    // --- MAP SETUP ---
+    const map = L.map('map').setView([20,0], 2);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
     let markers = L.layerGroup().addTo(map);
-    
-    // --- AUDIO SYSTEM ---
-    let audioEnabled = false;
-    let spokenSpots = []; // Mémoire des spots déjà annoncés
 
-    function toggleAudio() {
-        audioEnabled = !audioEnabled;
-        const btn = document.getElementById('btn-audio');
-        const icon = document.getElementById('icon-audio');
-        
-        if(audioEnabled) {
-            icon.className = 'fa-solid fa-volume-high';
-            btn.className = 'btn btn-sm btn-outline-danger me-2 audio-active';
-            speak("Système vocal activé");
-        } else {
-            icon.className = 'fa-solid fa-volume-xmark';
-            btn.className = 'btn btn-sm btn-dark border-secondary me-2';
+    // --- CHART SETUP (COULEURS FIXES) ---
+    const bandLabels = ["160m","80m","40m","30m","20m","17m","15m","12m","10m","6m","2m","70cm","QO-100"];
+    const bandColors = [
+        '#5D4037', // 160m Brown
+        '#7B1FA2', // 80m Purple
+        '#1A237E', // 40m Navy
+        '#004D40', // 30m Teal
+        '#1976D2', // 20m Blue
+        '#0097A7', // 17m Cyan
+        '#0288D1', // 15m Light Blue
+        '#F57C00', // 12m Orange
+        '#FFD600', // 10m Gold
+        '#C2185B', // 6m Pink
+        '#D32F2F', // 2m Red
+        '#388E3C', // 70cm Green
+        '#00E676'  // QO-100 Neon
+    ];
+    let bandChartCtx = document.getElementById('bandChart').getContext('2d');
+    let myChart = new Chart(bandChartCtx, {
+        type: 'bar',
+        data: { 
+            labels: bandLabels, 
+            datasets: [{ data: Array(13).fill(0), backgroundColor: bandColors, borderWidth: 0 }] 
+        },
+        options: { 
+            responsive:true, maintainAspectRatio:false, 
+            plugins:{legend:{display:false}}, 
+            scales:{x:{grid:{display:false}}, y:{grid:{color:'#333'}, beginAtZero:true}} 
         }
-    }
+    });
 
-    function speak(text) {
-        if(!audioEnabled) return;
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'fr-FR'; // Voix française
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // --- WATCHLIST ---
-    let watchlist = [];
-    try { watchlist = JSON.parse(localStorage.getItem('watchlist')) || []; } catch(e) { watchlist = []; }
-
-    function addWatch() {
-        const val = document.getElementById('watch-input').value.toUpperCase().trim();
-        if (val && !watchlist.includes(val)) {
-            watchlist.push(val);
-            localStorage.setItem('watchlist', JSON.stringify(watchlist));
-            updateWatchlistUI(); fetchData();
-        }
-        document.getElementById('watch-input').value = '';
-    }
+    // --- WATCHLIST LOGIC ---
     function updateWatchlistUI() {
-        const c = document.getElementById('watchlist-badges'); 
-        if(c) {
-            c.innerHTML = '';
-            document.getElementById('watchlist-count').innerText = watchlist.length;
-            watchlist.forEach(call => {
-                c.innerHTML += `<span class="badge bg-warning text-dark cursor-pointer" onclick="removeWatch('${call}')">${call} <i class="fa fa-times"></i></span>`;
-            });
-        }
+        const c = document.getElementById('watchlist-badges'); c.innerHTML='';
+        watchlist.forEach(w => c.innerHTML+=`<span class="badge bg-warning text-dark cursor-pointer" onclick="removeWatch('${w}')">${w} <i class="fa fa-times"></i></span>`);
     }
-    window.removeWatch = (call) => {
-        watchlist = watchlist.filter(x => x !== call);
-        localStorage.setItem('watchlist', JSON.stringify(watchlist));
-        updateWatchlistUI(); fetchData();
-    };
+    function addWatch() { 
+        let v = document.getElementById('watch-input').value.toUpperCase().trim(); 
+        if(v && !watchlist.includes(v)) { watchlist.push(v); localStorage.setItem('watchlist', JSON.stringify(watchlist)); updateWatchlistUI(); fetchData(); }
+    }
+    window.removeWatch = (w) => { watchlist=watchlist.filter(x=>x!==w); localStorage.setItem('watchlist', JSON.stringify(watchlist)); updateWatchlistUI(); fetchData(); };
     updateWatchlistUI();
 
-    // --- MAIN DATA LOOP ---
+    // --- MAIN LOOP ---
     async function fetchData() {
         try {
-            const res = await fetch('/spots.json');
-            if(!res.ok) return;
-            const allSpots = await res.json();
-            if(!Array.isArray(allSpots)) return;
+            const [resSpots, resRss, resWanted] = await Promise.all([
+                fetch('/spots.json'), fetch('/rss.json'), fetch('/wanted.json')
+            ]);
+            const spots = await resSpots.json();
+            const rss = await resRss.json();
+            const ranking = await resWanted.json();
 
-            // Ticker
-            fetch('/rss.json').then(r=>r.json()).then(d => {
-                if(d.ticker) document.getElementById('rss-content').innerText = d.ticker;
-            }).catch(e => {});
+            // 1. Ticker
+            if(rss.ticker) document.getElementById('rss-content').innerText = rss.ticker;
 
-            const fBand = document.getElementById('filter-band').value;
-            const fMode = document.getElementById('filter-mode').value;
-            
-            // FILTRE: On garde le spot si ça matche la bande ET le mode
-            const filtered = allSpots.filter(s => (fBand === 'ALL' || s.band === fBand) && (fMode === 'ALL' || s.mode === fMode));
+            // 2. Ranking IA
+            const list = document.getElementById('neural-list'); list.innerHTML = '';
+            ranking.forEach((item, i) => {
+                let badge = item.score > 80 ? 'bg-danger' : 'bg-warning text-dark';
+                list.innerHTML += `
+                    <li class="list-group-item bg-transparent text-white d-flex justify-content-between py-1 border-secondary">
+                        <span>${i+1}. <strong>${item.call}</strong> <span class="text-muted small">(${item.c})</span></span>
+                        <span class="badge ${badge} rounded-pill">${item.score}</span>
+                    </li>`;
+            });
 
+            // 3. Spots & Map
             const tbody = document.getElementById('spots-body'); 
-            tbody.innerHTML = '';
-            markers.clearLayers();
-            document.getElementById('spot-count').innerText = filtered.length;
+            tbody.innerHTML=''; markers.clearLayers();
+            document.getElementById('spot-count').innerText = spots.length;
+            
+            let countsMap = {}; // Temp storage for chart counts
 
-            filtered.forEach(s => {
-                let isWantedByServer = (s.is_wanted === true);
-                let isWantedByClient = false;
-                if(s.dx_call) isWantedByClient = watchlist.some(w => s.dx_call.includes(w));
+            spots.forEach(s => {
+                // Compte pour le chart
+                countsMap[s.band] = (countsMap[s.band] || 0) + 1;
+
+                // Logique Watchlist / AI
+                let isW = s.is_wanted || watchlist.some(w => s.dx_call.includes(w));
+                let cls = isW ? 'watchlist-hit' : '';
+                let scoreBadge = s.score > 50 ? 'bg-danger' : 'bg-secondary';
                 
-                let isW = isWantedByServer || isWantedByClient;
-                let rowClass = isW ? 'watchlist-hit' : '';
-
-                // --- AUDIO ALERT LOGIC ---
-                if (isW && audioEnabled) {
-                    let spotId = s.dx_call + s.band + s.time;
-                    if (!spokenSpots.includes(spotId)) {
-                        spokenSpots.push(spotId);
-                        if(spokenSpots.length > 50) spokenSpots.shift();
-                        
-                        let cleanCall = s.dx_call.replace('/', ' barre ');
-                        speak(`Alerte DX ! ${cleanCall} sur ${s.band}`);
-                    }
+                // Audio
+                if(isW && audioEnabled) {
+                    let sid = s.dx_call+s.band+s.time;
+                    if(!spokenSpots.includes(sid)) { spokenSpots.push(sid); speak(`Alerte DX ${s.dx_call} sur ${s.band}`); }
                 }
-                
+
+                // Tableau
                 tbody.insertAdjacentHTML('beforeend', `
-                    <tr class="${rowClass}">
+                    <tr class="${cls}">
                         <td>${s.time}</td>
-                        <td><a href="https://www.qrz.com/db/${s.dx_call}" target="_blank" class="text-decoration-none ${isW?'text-dark':'text-info'} fw-bold">${s.dx_call}</a></td>
-                        <td>${s.freq} <span class="badge bg-secondary" style="font-size:0.6em">${s.mode}</span></td>
+                        <td><a href="https://www.qrz.com/db/${s.dx_call}" target="_blank" class="fw-bold text-decoration-none text-reset">${s.dx_call}</a></td>
+                        <td>${s.freq}</td>
                         <td class="text-truncate" style="max-width:100px;">${s.country}</td>
+                        <td class="text-end"><span class="badge ${scoreBadge}">${s.score}</span></td>
                     </tr>
                 `);
 
+                // Map Marker
                 if(s.lat !== 0) {
-                    let col = isW ? '#FFD700' : '#0dcaf0'; 
-                    let rad = isW ? 8 : 3;
-                    let zIdx = isW ? 1000 : 0;
-                    L.circleMarker([s.lat, s.lon], { radius: rad, color: col, fillColor: col, fillOpacity: 0.8, zIndexOffset: zIdx })
-                     .addTo(markers)
-                     .bindPopup(`<div style="text-align:center; color: black;"><strong>${s.dx_call}</strong><br>${s.freq} kHz<br>${s.country}</div>`);
+                    let col = isW ? '#FFD700' : (s.score>50?'#ff4444':'#00ff9d');
+                    L.circleMarker([s.lat, s.lon], {radius: isW?8:3, color: col, fillColor: col, fillOpacity:0.8}).addTo(markers)
+                     .bindPopup(`<div class="text-center">
+                                    <strong style="font-size:1.1em">${s.dx_call}</strong><br>
+                                    <span class="badge bg-dark border border-secondary">${s.freq} kHz</span><br>
+                                    <span class="small text-muted">Score IA: ${s.score}</span>
+                                 </div>`);
                 }
             });
 
-            // CHART & WANTED
-            let counts = {};
-            ["160m","80m","40m","30m","20m","17m","15m","12m","10m","6m","2m","70cm","QO-100"].forEach(l => counts[l] = 0);
-            allSpots.forEach(s => { if(counts.hasOwnProperty(s.band)) counts[s.band]++; else counts['QO-100']++; });
-            
-            // --- COULEURS DES BANDES ---
-            const bandColors = {
-                "160m": "#6c757d", "80m": "#6610f2", "40m": "#0d6efd", "30m": "#198754",
-                "20m": "#ffc107", "17m": "#fd7e14", "15m": "#dc3545", "12m": "#d63384",
-                "10m": "#0dcaf0", "6m": "#20c997", "2m": "#adb5bd", "70cm": "#6c757d", "QO-100": "#ffc107"
-            };
+            // 4. Update Chart Data (Fixed Order)
+            let chartData = bandLabels.map(b => countsMap[b] || 0);
+            myChart.data.datasets[0].data = chartData;
+            myChart.update();
 
-            const labels = Object.keys(counts);
-            const dataVals = Object.values(counts);
-            const bgColors = labels.map(b => bandColors[b] || '#0d6efd');
-
-            if(window.myChart) window.myChart.destroy();
-            window.myChart = new Chart(document.getElementById('bandChart'), {
-                type: 'bar',
-                data: { 
-                    labels: labels, 
-                    datasets: [{ 
-                        data: dataVals, 
-                        backgroundColor: bgColors // Couleurs appliquées ici
-                    }] 
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false} }, scales: { x:{grid:{display:false}}, y:{grid:{color:'#333'}} } }
-            });
-            
-            // Update Wanted List
-            fetch('/wanted.json').then(r=>r.json()).then(d => {
-                const l = document.getElementById('top-dxcc-list'); l.innerHTML = '';
-                d.forEach(([c, n], i) => l.innerHTML += `<li class="list-group-item bg-transparent text-white d-flex justify-content-between py-1 border-secondary"><span>${i+1}. ${c}</span> <span class="badge bg-primary rounded-pill">${n}</span></li>`);
-            }).catch(e=>{});
-
-        } catch(e) { console.log(e); }
+        } catch(e) { console.error("Err:", e); }
     }
-
-    setInterval(() => document.getElementById('utc-clock').innerText = new Date().toISOString().split('T')[1].split('.')[0] + ' UTC', 1000);
+    
+    setInterval(()=>document.getElementById('utc-clock').innerText=new Date().toISOString().substring(11,16)+' UTC', 1000);
     setInterval(fetchData, 5000);
     fetchData();
 </script>

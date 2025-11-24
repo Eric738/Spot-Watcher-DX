@@ -6,33 +6,35 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}[INIT] Démarrage de Radio Spot Watcher DX v6.1...${NC}"
+echo -e "${YELLOW}[INIT] Démarrage de Radio Spot Watcher DX v6.2...${NC}"
 
-# 2. Gestion du port 8000 (KILL PROCESS)
-PORT=8000
-PID=$(lsof -t -i:$PORT)
-
-if [ -n "$PID" ]; then
-    echo -e "${RED}[WARN] Le port $PORT est occupé par le PID $PID.${NC}"
-    echo -e "${YELLOW}[ACTION] Arrêt forcé du processus $PID...${NC}"
-    kill -9 $PID
-    sleep 2
-    echo -e "${GREEN}[OK] Port $PORT libéré.${NC}"
-else
-    echo -e "${GREEN}[OK] Le port $PORT est libre.${NC}"
-fi
+# 2. Gestion du port 5000 (Flask par défaut) ou 8000
+# Note: Flask tourne souvent sur 5000, on nettoie les deux par sécurité
+for PORT in 5000 8000; do
+    PID=$(lsof -t -i:$PORT)
+    if [ -n "$PID" ]; then
+        echo -e "${RED}[WARN] Le port $PORT est occupé par le PID $PID.${NC}"
+        echo -e "${YELLOW}[ACTION] Arrêt forcé du processus $PID...${NC}"
+        kill -9 $PID
+        sleep 1
+    fi
+done
+echo -e "${GREEN}[OK] Ports nettoyés.${NC}"
 
 # 3. Vérification de l'environnement Python
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}[INSTALL] Création de l'environnement virtuel...${NC}"
     python3 -m venv venv
-    source venv/bin/activate
-    echo -e "${YELLOW}[INSTALL] Installation des dépendances...${NC}"
-    pip install flask
-else
-    source venv/bin/activate
 fi
 
-# 4. Lancement de l'application
+# On active l'environnement pour les commandes suivantes
+source venv/bin/activate
+
+# 4. Installation/Vérification des dépendances
+# On le fait à chaque fois, c'est très rapide si c'est déjà là
+echo -e "${YELLOW}[CHECK] Vérification des librairies (Flask, Requests, BS4)...${NC}"
+pip install flask requests beautifulsoup4 > /dev/null 2>&1
+
+# 5. Lancement de l'application
 echo -e "${GREEN}[START] Lancement de l'application Flask...${NC}"
-python3 webapp.py
+python webapp.py
