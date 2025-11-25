@@ -6,7 +6,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}[INIT] Démarrage de Radio Spot Watcher DX v6.2...${NC}"
+echo -e "${YELLOW}[INIT] Démarrage de Radio Spot Watcher Neural...${NC}"
 
 # 2. Gestion du port 5000 (Flask par défaut) ou 8000
 # Note: Flask tourne souvent sur 5000, on nettoie les deux par sécurité

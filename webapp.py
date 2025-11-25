@@ -5,15 +5,16 @@ import json
 import os
 import urllib.request
 from collections import deque, Counter
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 
 # --- CONFIGURATION ---
-APP_VERSION = "NEURAL AI v1.0"  # MODIFIÉ POUR L'AFFICHAGE
+APP_VERSION = "NEURAL AI v1.2 (FT4/VHF/UHF)" 
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
 SPOT_LIFETIME = 1800  # 30 minutes
 AI_SCORE_THRESHOLD = 50
+TOP_RANKING_LIMIT = 7 # Réduit à 7 pour éviter l'ascenseur (scrollbar)
 
 CLUSTERS = [
     ("dxfun.com", 8000),
@@ -23,18 +24,14 @@ CLUSTERS = [
 
 CTY_URL = "https://www.country-files.com/cty/cty.dat"
 CTY_FILE = "cty.dat"
-RSS_URLS = ["https://feeds.feedburner.com/dxzone/dx"]
 SOLAR_URL = "https://services.swpc.noaa.gov/text/wwv.txt"
 
 RARE_PREFIXES = [
     '3Y', 'BS7', 'CE0X', 'CY9', 'CY0', 'FT5', 'FT8', 'HK0', 'KH1', 'KH3', 
     'KH5', 'KH7K', 'KH9', 'KP1', 'KP5', 'P5', 'T3', 'VP8', 'VQ9', 'ZK', 
     'ZL9', 'ZS8', 'BV9', 'EZ', 'FR/G', 'VK0', 'TR8', 'DP0', 'TY', 'HV', 
-    '1A', '4U1UN', 'E4', 'SV/A'
+    '1A', '4U1UN', 'E4', 'SV/A', 'CE0'
 ]
-
-try: import feedparser; HAS_FEEDPARSER = True
-except: HAS_FEEDPARSER = False
 
 app = Flask(__name__)
 spots_buffer = deque(maxlen=5000)
@@ -48,20 +45,98 @@ def calculate_ai_score(call, band, mode, comment, country):
     
     # Rareté
     for p in RARE_PREFIXES:
-        if call.startswith(p): score += 50; break # Boost énorme pour les rares
+        if call.startswith(p): score += 50; break 
     
     # Mots clés
     if 'UP' in comment or 'SPLIT' in comment: score += 15
     if 'DX' in comment: score += 5
     
-    # Bandes & Modes
-    if band in ['6m', '10m', '12m', '160m']: score += 20
+    # Bandes & Modes (Bonus VHF/UHF)
+    if band in ['6m', '2m', '70cm']: score += 30
+    if band in ['10m', '12m', '160m']: score += 20
     if mode == 'CW': score += 10
     
     # Pénalités
     if 'PIRATE' in comment: score = 0
     
     return min(score, 100)
+
+# --- FILTRES BANDES & MODES INTELLIGENTS ---
+def get_band_and_mode_smart(freq_float, comment):
+    """
+    Détermine la bande et le mode précis.
+    Gère HF, VHF (2m), UHF (70cm) et distingue FT4/FT8.
+    """
+    # 1. Nettoyage
+    comment = comment.upper()
+    
+    # 2. Conversion MHz -> kHz si nécessaire
+    f = freq_float
+    if f < 1000: f = f * 1000 
+    
+    # 3. Détection Bande
+    band = "Unknown"
+    if 1800 <= f <= 2000: band = "160m"
+    elif 3500 <= f <= 3800: band = "80m"
+    elif 7000 <= f <= 7200: band = "40m"
+    elif 10100 <= f <= 10150: band = "30m"
+    elif 14000 <= f <= 14350: band = "20m"
+    elif 18068 <= f <= 18168: band = "17m"
+    elif 21000 <= f <= 21450: band = "15m"
+    elif 24890 <= f <= 24990: band = "12m"
+    elif 28000 <= f <= 29700: band = "10m"
+    elif 50000 <= f <= 54000: band = "6m"
+    elif 144000 <= f <= 146000: band = "2m"    
+    elif 430000 <= f <= 440000: band = "70cm"  
+    elif f > 10000000: band = "QO-100"
+
+    # 4. Détection Mode (Priorité au commentaire pour FT4/FT8)
+    # On retourne le mode précis si trouvé
+    if "FT4" in comment: return band, "FT4"
+    if "FT8" in comment: return band, "FT8"
+    if "CW" in comment: return band, "CW"
+    if "SSB" in comment or "USB" in comment or "LSB" in comment: return band, "SSB"
+    if "RTTY" in comment: return band, "RTTY"
+    if "FM" in comment: return band, "FM"
+
+    # Sinon, on devine via la fréquence (Logique IARU)
+    mode = "DATA" # Par défaut
+
+    if band == "40m":
+        if f < 7040: mode = "CW"
+        elif f < 7050: mode = "DATA" # Souvent FT8/FT4 ici
+        else: mode = "SSB"
+    elif band == "20m":
+        if f < 14070: mode = "CW"
+        elif f < 14100: mode = "DATA"
+        else: mode = "SSB"
+    elif band == "15m":
+        if f < 21070: mode = "CW"
+        elif f < 21150: mode = "DATA"
+        else: mode = "SSB"
+    elif band == "10m":
+        if f < 28070: mode = "CW"
+        elif f < 28300: mode = "DATA"
+        else: mode = "SSB"
+    elif band == "6m":
+        if f < 50100: mode = "CW"
+        elif f < 50300: mode = "SSB"
+        elif f < 50320: mode = "DATA"
+        else: mode = "SSB/FM"
+    elif band == "2m":
+        if f < 144150: mode = "CW"
+        elif f < 144180: mode = "DATA"
+        elif f < 144400: mode = "SSB"
+        else: mode = "FM"
+    elif band == "70cm":
+        if f < 432150: mode = "CW"
+        elif f < 432200: mode = "DATA"
+        else: mode = "SSB/FM"
+    elif band in ["30m", "17m", "12m", "80m"]:
+        if (f - int(f/1000)*1000) < 50: mode = "CW"
+        else: mode = "DATA/SSB"
+
+    return band, mode
 
 # --- CTY ---
 def load_cty_dat():
@@ -134,22 +209,14 @@ def telnet_worker():
                     try:
                         parts = line[line.find("DX de")+6:].split()
                         if len(parts) < 4: continue
-                        freq = float(parts[1])
+                        
+                        # --- FILTRE INTELLIGENT ---
+                        freq_raw = float(parts[1])
                         dx_call = parts[2]
                         comment = " ".join(parts[3:-1]).upper()
                         
-                        band = "HF"
-                        if 1800<=freq<=2000: band="160m"
-                        elif 7000<=freq<=7300: band="40m"
-                        elif 14000<=freq<=14350: band="20m"
-                        elif 21000<=freq<=21450: band="15m"
-                        elif 28000<=freq<=29700: band="10m"
-                        elif 50000<=freq<=54000: band="6m"
-                        elif freq > 10000000: band="QO-100"
-                        
-                        mode = "DATA"
-                        if "CW" in comment: mode="CW"
-                        elif "SSB" in comment: mode="SSB"
+                        band, mode = get_band_and_mode_smart(freq_raw, comment)
+                        # --------------------------
                         
                         info = get_country_info(dx_call)
                         score = calculate_ai_score(dx_call, band, mode, comment, info['c'])
@@ -160,7 +227,7 @@ def telnet_worker():
                             "country": info['c'], "lat": info['lat'], "lon": info['lon'],
                             "score": score, "is_wanted": score >= AI_SCORE_THRESHOLD
                         })
-                        print(f"AI SCAN: {dx_call} -> Score {score}")
+                        print(f"AI SCAN: {dx_call} ({band}/{mode}) -> Score {score}")
                     except: pass
         except: pass
         time.sleep(5); idx = (idx + 1) % len(CLUSTERS)
@@ -172,24 +239,36 @@ def index(): return render_template('index.html', version=APP_VERSION, my_call=M
 @app.route('/spots.json')
 def get_spots():
     now = time.time()
-    return jsonify(list(reversed([s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME])))
+    # Support optionnel de filtres via URL ?band=20m&mode=FT8
+    filter_band = request.args.get('band')
+    filter_mode = request.args.get('mode')
+    
+    all_spots = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
+    
+    # Application des filtres si demandés
+    if filter_band:
+        all_spots = [s for s in all_spots if s['band'] == filter_band]
+    if filter_mode:
+        all_spots = [s for s in all_spots if s['mode'] == filter_mode]
+        
+    return jsonify(list(reversed(all_spots)))
 
 @app.route('/wanted.json')
 def get_ranking():
-    # C'EST ICI LA CORRECTION MAJEURE
-    # On renvoie le TOP 10 des scores IA au lieu des pays
     now = time.time()
     active = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
+    
     # Tri par score décroissant
     ranked = sorted(active, key=lambda x: x['score'], reverse=True)
     
-    # Dédoublonnage pour le top 10
+    # Dédoublonnage
     seen, top = set(), []
     for s in ranked:
         if s['dx_call'] not in seen:
             top.append({'call': s['dx_call'], 'score': s['score'], 'c': s['country']})
             seen.add(s['dx_call'])
-        if len(top) >= 10: break
+        # LIMITE À 7 POUR ÉVITER L'ASCENSEUR DANS L'INTERFACE
+        if len(top) >= TOP_RANKING_LIMIT: break
             
     return jsonify(top)
 

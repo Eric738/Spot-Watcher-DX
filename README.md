@@ -1,4 +1,4 @@
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.0)
+# 📡 DX Watcher Ultimate - Neural AI Edition (v1.2)VHF/UHF
 
 **DX Watcher Ultimate** est un agrégateur de DX Cluster local, multicanal et intelligent. Contrairement aux clusters traditionnels qui se contentent d'afficher une liste chronologique brute, ce logiciel intègre un moteur d'analyse algorithmique (**Neural AI Engine**) qui note, classe et priorise les spots radioamateurs en temps réel.
 
@@ -50,7 +50,8 @@ Neural Ranking Table : Un Top 10 dynamique des stations les plus intéressantes 
 Cartographie Live : Affichage des spots sur une carte interactive (Leaflet) avec code couleur selon le score (Vert = Standard, Rouge = Hot DX).
 Graphique de Propagation : Histogramme temps réel de l'activité par bande avec couleurs fixes standardisées.
 Watchlist Intelligente : Ajoutez un indicatif (ex: TR8) et le système le surlignera en Or et déclenchera une alerte.
-Synthèse Vocale (TTS) : Annonce vocale automatique des spots "Hot" ou de la Watchlist ("Alerte DX ! TR8CA sur 20 mètres").
+Synthèse Vocale (TTS) : Annonce vocale automatique des spots "Hot" ou de la Watchlist ("Alerte DX ! T88AR sur 20 mètres").
+
 🛠️ Installation et Démarrage
 Prérequis
 Python 3.x installé.
@@ -65,6 +66,7 @@ Lancez le script principal :
 python webapp.py
 Le moteur va démarrer, charger la base de données pays (cty.dat) et se connecter aux clusters.
 Ouvrez votre navigateur à l'adresse : http://localhost:8000
+
 📝 Configuration
 Ouvrez webapp.py pour modifier :
 

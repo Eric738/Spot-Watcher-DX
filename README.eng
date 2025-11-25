@@ -1,4 +1,4 @@
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.0)
+# 📡 DX Watcher Ultimate - Neural AI Edition (v1.2)
 
 **DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
 
@@ -55,7 +55,7 @@ I have kept the emphasis on the Neural Engine innovation, explaining clearly tha
 
 **DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
 
-![Version](https://img.shields.io/badge/Version-Neural_AI_v1.0-blue) ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License](https://img.shields.io/badge/License-MIT-green)
+![Version](https://img.shields.io/badge/Version-Neural_AI_v1.2-blue) ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
@@ -115,7 +115,7 @@ Here is the complete README.md in English.
 
 I have kept the emphasis on the Neural Engine innovation, explaining clearly that this logic is a "first" in the amateur radio software ecosystem.
 
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.0)
+# 📡 DX Watcher Ultimate - Neural AI Edition (v1.2)
 
 **DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
 
@@ -170,7 +170,7 @@ Neural Ranking Table: A dynamic Top 10 of the most interesting stations of the m
 Live Mapping: Display spots on an interactive map (Leaflet) with color coding based on the score (Green = Standard, Red = Hot DX).
 Propagation Chart: Real-time histogram of band activity with standardized fixed colors.
 Smart Watchlist: Add a callsign (e.g., TR8) and the system will highlight it in Gold and trigger an alert.
-Text-to-Speech (TTS): Automatic voice announcement for "Hot" spots or Watchlist hits ("DX Alert! TR8CA on 20 meters").
+Text-to-Speech (TTS): Automatic voice announcement for "Hot" spots or Watchlist hits ("DX Alert! T88AR on 20 meters").
 
 🛠️ Installation and Usage
 Prerequisites
