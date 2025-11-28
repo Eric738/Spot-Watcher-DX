@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL DX CLUSTER v1.3</title>
+    <title>{{ my_call }} - NEURAL DX CLUSTER v2</title>
     
-    <!-- Leaflet CSS -->
+    <!-- Leaflet CSS (Carte) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Scripts Externes -->
@@ -13,60 +13,149 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- THEMES --- */
+        /* --- THEMES & VARIABLES --- */
         :root {
             --primary: #00f3ff;
             --secondary: #00ff41;
             --alert: #ff003c;
+            --surge: #ffffff; /* Couleur Flash Surge */
             --bg: #050a10;
             --panel: rgba(10, 20, 30, 0.9);
             --text: #e0e0e0;
             --grid: rgba(0, 243, 255, 0.1);
         }
         
+        /* Definitions des themes */
         [data-theme="amber"] { --primary: #ffb000; --secondary: #ffcc00; --alert: #ff4400; --bg: #100a00; --panel: rgba(30, 20, 5, 0.9); --grid: rgba(255, 176, 0, 0.15); }
         [data-theme="matrix"] { --primary: #00ff00; --secondary: #008f11; --alert: #ff0000; --bg: #000000; --panel: rgba(0, 20, 0, 0.95); --grid: rgba(0, 255, 0, 0.1); }
         [data-theme="cyber"] { --primary: #ff00ff; --secondary: #00ffff; --alert: #ffff00; --bg: #0a000f; --panel: rgba(20, 0, 30, 0.9); --grid: rgba(255, 0, 255, 0.15); }
         [data-theme="light"] { --primary: #0055ff; --secondary: #00aa00; --alert: #dd0000; --bg: #f0f0f0; --panel: #ffffff; --text: #111; --grid: rgba(0,0,0,0.1); }
 
-        body { background-color: var(--bg); color: var(--text); font-family: 'Courier New', monospace; margin: 0; padding: 15px; overflow-x: hidden; transition: background 0.3s; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 15px; 
+            overflow-x: hidden; 
+            transition: background 0.3s; 
+        }
         
-        /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px; text-shadow: 0 0 10px var(--primary); }
+        /* --- SURGE ALERT BOX (NOUVEAU) --- */
+        #surge-alert {
+            display: none; /* Caché par défaut */
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            background: var(--alert);
+            color: #000;
+            padding: 10px 30px;
+            font-weight: 900;
+            font-size: 1.5rem;
+            border: 2px solid #fff;
+            box-shadow: 0 0 30px var(--alert);
+            text-transform: uppercase;
+            border-radius: 4px;
+            animation: surgeBlink 0.8s infinite;
+        }
+        @keyframes surgeBlink {
+            0% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.8; transform: translateX(-50%) scale(1.05); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+
+        /* --- HEADER --- */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--primary); 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+            text-shadow: 0 0 10px var(--primary); 
+        }
         .title { font-size: 1.8rem; font-weight: bold; color: var(--primary); letter-spacing: 3px; }
         .meta { font-size: 0.8rem; color: var(--secondary); display: flex; gap: 15px; align-items: center; }
         
-        /* Ticker */
-        .ticker-wrap { width: 100%; overflow: hidden; background: #000; border: 1px solid var(--primary); margin-bottom: 15px; height: 25px; line-height: 25px; position: relative; }
-        .ticker { display: inline-block; white-space: nowrap; animation: ticker 40s linear infinite; color: var(--secondary); font-weight: bold; font-size: 0.9rem; }
+        /* --- TICKER (NEWS) --- */
+        .ticker-wrap { 
+            width: 100%; 
+            overflow: hidden; 
+            background: #000; 
+            border: 1px solid var(--primary); 
+            margin-bottom: 15px; 
+            height: 30px; 
+            line-height: 30px; 
+            position: relative; 
+        }
+        .ticker { 
+            display: inline-block; 
+            white-space: nowrap; 
+            animation-name: ticker;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            color: var(--secondary); 
+            font-weight: bold; 
+            font-size: 1rem; 
+        }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Controls */
+        /* --- CONTROLS --- */
         .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        select, button.ctrl-btn { background: #000; color: var(--primary); border: 1px solid var(--primary); padding: 4px 8px; font-family: inherit; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+        select, button.ctrl-btn { 
+            background: #000; 
+            color: var(--primary); 
+            border: 1px solid var(--primary); 
+            padding: 5px 10px; 
+            font-family: inherit; 
+            cursor: pointer; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 0.9rem; 
+        }
         select:hover, button.ctrl-btn:hover { box-shadow: 0 0 10px var(--primary); }
         
-        .voice-on { background-color: var(--alert) !important; color: #000 !important; border-color: var(--alert) !important; animation: pulse 2s infinite; }
+        .voice-on { 
+            background-color: var(--alert) !important; 
+            color: #000 !important; 
+            border-color: var(--alert) !important; 
+            animation: pulse 2s infinite; 
+        }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0); } }
 
         /* --- LAYOUT GRID --- */
         .main-grid {
             display: grid;
-            grid-template-columns: 68% 30%; /* Carte large à gauche */
+            grid-template-columns: 65% 33%;
             gap: 2%;
             align-items: start;
         }
+        @media (max-width: 1000px) { .main-grid { grid-template-columns: 1fr; } }
 
-        /* Panels */
-        .panel { background: var(--panel); border: 1px solid var(--primary); padding: 10px; box-shadow: 0 0 15px var(--grid); margin-bottom: 20px; position: relative; }
-        .panel h2 { margin-top: 0; border-bottom: 1px solid var(--primary); padding-bottom: 5px; font-size: 1.1rem; color: var(--primary); text-transform: uppercase; display: flex; justify-content: space-between; }
+        /* --- PANELS --- */
+        .panel { 
+            background: var(--panel); 
+            border: 1px solid var(--primary); 
+            padding: 10px; 
+            box-shadow: 0 0 15px var(--grid); 
+            margin-bottom: 20px; 
+            position: relative; 
+        }
+        .panel h2 { 
+            margin-top: 0; 
+            border-bottom: 1px solid var(--primary); 
+            padding-bottom: 5px; 
+            font-size: 1.1rem; 
+            color: var(--primary); 
+            text-transform: uppercase; 
+        }
         
-        /* Specific Heights */
-        .map-container { height: 500px; width: 100%; border: 1px solid var(--secondary); } /* Grande carte principale */
-        .spots-container { height: 350px; overflow-y: auto; } /* Tableau en dessous */
-        .chart-wrapper { position: relative; height: 220px; width: 100%; }
-
-        /* Map */
+        /* Dimensions fixes */
+        .map-container { height: 450px; width: 100%; border: 1px solid var(--secondary); background: #000; }
+        .spots-container { height: 400px; overflow-y: auto; }
+        .chart-wrapper { position: relative; height: 200px; width: 100%; }
         #map { height: 100%; width: 100%; }
 
         /* Tables */
@@ -74,32 +163,35 @@
         th { text-align: left; color: var(--primary); padding: 4px; border-bottom: 1px solid #333; position: sticky; top: 0; background: var(--bg); z-index: 2; }
         td { padding: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         
-        /* Modes & Scores */
+        /* Couleurs Modes */
         .mode-ft8 { color: #ff00ff; }
         .mode-cw { color: #ffff00; }
         .mode-ssb { color: #00ff00; }
         .high-score { color: var(--alert); font-weight: bold; text-shadow: 0 0 5px var(--alert); }
         
-        /* WATCHLIST HIGHLIGHT */
+        /* Watchlist Highlight */
         tr.watchlist-match { background-color: #ffff00 !important; color: #000000 !important; font-weight: bold; }
         tr.watchlist-match td { border-bottom: 1px solid #000; }
         tr.watchlist-match .mode-ft8, tr.watchlist-match .mode-cw, tr.watchlist-match .mode-ssb, tr.watchlist-match .high-score { color: #000 !important; text-shadow: none !important; }
 
-        /* Inputs */
+        /* Inputs Watchlist */
         .watchlist-input { display: flex; gap: 5px; margin-bottom: 10px; }
         .watchlist-input input { background: #000; border: 1px solid var(--secondary); color: #fff; padding: 4px; width: 100%; font-family: inherit; text-transform: uppercase; }
         .watchlist-input button { background: var(--secondary); color: #000; border: none; cursor: pointer; font-weight: bold; padding: 0 8px; }
         .watchlist-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #555; font-size: 0.9rem; }
         .btn-del { color: var(--alert); cursor: pointer; font-weight: bold; border: 1px solid var(--alert); padding: 0 4px; font-size: 0.7rem; }
         .btn-del:hover { background: var(--alert); color: #000; }
-
-        /* Scrollbar */
+        
+        /* Scrollbar Custom */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: var(--primary); }
     </style>
 </head>
 <body>
+    <!-- BANNIERE D'ALERTE SURGE -->
+    <div id="surge-alert">⚠️ SURGE DETECTED ⚠️</div>
+
     <div class="header">
         <div class="title">NEURAL CLUSTER <span style="font-size:0.5em">{{ version }}</span></div>
         <div class="meta">
@@ -115,10 +207,12 @@
         </div>
     </div>
 
+    <!-- TICKER NEWS -->
     <div class="ticker-wrap">
-        <div class="ticker" id="ticker">SYSTEM INITIALIZING RSS FEED...</div>
+        <div class="ticker" id="ticker" style="animation-duration: 60s;">INITIALISATION DU SYSTEME... CHARGEMENT FLUX RSS...</div>
     </div>
 
+    <!-- BARRE DE CONTROLE -->
     <div class="controls">
         <select id="bandFilter" onchange="updateSpots()">
             <option value="All">BAND: ALL</option>
@@ -131,22 +225,22 @@
         <button id="voiceBtn" class="ctrl-btn" onclick="toggleVoice()">VOICE: OFF</button>
     </div>
 
-    <!-- MAIN GRID LAYOUT -->
+    <!-- GRILLE PRINCIPALE -->
     <div class="main-grid">
         
-        <!-- COLONNE GAUCHE (CARTE EN HAUT + TABLEAU EN BAS) -->
+        <!-- COLONNE GAUCHE -->
         <div class="left-col">
             
-            <!-- 1. MAIN MAP (TACTICAL VIEW) -->
+            <!-- 1. CARTE MONDIALE -->
             <div class="panel" style="padding:0; border:none;">
                 <div class="map-container">
                     <div id="map"></div>
                 </div>
             </div>
 
-            <!-- 2. LIVE STREAM TABLE -->
+            <!-- 2. TABLEAU LIVE -->
             <div class="panel">
-                <h2>LIVE SPOTS STREAM</h2>
+                <h2>FLUX LIVE (SPOTS)</h2>
                 <div class="spots-container">
                     <table id="spotsTable">
                         <thead>
@@ -161,12 +255,12 @@
 
         </div>
 
-        <!-- COLONNE DROITE (RANKING + WATCHLIST + CHART) -->
+        <!-- COLONNE DROITE -->
         <div class="right-col">
             
-            <!-- 3. TOP RANKING (AI) -->
+            <!-- 3. CLASSEMENT IA -->
             <div class="panel">
-                <h2 style="color: var(--alert)">TOP RANKING (AI)</h2>
+                <h2 style="color: var(--alert)">TOP WANTED (IA)</h2>
                 <table id="wantedTable">
                     <thead><tr><th>CALL</th><th>FREQ</th><th>BND</th><th>SCR</th></tr></thead>
                     <tbody></tbody>
@@ -177,15 +271,15 @@
             <div class="panel" style="border-color: var(--secondary);">
                 <h2 style="color: var(--secondary)">WATCHLIST</h2>
                 <div class="watchlist-input">
-                    <input type="text" id="newCall" placeholder="ADD CALL..." maxlength="10">
+                    <input type="text" id="newCall" placeholder="CALL..." maxlength="10">
                     <button onclick="addToWatchlist()">ADD</button>
                 </div>
-                <div id="watchlistContainer" style="height: 120px; overflow-y: auto;"></div>
+                <div id="watchlistContainer" style="height: 150px; overflow-y: auto;"></div>
             </div>
 
-            <!-- 5. BAND ACTIVITY CHART -->
+            <!-- 5. GRAPHIQUE -->
             <div class="panel">
-                <h2>BAND ACTIVITY</h2>
+                <h2>ACTIVITE BANDES</h2>
                 <div class="chart-wrapper">
                     <canvas id="bandChart"></canvas>
                 </div>
@@ -195,31 +289,34 @@
     </div>
 
     <script>
-        // --- GLOBALS ---
+        // --- VARIABLES GLOBALES ---
         let map, markers = [];
         let currentWatchlist = []; 
         let activityChart = null;
         let voiceEnabled = false;
         let announcedSet = new Set(); 
         let firstLoad = true;
+        let lastTickerText = "";
+        let activeSurges = []; // Liste des bandes en SURGE
 
-        const bandOrder = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '4m', '2m', '70cm'];
+        const bandOrder = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '4m', '2m', '70cm', '23cm', '13cm', 'QO-100'];
         
-        // Couleurs Spectrum
-        const bandColors = [
-            '#8b0000', '#800080', '#4b0082', '#0000ff', '#00ced1', 
-            '#008000', '#adff2f', '#ffff00', '#ffa500', '#ff0000', 
-            '#ff1493', '#ff69b4', '#ffffff', '#808080'
-        ];
+        // Map des couleurs par défaut (backup si le backend ne répond pas)
+        const BAND_COLORS_MAP = {
+            '160m': '#5c4b51', '80m': '#8e44ad', '60m': '#2c3e50', '40m': '#2980b9',
+            '30m': '#16a085', '20m': '#27ae60', '17m': '#f1c40f', '15m': '#e67e22',
+            '12m': '#d35400', '10m': '#c0392b', '6m': '#e84393', '4m': '#ff9ff3',
+            '2m': '#ffffff', '70cm': '#7f8c8d', 'QO-100': '#00a8ff'
+        };
 
-        // --- VOICE ---
+        // --- SYSTEME VOCAL ---
         function toggleVoice() {
             voiceEnabled = !voiceEnabled;
             const btn = document.getElementById('voiceBtn');
             if(voiceEnabled) {
                 btn.innerText = "VOICE: ON";
                 btn.classList.add('voice-on');
-                speak("Voice online.");
+                speak("Voice system online.");
             } else {
                 btn.innerText = "VOICE: OFF";
                 btn.classList.remove('voice-on');
@@ -241,17 +338,17 @@
             if(announcedSet.has(key)) return;
 
             if(currentWatchlist.includes(spot.dx_call)) {
-                speak(`Watchlist alert! ${spot.dx_call} on ${spot.band}`);
+                speak(`Alert! Watchlist hit! ${spot.dx_call} on ${spot.band}`);
                 announcedSet.add(key);
                 return;
             }
-            if(spot.score >= 90) {
-                speak(`Priority traffic! ${spot.dx_call} on ${spot.band}`);
-                announcedSet.add(key);
+            if(activeSurges.includes(spot.band)) {
+                 // On ne parle pas a chaque spot de surge, sinon c'est insupportable
+                 // Mais on pourrait ajouter une logique ici
             }
         }
 
-        // --- THEME ---
+        // --- GESTION THEMES ---
         function changeTheme(themeName) {
             document.documentElement.setAttribute('data-theme', themeName);
             localStorage.setItem('neuralTheme', themeName);
@@ -264,9 +361,9 @@
             }
         }
 
-        // --- MAP ---
+        // --- CARTE LEAFLET ---
         function initMap() {
-            map = L.map('map').setView([20, 0], 1);
+            map = L.map('map').setView([20, 0], 2);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap',
                 subdomains: 'abcd',
@@ -274,7 +371,7 @@
             }).addTo(map);
         }
 
-        // --- CHART ---
+        // --- GRAPHIQUE CHART.JS ---
         function initChart() {
             const ctx = document.getElementById('bandChart');
             if (!ctx) return;
@@ -287,7 +384,7 @@
                     datasets: [{
                         label: 'Spots',
                         data: new Array(bandOrder.length).fill(0),
-                        backgroundColor: bandColors,
+                        backgroundColor: [], // Sera rempli dynamiquement
                         borderColor: '#000',
                         borderWidth: 1
                     }]
@@ -298,18 +395,42 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, grid: { color: style.getPropertyValue('--grid').trim() }, ticks: { color: style.getPropertyValue('--primary').trim() } },
-                        x: { ticks: { color: style.getPropertyValue('--primary').trim(), font: { size: 10 } }, grid: { display: false } }
+                        x: { ticks: { color: style.getPropertyValue('--primary').trim(), font: { size: 9 } }, grid: { display: false } }
                     },
                     animation: { duration: 500 }
                 }
             });
         }
 
-        // --- LOGIC ---
+        // --- LOGIQUE SURGE (NOUVEAU) ---
+        function checkSurgeStatus() {
+            fetch('/surge.json')
+                .then(r => r.json())
+                .then(data => {
+                    activeSurges = data.surges || [];
+                    const alertBox = document.getElementById('surge-alert');
+                    
+                    if (activeSurges.length > 0) {
+                        // Afficher l'alerte
+                        alertBox.innerText = `⚠️ SURGE DETECTED: ${activeSurges.join(', ')} OPENING! ⚠️`;
+                        alertBox.style.display = 'block';
+                        
+                        // Si c'est la première fois qu'on détecte ce surge, alerte vocale
+                        if (voiceEnabled) {
+                            // Logique simplifiée pour ne pas spammer
+                        }
+                    } else {
+                        alertBox.style.display = 'none';
+                    }
+                })
+                .catch(e => console.log("Surge check failed", e));
+        }
+
+        // --- LOGIQUE PRINCIPALE ---
         function getRankingIcon(score) {
             if(score >= 90) return '🏆';
-            if(score >= 80) return '🥇';
-            if(score >= 70) return '🥈';
+            if(score >= 80) return '🔥';
+            if(score >= 60) return '⭐';
             return '';
         }
 
@@ -322,6 +443,7 @@
                 .then(data => {
                     const tbody = document.querySelector('#spotsTable tbody');
                     tbody.innerHTML = '';
+                    
                     markers.forEach(m => map.removeLayer(m));
                     markers = [];
 
@@ -330,9 +452,13 @@
 
                     data.forEach(s => {
                         if(bandCounts.hasOwnProperty(s.band)) bandCounts[s.band]++;
+                        else bandCounts[s.band] = (bandCounts[s.band] || 0) + 1;
+
                         checkVoiceAlerts(s);
 
                         const isWatchlisted = currentWatchlist.includes(s.dx_call);
+                        const isSurge = activeSurges.includes(s.band); // Vérifie si la bande est en feu
+
                         const rowClass = isWatchlisted ? 'watchlist-match' : (s.score > 80 ? 'high-score' : '');
                         const rankIcon = getRankingIcon(s.score);
 
@@ -340,7 +466,7 @@
                             <td>${s.time}</td>
                             <td>${s.freq}</td>
                             <td>${s.dx_call}</td>
-                            <td>${s.country.substring(0,10)}</td>
+                            <td>${s.country.substring(0,15)}</td>
                             <td>${s.band}</td>
                             <td class="mode-${s.mode.toLowerCase()}">${s.mode}</td>
                             <td>${s.score} ${rankIcon}</td>
@@ -348,18 +474,45 @@
                         tbody.innerHTML += row;
 
                         if(s.lat !== 0 && s.lon !== 0) {
-                            const color = isWatchlisted ? '#ffff00' : (s.score > 80 ? '#ff003c' : bandColors[bandOrder.indexOf(s.band)] || '#00f3ff');
+                            // Priorité couleur : Watchlist > Surge > Score > Standard
+                            let markerColor = s.color || '#00f3ff'; // Couleur du backend par défaut
+                            let radius = 4;
+                            let opacity = 0.7;
+
+                            if (isWatchlisted) {
+                                markerColor = '#ffff00';
+                                radius = 8;
+                                opacity = 1.0;
+                            } else if (isSurge) {
+                                markerColor = '#ffffff'; // Blanc pur si Surge
+                                radius = 6; // Un peu plus gros
+                                opacity = 0.9;
+                            } else if (s.score > 80) {
+                                markerColor = '#ff003c';
+                            }
+
                             const m = L.circleMarker([s.lat, s.lon], {
-                                radius: 5, color: color, fillColor: color, fillOpacity: 0.8
-                            }).bindPopup(`<b>${s.dx_call}</b><br>${s.freq} ${s.mode}`);
+                                radius: radius, 
+                                color: markerColor, 
+                                fillColor: markerColor, 
+                                fillOpacity: opacity
+                            }).bindPopup(`<b>${s.dx_call}</b><br>${s.freq} ${s.mode}<br>${s.country}`);
                             m.addTo(map);
                             markers.push(m);
                         }
                     });
 
+                    // Mise à jour du Chart avec gestion des couleurs SURGE
                     if(activityChart) {
-                        activityChart.data.datasets[0].data = bandOrder.map(b => bandCounts[b]);
-                        activityChart.update('none');
+                        const chartData = bandOrder.map(b => bandCounts[b] || 0);
+                        const bgColors = bandOrder.map(b => {
+                            if (activeSurges.includes(b)) return '#ffffff'; // BLANC SI SURGE
+                            return BAND_COLORS_MAP[b] || '#555'; // Couleur normale sinon
+                        });
+
+                        activityChart.data.datasets[0].data = chartData;
+                        activityChart.data.datasets[0].backgroundColor = bgColors;
+                        activityChart.update('none'); // 'none' pour éviter l'animation complète à chaque fois
                     }
                     firstLoad = false;
                 });
@@ -374,7 +527,7 @@
                     tbody.innerHTML += `<tr>
                         <td style="color:var(--alert);font-weight:bold">${s.call}</td>
                         <td>${freq}</td>
-                        <td>${s.band}</td>
+                        <td style="color:${s.color}">${s.band}</td>
                         <td>${s.score}</td>
                     </tr>`;
                 });
@@ -385,24 +538,31 @@
             fetch('/rss.json')
                 .then(r => r.json())
                 .then(d => {
-                    if(d.ticker && d.ticker.length > 0) {
-                        document.getElementById('ticker').innerText = d.ticker;
+                    if(d.ticker && d.ticker.length > 0 && d.ticker !== lastTickerText) {
+                        const el = document.getElementById('ticker');
+                        el.innerText = d.ticker;
+                        lastTickerText = d.ticker;
+                        const duration = Math.max(40, d.ticker.length * 0.2);
+                        el.style.animationDuration = duration + 's';
+                        el.classList.remove('ticker');
+                        void el.offsetWidth; 
+                        el.classList.add('ticker');
                     }
                 })
-                .catch(e => console.log("RSS Error or Wait:", e));
+                .catch(e => console.log("RSS loading...", e));
         }
 
-        // --- WATCHLIST ---
+        // --- GESTION WATCHLIST ---
         function loadWatchlist() {
             fetch('/watchlist.json').then(r => r.json()).then(list => {
                 currentWatchlist = list;
                 const div = document.getElementById('watchlistContainer');
                 div.innerHTML = '';
-                if(list.length === 0) div.innerHTML = '<div style="color:#555;font-style:italic;padding:5px;">Empty list...</div>';
+                if(list.length === 0) div.innerHTML = '<div style="color:#555;font-style:italic;padding:5px;">Liste vide...</div>';
                 list.forEach(call => {
                     div.innerHTML += `<div class="watchlist-item"><span style="color:var(--secondary);font-weight:bold">${call}</span><span class="btn-del" onclick="removeFromWatchlist('${call}')">X</span></div>`;
                 });
-                updateSpots();
+                if(!firstLoad) updateSpots();
             });
         }
 
@@ -417,7 +577,7 @@
             fetch('/watchlist.json', { method: 'DELETE', body: JSON.stringify({call: call}) }).then(() => loadWatchlist());
         }
 
-        // --- START ---
+        // --- INITIALISATION ---
         const savedTheme = localStorage.getItem('neuralTheme');
         if(savedTheme) { 
             document.getElementById('themeSelect').value = savedTheme;
@@ -425,14 +585,19 @@
         }
 
         initMap();
-        setTimeout(initChart, 100);
+        setTimeout(initChart, 200);
         loadWatchlist();
         updateRanking();
         updateRSS();
         
-        setInterval(updateSpots, 2000);
-        setInterval(updateRanking, 5000);
-        setInterval(updateRSS, 60000);
+        // Timers
+        setInterval(checkSurgeStatus, 5000); // Vérifie le SURGE toutes les 5s
+        setInterval(updateSpots, 2000);      // Spots toutes les 2s
+        setInterval(updateRanking, 5000);    // Ranking toutes les 5s
+        setInterval(updateRSS, 60000);       // RSS toutes les minutes
+        
+        updateSpots();
+
     </script>
 </body>
 </html>

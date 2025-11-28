@@ -1,196 +1,112 @@
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.3)
+# 📡 NEURAL DX CLUSTER (v2.0)
 
-**DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
+> **AI-Powered DXing.**
+> A next-generation radio amateur spot aggregator featuring real-time behavioral analysis, propagation opening detection (Surge), and an immersive visual interface.
 
-![Version](https://img.shields.io/badge/Version-Neural_AI_v1.0-blue) ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
+![Status](https://img.shields.io/badge/status-OPERATIONAL-green.svg)
 
----
+## 📋 Overview
 
-## 🌍 The "Neural Ranking" Revolution
+The **Neural DX Cluster** is not just a simple Telnet spot display. It is an analytical engine (written in Python) that connects to the global network, ingests raw data, and processes it via a scoring algorithm to identify **what is interesting right now**.
 
-For the first time in amateur radio software, DX Watcher implements a **Live Neural Ranking System**. Instead of scrolling through hundreds of irrelevant spots, the software analyzes the metadata of each incoming signal (Callsign rarity, comments like "UP/SPLIT", band propagation, and mode) to assign a **Real-Time Interest Score (0-100)**.
-
-This introduces a paradigm shift: **Don't just watch the spots, watch the Score.** The system automatically highlights "Hot" DX stations that you might have missed in the noise of a standard cluster. It acts as a smart co-pilot, filtering the mundane to reveal the extraordinary.
-
----
-
-## 🧠 The Neural Engine: How it works
-
-The core of the system relies on the `calculate_ai_score` function located in `webapp.py`. It is not a simple filter list, but a **weighted scoring system**.
-
-Every spot starts with a base score and gains (or loses) points based on specific criteria:
-
-1.  **Callsign Analysis (Rarity)**: The engine compares the prefix against a "Most Wanted" database (e.g., P5, 3Y, FT8...). If it is rare, the score explodes (+50 points).
-2.  **Semantic Analysis (Comments)**: The AI parses the comments left by spotters.
-    *   Detection of `UP`, `SPLIT`, `LISTEN`: Indicates a high-demand DX station (+15 points).
-    *   Detection of `PIRATE`: The score immediately drops to 0.
-3.  **Band & Mode Context**:
-    *   Bonus for "magic bands" (6m, 10m, 12m, 160m).
-    *   Bonus for CW mode (depending on configuration).
-
-### 🚀 Enriching the AI (Customization)
-
-This is where the magic happens. You can make the AI "smarter" by modifying the `calculate_ai_score` function in the Python file.
-
-**Example 1: Prioritizing IOTA (Islands On The Air)**
-Simply add this condition to scan the comments:
-```python
-if 'IOTA' in comment:
-    score += 20  # Significant boost for island chasers
-if 'POTA' in comment or 'SOTA' in comment:
-    score += 10
-if 'POTA' in comment or 'SOTA' in comment:
-    score += 10
-if mode == 'FT8':
-    score -= 30  # Penalize FT8 to let SSB/CW rise to the top
-The goal is to evolve this engine so it "thinks" like the operator using it.
-
-Réflexion
-13s
-Here is the complete README.md in English.
-
-I have kept the emphasis on the Neural Engine innovation, explaining clearly that this logic is a "first" in the amateur radio software ecosystem.
-
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.3)
-
-**DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
-
-![Version](https://img.shields.io/badge/Version-Neural_AI_v1.2-blue) ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License](https://img.shields.io/badge/License-MIT-green)
+It replaces endless text lists with a visual dashboard (Maps, Charts, Alerts) inspired by Cyberpunk/Sci-Fi interfaces.
 
 ---
 
-## 🌍 The "Neural Ranking" Revolution
+## 🌟 Key Features
 
-For the first time in amateur radio software, DX Watcher implements a **Live Neural Ranking System**. Instead of scrolling through hundreds of irrelevant spots, the software analyzes the metadata of each incoming signal (Callsign rarity, comments like "UP/SPLIT", band propagation, and mode) to assign a **Real-Time Interest Score (0-100)**.
+### 🧠 1. Neural Scoring ("The Brain")
+Every received spot is assigned a score from **0 to 100** in real-time based on multiple criteria:
+*   **DXCC Rarity:** Rare countries boost the score (e.g., P5, 3Y...).
+*   **Band/Frequency:** Smart weighting based on preferences.
+*   **Mode:** CW/SSB/FT8 detection.
+*   **Distance & Geolocation:** Calculated via Maidenhead Locator and CTY database.
 
-This introduces a paradigm shift: **Don't just watch the spots, watch the Score.** The system automatically highlights "Hot" DX stations that you might have missed in the noise of a standard cluster. It acts as a smart co-pilot, filtering the mundane to reveal the extraordinary.
+### ⚡ 2. SURGE System (Propagation Discovery)
+The major innovation of v2.0. The system monitors the **rate of spots** per band.
+*   If a quiet band (e.g., 10m) suddenly receives a burst of spots, the system triggers a **SURGE** alert.
+*   **Visuals:** Blinking warning banner, chart bars turning white, pulsating markers on the map.
+*   **Audio:** Immediate voice announcement.
 
----
-
-## 🧠 The Neural Engine: How it works
-
-The core of the system relies on the `calculate_ai_score` function located in `webapp.py`. It is not a simple filter list, but a **weighted scoring system**.
-
-Every spot starts with a base score and gains (or loses) points based on specific criteria:
-
-1.  **Callsign Analysis (Rarity)**: The engine compares the prefix against a "Most Wanted" database (e.g., P5, 3Y, FT8...). If it is rare, the score explodes (+50 points).
-2.  **Semantic Analysis (Comments)**: The AI parses the comments left by spotters.
-    *   Detection of `UP`, `SPLIT`, `LISTEN`: Indicates a high-demand DX station (+15 points).
-    *   Detection of `PIRATE`: The score immediately drops to 0.
-3.  **Band & Mode Context**:
-    *   Bonus for "magic bands" (6m, 10m, 12m, 160m).
-    *   Bonus for CW mode (depending on configuration).
-
-### 🚀 Enriching the AI (Customization)
-
-This is where the magic happens. You can make the AI "smarter" by modifying the `calculate_ai_score` function in the Python file.
-
-**Example 1: Prioritizing IOTA (Islands On The Air)**
-Simply add this condition to scan the comments:
-```python
-if 'IOTA' in comment:
-    score += 20  # Significant boost for island chasers
-Example 2: Specific Alert for POTA/SOTA
-
-if 'POTA' in comment or 'SOTA' in comment:
-    score += 10
-Example 3: Ignoring FT8 to focus on Phone/CW
-
-if mode == 'FT8':
-    score -= 30  # Penalize FT8 to let SSB/CW rise to the top
-The goal is to evolve this engine so it "thinks" like the operator using it.
-
-✨ Key Features
-Multi-Cluster Aggregation: Simultaneous connection to 3 Telnet servers (customizable) to ensure you miss nothing.
-Neural Ranking Table: A dynamic Top 10 of the most interesting stations of the moment, sorted by AI score.
-Live Mapping: Display spots on an interactive map (Leaflet) with color coding based on the score (Green = Standard, Red = Hot DX).
-Propagation Chart: Real-time histogram of band activity with standardized fixed colors.
-Smart Watchlist: Add a callsign (e.g., TR8) and the system will highlight it in Gold and trigger an alert.
-Text-to-Speech (TTS): Automatic voice announcement for "Hot" spots or Watchlist hits ("DX Alert! TR8CA on 20 meters").
-
-
-Réflexion
-13s
-Here is the complete README.md in English.
-
-I have kept the emphasis on the Neural Engine innovation, explaining clearly that this logic is a "first" in the amateur radio software ecosystem.
-
-# 📡 DX Watcher Ultimate - Neural AI Edition (v1.2)
-
-**DX Watcher Ultimate** is a local, multi-channel, and intelligent DX Cluster aggregator. Unlike traditional clusters that merely display a raw chronological list, this software integrates an algorithmic analysis engine (**Neural AI Engine**) that scores, ranks, and prioritizes amateur radio spots in real-time.
-
-![Version](https://img.shields.io/badge/Version-Neural_AI_v1.0-blue) ![Python](https://img.shields.io/badge/Python-3.x-yellow) ![License](https://img.shields.io/badge/License-MIT-green)
+### 👁️ 3. Immersive Interface
+*   **Live World Map:** Geographic visualization of spots (Leaflet).
+*   **Activity Chart:** Real-time histogram of band activity.
+*   **Dynamic Themes:** Change the mood in one click (Matrix, Cyber, Amber, Neon, Light).
+*   **News Ticker:** Scrolling RSS feed (Solar data, DX News) like a stock market ticker.
 
 ---
 
-## 🌍 The "Neural Ranking" Revolution
+## ⚙️ Architecture & System Logic
 
-For the first time in amateur radio software, DX Watcher implements a **Live Neural Ranking System**. Instead of scrolling through hundreds of irrelevant spots, the software analyzes the metadata of each incoming signal (Callsign rarity, comments like "UP/SPLIT", band propagation, and mode) to assign a **Real-Time Interest Score (0-100)**.
+### File Structure
+*   `webapp.py`: **The Core.** Handles Telnet connection, AI analysis, Surge detection, and the Flask Web Server.
+*   `templates/index.html`: The User Interface (Frontend).
+*   `cty.dat`: Country database (auto-downloaded).
+*   `watchlist.json`: Persistence file for your watched callsigns.
 
-This introduces a paradigm shift: **Don't just watch the spots, watch the Score.** The system automatically highlights "Hot" DX stations that you might have missed in the noise of a standard cluster. It acts as a smart co-pilot, filtering the mundane to reveal the extraordinary.
+### How does SURGE detection work?
+The Surge system relies on a differential analysis of spot history (Sliding Window Algorithm) implemented in `webapp.py`.
+
+1.  **Collection:** The backend records the timestamp of every spot per band.
+2.  **Analysis:** 
+    *   It calculates the average activity over 15 minutes (`SURGE_WINDOW`).
+    *   It compares the activity of the **last minute** against this average.
+3.  **Trigger:**
+    *   If `Current Activity > Average * 3` (Threshold is adjustable): **SURGE DETECTED**.
+    *   The server pushes the alert to the browser via `/surge.json`.
 
 ---
 
-## 🧠 The Neural Engine: How it works
+## 🚀 Installation and Startup
 
-The core of the system relies on the `calculate_ai_score` function located in `webapp.py`. It is not a simple filter list, but a **weighted scoring system**.
+### Prerequisites
+*   Python 3.8 or higher.
+*   A stable internet connection.
 
-Every spot starts with a base score and gains (or loses) points based on specific criteria:
-
-1.  **Callsign Analysis (Rarity)**: The engine compares the prefix against a "Most Wanted" database (e.g., P5, 3Y, FT8...). If it is rare, the score explodes (+50 points).
-2.  **Semantic Analysis (Comments)**: The AI parses the comments left by spotters.
-    *   Detection of `UP`, `SPLIT`, `LISTEN`: Indicates a high-demand DX station (+15 points).
-    *   Detection of `PIRATE`: The score immediately drops to 0.
-3.  **Band & Mode Context**:
-    *   Bonus for "magic bands" (6m, 10m, 12m, 160m).
-    *   Bonus for CW mode (depending on configuration).
-
-### 🚀 Enriching the AI (Customization)
-
-This is where the magic happens. You can make the AI "smarter" by modifying the `calculate_ai_score` function in the Python file.
-
-**Example 1: Prioritizing IOTA (Islands On The Air)**
-Simply add this condition to scan the comments:
-```python
-if 'IOTA' in comment:
-    score += 20  # Significant boost for island chasers
-Example 2: Specific Alert for POTA/SOTA
-
-if 'POTA' in comment or 'SOTA' in comment:
-    score += 10
-Example 3: Ignoring FT8 to focus on Phone/CW
-
-if mode == 'FT8':
-    score -= 30  # Penalize FT8 to let SSB/CW rise to the top
-The goal is to evolve this engine so it "thinks" like the operator using it.
-
-✨ Key Features
-Multi-Cluster Aggregation: Simultaneous connection to 3 Telnet servers (customizable) to ensure you miss nothing.
-Neural Ranking Table: A dynamic Top 10 of the most interesting stations of the moment, sorted by AI score.
-Live Mapping: Display spots on an interactive map (Leaflet) with color coding based on the score (Green = Standard, Red = Hot DX).
-Propagation Chart: Real-time histogram of band activity with standardized fixed colors.
-Smart Watchlist: Add a callsign (e.g., TR8) and the system will highlight it in Gold and trigger an alert.
-Text-to-Speech (TTS): Automatic voice announcement for "Hot" spots or Watchlist hits ("DX Alert! T88AR on 20 meters").
-
-🛠️ Installation and Usage
-Prerequisites
-Python 3.x installed.
-Python libraries: flask (The rest are standard libraries).
-Installation
-Clone or download this folder.
-Install dependencies:
+### 1. Install Dependencies
+Install necessary libraries via pip:
+```bash
 pip install flask feedparser
-(Note: feedparser is optional for the solar ticker; the code handles its absence)
-Running the App
-Launch the main script:
+# Note: telnetlib is included by default in Python < 3.13. 
+# If using Python 3.13+, you might need 'telnetlib3' or an alternative.
+
+ Configuration
+Open the webapp.py file and modify the CONFIG section at the top:
+
+MY_CALL = "F1SMV"        # Your Callsign
+WEB_PORT = 8000          # Web Server Port
+SURGE_THRESHOLD = 3.0    # Sensitivity of opening detection
+3. Launch
+Simply execute the main script:
+
 python webapp.py
-The engine will start, load the country database (cty.dat), and connect to the clusters.
-Open your browser at: http://localhost:8000
+The terminal will display:
 
-📝 Configuration
-Open webapp.py to modify:
+[SYSTEM] Connexion au cluster...
+[RSS] RSS OK: 20 news loaded.
+[FLASK] Running on http://0.0.0.0:8000
+4. Access
+Open your browser and go to: http://localhost:8000
 
-MY_CALL: Your callsign.
-CLUSTERS: The list of Telnet servers.
-RARE_PREFIXES: The list of countries YOU consider rare for the score calculation.
-think by Eric F1SMV coded par GIMINI3 #codevibing
+📖 Interface Guide
+The Dashboard
+Top Left (Map):
+🔵 Colors: Synced with backend (10m = Red, 20m = Green, etc.).
+⚪ Pulsing White: Band is in SURGE mode.
+Top Right (Wanted IA): Priority list sorted by the AI score.
+Bottom Left (Live Feed): The raw scrolling list.
+Bottom Right (Watchlist & Chart):
+Enter a callsign to track it (immediate voice alert).
+The chart shows which band is currently open.
+Controls
+VOICE: Toggle Text-to-Speech announcements.
+THEME: Change the color palette.
+FILTERS: Filter by Band or Mode to clean up the display.
+🤝 Credits
+Developed by F1SMV for the Radio Amateur community and GIMINI3.
+Powered by Python, Flask, and LeafletJS.
+
+Happy DXing & 73!
+

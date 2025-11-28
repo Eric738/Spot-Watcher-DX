@@ -5,11 +5,12 @@ import json
 import os
 import urllib.request
 import feedparser
+import ssl
 from collections import deque
 from flask import Flask, render_template, jsonify, request, abort
 
-# --- CONFIGURATION ---
-APP_VERSION = "NEURAL AI v1.3 " 
+# --- CONFIGURATION GENERALE ---
+APP_VERSION = "NEURAL AI v2.0 (Surge Core)" 
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -17,8 +18,34 @@ SPOT_LIFETIME = 1800
 AI_SCORE_THRESHOLD = 50 
 TOP_RANKING_LIMIT = 10 
 
-# URL du flux RSS 
-RSS_URL = "http://www.arrl.org/news/feed" 
+# --- CONFIGURATION SURGE (DETECTION D'OUVERTURE) ---
+SURGE_WINDOW = 900       # Fenêtre d'analyse (15 minutes en secondes)
+SURGE_THRESHOLD = 3.0    # Facteur multiplicateur (3x la moyenne = ALERTE)
+MIN_SPOTS_FOR_SURGE = 3  # Minimum de spots par minute pour déclencher une alerte
+
+# --- CONFIGURATION COULEURS (Même que le Chart JS) ---
+BAND_COLORS = {
+    '160m': '#5c4b51', # Gris/Bronze
+    '80m':  '#8e44ad', # Violet
+    '60m':  '#2c3e50', # Bleu Nuit
+    '40m':  '#2980b9', # Bleu Roi
+    '30m':  '#16a085', # Turquoise
+    '20m':  '#27ae60', # Vert Matrix
+    '17m':  '#f1c40f', # Jaune Or
+    '15m':  '#e67e22', # Orange
+    '12m':  '#d35400', # Orange Brûlé
+    '10m':  '#c0392b', # Rouge Sang (Danger/Ouverture)
+    '6m':   '#e84393', # Rose Neon
+    '4m':   '#ff9ff3', # Rose pastel
+    '2m':   '#ffffff', # Blanc
+    '70cm': '#7f8c8d', # Gris
+    'QO-100': '#00a8ff' # Bleu ciel
+}
+
+# SEUL FLUX ACTIF
+RSS_URLS = [
+    "https://feeds.feedburner.com/dxzone/xml"
+]
 
 CLUSTERS = [
     ("dxfun.com", 8000),
@@ -39,14 +66,25 @@ RARE_PREFIXES = [
     '3Y', 'BS7', 'CE0', 'CY9', 'CY0', 'FT5', 'FT8', 'HK0', 'KH1', 'KH3', 
     'KH5', 'KH7K', 'KH9', 'KP1', 'KP5', 'P5', 'T3', 'VP8', 'VQ9', 'ZK', 
     'ZL9', 'ZS8', 'BV9', 'EZ', 'FR/G', 'VK0', 'TR8', 'DP0', 'TY', 'HV', 
-    '1A', '4U', 'E4', 'SV/A', 'V47', 'T88', 'VP9'
+    '1A', '4U', 'E4', 'SV/A', 'V47', 'T88', 'VP9', '9J', 'XU', '3D2', 'S21', '3G0', 'KH0'
 ]
 
 app = Flask(__name__)
+
+# Stockage
 spots_buffer = deque(maxlen=5000)
+band_history = {} # Pour l'analyse SURGE : {'20m': deque([ts1, ts2...])}
 prefix_db = {}
-ticker_info = {"text": "Initialisation Neural Engine..."}
+ticker_info = {"text": "Initialisation du systeme..."}
 watchlist = set()
+
+# --- SSL CONTEXT BYPASS ---
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
 # --- Watchlist Persistence ---
 def load_watchlist():
@@ -64,6 +102,43 @@ def save_watchlist():
             json.dump(sorted(list(watchlist)), f, indent=2)
     except: pass
 
+# --- SURGE ENGINE (NOUVEAU) ---
+def record_surge_data(band):
+    """Enregistre le timestamp d'un spot pour l'analyse de tendance"""
+    if band not in band_history:
+        band_history[band] = deque()
+    band_history[band].append(time.time())
+
+def analyze_surges():
+    """
+    Analyse mathématique des tendances (Dérivée temporelle).
+    Retourne une liste des bandes en 'SURGE'.
+    """
+    current_time = time.time()
+    active_surges = []
+    
+    # Nettoyage et analyse
+    for band, timestamps in list(band_history.items()):
+        # 1. Nettoyage des vieux timestamps (> 15 min)
+        while timestamps and timestamps[0] < current_time - SURGE_WINDOW:
+            timestamps.popleft()
+            
+        count_total = len(timestamps)
+        if count_total < 5: continue 
+        
+        # 2. Calcul de la moyenne (spots par minute sur la fenêtre globale)
+        avg_rate = count_total / (SURGE_WINDOW / 60.0)
+        
+        # 3. Calcul de l'instantané (spots sur la dernière minute)
+        recent_count = sum(1 for t in timestamps if t > current_time - 60)
+        
+        # 4. Détection
+        # Si activité récente > seuil * moyenne ET activité significative
+        if recent_count > (avg_rate * SURGE_THRESHOLD) and recent_count >= MIN_SPOTS_FOR_SURGE:
+            active_surges.append(band)
+            
+    return active_surges
+
 # --- IA CORE ---
 def calculate_ai_score(call, band, mode, comment, country):
     score = 10 
@@ -75,7 +150,6 @@ def calculate_ai_score(call, band, mode, comment, country):
     if 'UP' in comment or 'SPLIT' in comment: score += 15
     if 'DX' in comment: score += 5
     
-    # Bonus VHF/UHF
     if band in ['6m', '4m', '2m', '70cm', '23cm', '13cm', 'QO-100']: score += 60
     if band in ['10m', '12m', '160m']: score += 20
     
@@ -84,19 +158,17 @@ def calculate_ai_score(call, band, mode, comment, country):
     
     return min(score, 100)
 
-# --- LOGIQUE BANDES & MODES (CORRIGÉE) ---
+# --- LOGIQUE BANDES & MODES ---
 def get_band_and_mode_smart(freq_float, comment):
     comment = (comment or "").upper()
     f = float(freq_float)
     
-    # Normalisation kHz
     if f < 1000: f = f * 1000.0
     if f > 1000000: f = f / 1000.0
 
-    # 1. Détection FT8/FT4 par fréquence exacte (+/- tolérance)
     ft8_centers = [1840, 3573, 5357, 7074, 10136, 14074, 18100, 21074, 24915, 28074, 50313, 144174]
     ft4_centers = [3575, 7047, 10140, 14080, 18104, 21140, 24919, 28180, 50318]
-    tol = 2.0 # Tolérance élargie à 2kHz
+    tol = 2.0 
 
     def find_band(freq_khz):
         if 1800 <= freq_khz <= 2000: return "160m"
@@ -119,13 +191,11 @@ def get_band_and_mode_smart(freq_float, comment):
 
     band = find_band(f)
 
-    # Vérification prioritaire Fréquences Digi
     for c in ft8_centers:
         if abs(f - c) <= tol: return band, "FT8"
     for c in ft4_centers:
         if abs(f - c) <= tol: return band, "FT4"
 
-    # 2. Analyse du Commentaire (Priorité absolue si explicite)
     if "FT8" in comment: return band, "FT8"
     if "FT4" in comment: return band, "FT4"
     if "CW" in comment: return band, "CW"
@@ -134,36 +204,14 @@ def get_band_and_mode_smart(freq_float, comment):
     if "SSB" in comment or "USB" in comment or "LSB" in comment: return band, "SSB"
     if "FM" in comment: return band, "FM"
 
-    # 3. Band Plan Logic (Le correctif est ici)
-    # Si le mode est inconnu, on devine selon la portion de bande
-    mode = "DATA" # Valeur par défaut temporaire
-
-    if band == "160m":
-        mode = "CW" if f < 1840 else "SSB"
-    elif band == "80m":
-        mode = "CW" if f < 3600 else "SSB"
-    elif band == "40m":
-        mode = "CW" if f < 7050 else "SSB"
-    elif band == "30m":
-        mode = "CW" if f < 10130 else "DATA" # 30m est data/cw only
-    elif band == "20m":
-        mode = "CW" if f < 14100 else "SSB"
-    elif band == "17m":
-        mode = "CW" if f < 18110 else "SSB"
-    elif band == "15m":
-        mode = "CW" if f < 21150 else "SSB"
-    elif band == "12m":
-        mode = "CW" if f < 24930 else "SSB"
-    elif band == "10m":
-        mode = "CW" if f < 28300 else "SSB"
-    elif band in ["6m", "2m", "70cm"]:
-        # En VHF DX, le bas de bande est souvent CW/SSB, le haut FM
-        if "FM" in comment: 
-            mode = "FM"
-        elif band == "2m" and f > 144400:
-            mode = "FM"
-        else:
-            mode = "SSB" # Par défaut en DX VHF on assume SSB si pas précisé
+    mode = "SSB" 
+    if band in ["160m", "80m", "40m", "20m", "17m", "15m", "12m", "10m"]:
+        if band == "40m" and f < 7040: mode = "CW"
+        elif band == "20m" and f < 14100: mode = "CW"
+        elif band == "30m": mode = "CW"
+        elif "CW" in comment: mode = "CW"
+    elif band in ["6m", "2m", "70cm"] and "FM" in comment: mode = "FM"
+    elif band == "QO-100": mode = "SSB"
 
     return band, mode
 
@@ -203,32 +251,47 @@ def get_country_info(call):
 
 # --- WORKERS ---
 def ticker_worker():
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'application/xml,text/xml,application/xhtml+xml'
+    }
+    
     while True:
-        msgs = [f"SYSTEM ONLINE - {MY_CALL}"]
+        msgs = [f"SYSTEM ONLINE - {MY_CALL} - {APP_VERSION}"]
         
-        # 1. Solar Data (NOAA)
+        # 1. Solar Data
         try:
-            with urllib.request.urlopen(SOLAR_URL, timeout=10) as r:
+            req = urllib.request.Request(SOLAR_URL, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=10) as r:
                 l = [x for x in r.read().decode('utf-8').split('\n') if x and not x.startswith((':','#'))]
                 if l: msgs.append(f"SOLAR: {l[-1]}")
         except: pass
         
-        # 2. RSS News (Feedparser)
+        # 2. RSS News
+        print("--- Fetching RSS DXZone ---")
         try:
-            feed = feedparser.parse(RSS_URL)
-            if feed.entries:
-                headlines = []
-                for entry in feed.entries[:3]: # Prend les 3 premiers
-                    headlines.append(entry.title.upper())
-                if headlines:
-                    msgs.append("NEWS: " + " +++ ".join(headlines))
-            else:
-                print("RSS: Pas d'entrées trouvées.")
+            req = urllib.request.Request(RSS_URLS[0], headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=15) as response:
+                raw_data = response.read()
+                feed = feedparser.parse(raw_data)
+                
+                if feed.entries:
+                    count = 0
+                    for entry in feed.entries:
+                        if count >= 20: break 
+                        title = entry.title.replace('\n', ' ').strip().upper()
+                        msgs.append(f"NEWS: {title}")
+                        count += 1
+                    print(f"RSS OK: {count} news chargees.")
+                else:
+                    msgs.append("NEWS: Flux vide ou erreur de format.")
+                    print("RSS Vide.")
         except Exception as e:
             print(f"RSS Error: {e}")
+            msgs.append(f"NEWS: Erreur connexion RSS.")
 
         ticker_info["text"] = "   +++   ".join(msgs)
-        time.sleep(900) # Mise à jour toutes les 15 min
+        time.sleep(900)
 
 def telnet_worker():
     idx = 0
@@ -241,52 +304,34 @@ def telnet_worker():
             except: pass
             tn.write(MY_CALL.encode('ascii') + b"\n")
             time.sleep(1)
-            # On demande les derniers spots au démarrage pour remplir le tableau
+            tn.write(b"set/dx\n")
             tn.write(b"show/dx 20\n")
             
             last_ping = time.time()
             while True:
                 try:
                     line = tn.read_until(b"\n", timeout=2).decode('ascii', errors='ignore').strip()
-                except:
-                    line = ""
+                except: line = ""
 
                 if not line:
                     if time.time() - last_ping > KEEP_ALIVE: 
-                        tn.write(b"\n")
-                        last_ping = time.time()
+                        tn.write(b"\n"); last_ping = time.time()
                     continue
                 
                 if "DX de" in line:
                     try:
-                        # Format typique: "DX de SPOTTER: FREQ CALL COMMENT TIME"
-                        # On cherche "DX de" et on coupe après
                         content = line[line.find("DX de")+5:].strip()
-                        # content ressemble à "F1SMV: 14000.0 W1AW CW 1200Z" ou "F1SMV 14000.0..."
-                        
                         parts = content.split()
-                        # parts[0] = Spotter (ex: "K1ABC:")
-                        # parts[1] = Freq (ex: "14020.0")
-                        # parts[2] = DX Call (ex: "TM100")
-                        # parts[3...] = Comment
-                        
                         if len(parts) < 3: continue
                         
                         freq_str = parts[1]
                         dx_call = parts[2].upper()
-                        
-                        # Reconstitution du commentaire
                         comment = " ".join(parts[3:]).upper()
                         
-                        # Nettoyage fréquence (parfois collée à :)
-                        if ":" in parts[0] and len(parts[0]) > 8: 
-                            # Cas rare de collage malformé
-                            continue
+                        if ":" in parts[0] and len(parts[0]) > 8: continue
 
-                        try:
-                            freq_raw = float(freq_str)
-                        except ValueError:
-                            continue
+                        try: freq_raw = float(freq_str)
+                        except ValueError: continue
 
                         via_eme = False
                         if "EME" in comment or "MOON" in comment: via_eme = True
@@ -294,6 +339,13 @@ def telnet_worker():
                         band, mode = get_band_and_mode_smart(freq_raw, comment)
                         info = get_country_info(dx_call)
                         score = calculate_ai_score(dx_call, band, mode, comment, info['c'])
+                        
+                        # --- INTEGRATION COULEUR ET SURGE ---
+                        # Récupération de la couleur définie
+                        color = BAND_COLORS.get(band, '#00f3ff') # Cyan par défaut si inconnu
+                        
+                        # Enregistrement pour le SURGE
+                        record_surge_data(band)
                         
                         spot_obj = {
                             "timestamp": time.time(), 
@@ -307,10 +359,11 @@ def telnet_worker():
                             "lon": info['lon'],
                             "score": score, 
                             "is_wanted": score >= AI_SCORE_THRESHOLD,
-                            "via_eme": via_eme
+                            "via_eme": via_eme,
+                            "color": color # Couleur envoyée au frontend
                         }
                         spots_buffer.append(spot_obj)
-                        print(f"SCAN: {dx_call} [{band}/{mode}] -> {score}")
+                        print(f"SCAN: {dx_call} [{band}/{mode}] -> {score} (Color: {color})")
                     except Exception as e: 
                         print(f"Error parsing line: {line} -> {e}")
         except Exception as e:
@@ -336,6 +389,15 @@ def get_spots():
         all_spots = [s for s in all_spots if s['mode'] == filter_mode]
     return jsonify(list(reversed(all_spots)))
 
+@app.route('/surge.json')
+def get_surge_status():
+    """Route dédiée pour l'état des ouvertures (Surge)"""
+    surges = analyze_surges()
+    return jsonify({
+        "surges": surges,
+        "timestamp": time.time()
+    })
+
 @app.route('/wanted.json')
 def get_ranking():
     now = time.time()
@@ -355,7 +417,8 @@ def get_ranking():
                 'score': s['score'], 
                 'c': s['country'], 
                 'band': s['band'],
-                'freq': s['freq']
+                'freq': s['freq'],
+                'color': s['color'] # On passe la couleur aussi ici
             })
             seen.add(s['dx_call'])
         if len(top) >= TOP_RANKING_LIMIT: break
