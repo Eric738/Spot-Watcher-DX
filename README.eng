@@ -1,112 +1,51 @@
-# 📡 NEURAL DX CLUSTER (v2.0)
+🇬🇧 ENGLISH
 
-> **AI-Powered DXing.**
-> A next-generation radio amateur spot aggregator featuring real-time behavioral analysis, propagation opening detection (Surge), and an immersive visual interface.
+Neural DX Cluster is a next-gen DX monitoring application designed for serious ham radio operators. Unlike traditional clusters that simply display raw text lists, Neural DX uses a "Dual Spectrum" GUI to separate HF traffic (Shortwave) from VHF/UHF/Space traffic.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
-![Status](https://img.shields.io/badge/status-OPERATIONAL-green.svg)
+It analyzes spots in real-time, detects propagation openings (Surges), and ranks stations based on interest using an intelligent scoring algorithm.
+✨ Key Features
 
-## 📋 Overview
+    🖥️ Dual Spectrum Dashboard:
+        HF Sector (160m - 10m): Global map, Top DX List, Ionospheric propagation charts.
+        VHF Sector (6m - QO-100): Local/Regional map, Top Tropo/ES/EME List, Specific activity charts.
+    🧠 AI Scoring Algorithm: The system scores every spot (0-100) based on prefix rarity, mode, band, and comments (e.g., "UP", "SPLIT").
+    ⚠️ Surge Detection: Sliding statistical analysis to detect abnormal activity spikes on a band (e.g., sudden 10m or 6m opening).
+    🎙️ Voice Alerts & Watchlist: Text-to-speech announcements for openings and priority monitoring for your favorite callsigns (friends, DXpeditions).
+    🎨 Customizable Interface:
+        Visual Themes: Cyber, Matrix, Amber, Neon.
+        Dynamic Filters: By Band and Mode (CW, SSB, FT8, FT4, FM).
+    🗺️ Live Mapping: Spots displayed on interactive maps (Leaflet).
 
-The **Neural DX Cluster** is not just a simple Telnet spot display. It is an analytical engine (written in Python) that connects to the global network, ingests raw data, and processes it via a scoring algorithm to identify **what is interesting right now**.
+🛠️ Installation
 
-It replaces endless text lists with a visual dashboard (Maps, Charts, Alerts) inspired by Cyberpunk/Sci-Fi interfaces.
+    Prerequisites: Python 3.x installed on your machine.
+    Install dependencies:
 
----
-
-## 🌟 Key Features
-
-### 🧠 1. Neural Scoring ("The Brain")
-Every received spot is assigned a score from **0 to 100** in real-time based on multiple criteria:
-*   **DXCC Rarity:** Rare countries boost the score (e.g., P5, 3Y...).
-*   **Band/Frequency:** Smart weighting based on preferences.
-*   **Mode:** CW/SSB/FT8 detection.
-*   **Distance & Geolocation:** Calculated via Maidenhead Locator and CTY database.
-
-### ⚡ 2. SURGE System (Propagation Discovery)
-The major innovation of v2.0. The system monitors the **rate of spots** per band.
-*   If a quiet band (e.g., 10m) suddenly receives a burst of spots, the system triggers a **SURGE** alert.
-*   **Visuals:** Blinking warning banner, chart bars turning white, pulsating markers on the map.
-*   **Audio:** Immediate voice announcement.
-
-### 👁️ 3. Immersive Interface
-*   **Live World Map:** Geographic visualization of spots (Leaflet).
-*   **Activity Chart:** Real-time histogram of band activity.
-*   **Dynamic Themes:** Change the mood in one click (Matrix, Cyber, Amber, Neon, Light).
-*   **News Ticker:** Scrolling RSS feed (Solar data, DX News) like a stock market ticker.
-
----
-
-## ⚙️ Architecture & System Logic
-
-### File Structure
-*   `webapp.py`: **The Core.** Handles Telnet connection, AI analysis, Surge detection, and the Flask Web Server.
-*   `templates/index.html`: The User Interface (Frontend).
-*   `cty.dat`: Country database (auto-downloaded).
-*   `watchlist.json`: Persistence file for your watched callsigns.
-
-### How does SURGE detection work?
-The Surge system relies on a differential analysis of spot history (Sliding Window Algorithm) implemented in `webapp.py`.
-
-1.  **Collection:** The backend records the timestamp of every spot per band.
-2.  **Analysis:** 
-    *   It calculates the average activity over 15 minutes (`SURGE_WINDOW`).
-    *   It compares the activity of the **last minute** against this average.
-3.  **Trigger:**
-    *   If `Current Activity > Average * 3` (Threshold is adjustable): **SURGE DETECTED**.
-    *   The server pushes the alert to the browser via `/surge.json`.
-
----
-
-## 🚀 Installation and Startup
-
-### Prerequisites
-*   Python 3.8 or higher.
-*   A stable internet connection.
-
-### 1. Install Dependencies
-Install necessary libraries via pip:
-```bash
 pip install flask feedparser
-# Note: telnetlib is included by default in Python < 3.13. 
-# If using Python 3.13+, you might need 'telnetlib3' or an alternative.
 
- Configuration
-Open the webapp.py file and modify the CONFIG section at the top:
+Configuration:
+Open webapp.py and change the MY_CALL variable to your callsign:
 
-MY_CALL = "F1SMV"        # Your Callsign
-WEB_PORT = 8000          # Web Server Port
-SURGE_THRESHOLD = 3.0    # Sensitivity of opening detection
-3. Launch
-Simply execute the main script:
+    MY_CALL = "YOUR_CALLSIGN"
 
-python webapp.py
-The terminal will display:
+🚀 Running the App
 
-[SYSTEM] Connexion au cluster...
-[RSS] RSS OK: 20 news loaded.
-[FLASK] Running on http://0.0.0.0:8000
-4. Access
-Open your browser and go to: http://localhost:8000
+    Start the application:
 
-📖 Interface Guide
-The Dashboard
-Top Left (Map):
-🔵 Colors: Synced with backend (10m = Red, 20m = Green, etc.).
-⚪ Pulsing White: Band is in SURGE mode.
-Top Right (Wanted IA): Priority list sorted by the AI score.
-Bottom Left (Live Feed): The raw scrolling list.
-Bottom Right (Watchlist & Chart):
-Enter a callsign to track it (immediate voice alert).
-The chart shows which band is currently open.
-Controls
-VOICE: Toggle Text-to-Speech announcements.
-THEME: Change the color palette.
-FILTERS: Filter by Band or Mode to clean up the display.
-🤝 Credits
-Developed by F1SMV for the Radio Amateur community and GIMINI3.
-Powered by Python, Flask, and LeafletJS.
+    python webapp.py
 
-Happy DXing & 73!
+    Open your web browser and navigate to:
+    http://localhost:8000
 
+The system will automatically download the country database (cty.dat), connect to Telnet clusters, and begin populating the maps.
+📂 Project Structure
+
+    webapp.py: The backend core (Flask, Telnet management, AI Logic).
+    templates/index.html: The frontend interface (HTML5, CSS Grid, JS, Leaflet, Chart.js).
+    cty.dat: Country prefix database (auto-downloaded).
+    watchlist.json: Stores your tracked callsigns (auto-generated).
+
+📜 License
+
+MIT License - Feel free to modify and share.
+Created for the Amateur Radio Community. Conceived by F1SMV, created by gimini3 #codevibing

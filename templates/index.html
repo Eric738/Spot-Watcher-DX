@@ -3,601 +3,430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ my_call }} - NEURAL DX CLUSTER v2</title>
-    
-    <!-- Leaflet CSS (Carte) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Scripts Externes -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <title>NEURAL DX v2.2 - YELLOW OPS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        /* --- THEMES & VARIABLES --- */
         :root {
-            --primary: #00f3ff;
-            --secondary: #00ff41;
+            --bg-color: #050505;
+            --panel-bg: #0e0e0e;
+            --text-main: #a0a0a0;
+            --accent: #00f3ff;
             --alert: #ff003c;
-            --surge: #ffffff; /* Couleur Flash Surge */
-            --bg: #050a10;
-            --panel: rgba(10, 20, 30, 0.9);
-            --text: #e0e0e0;
-            --grid: rgba(0, 243, 255, 0.1);
+            --border: 1px solid #333;
+            --wl-bg: #ffeb3b; /* Jaune vif */
+            --wl-text: #000000;
         }
         
-        /* Definitions des themes */
-        [data-theme="amber"] { --primary: #ffb000; --secondary: #ffcc00; --alert: #ff4400; --bg: #100a00; --panel: rgba(30, 20, 5, 0.9); --grid: rgba(255, 176, 0, 0.15); }
-        [data-theme="matrix"] { --primary: #00ff00; --secondary: #008f11; --alert: #ff0000; --bg: #000000; --panel: rgba(0, 20, 0, 0.95); --grid: rgba(0, 255, 0, 0.1); }
-        [data-theme="cyber"] { --primary: #ff00ff; --secondary: #00ffff; --alert: #ffff00; --bg: #0a000f; --panel: rgba(20, 0, 30, 0.9); --grid: rgba(255, 0, 255, 0.15); }
-        [data-theme="light"] { --primary: #0055ff; --secondary: #00aa00; --alert: #dd0000; --bg: #f0f0f0; --panel: #ffffff; --text: #111; --grid: rgba(0,0,0,0.1); }
-
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            font-family: 'Courier New', monospace; 
-            margin: 0; 
-            padding: 15px; 
-            overflow-x: hidden; 
-            transition: background 0.3s; 
-        }
+        /* THEMES */
+        body.matrix { --accent: #0f0; --bg-color: #000; --text-main: #0f0; }
+        body.amber { --accent: #ffae00; --bg-color: #1a1000; --text-main: #d4a017; }
+        body.neon { --accent: #ff00ff; --bg-color: #0a000a; --text-main: #ffccff; }
         
-        /* --- SURGE ALERT BOX (NOUVEAU) --- */
-        #surge-alert {
-            display: none; /* Caché par défaut */
-            position: fixed;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            background: var(--alert);
-            color: #000;
-            padding: 10px 30px;
-            font-weight: 900;
-            font-size: 1.5rem;
-            border: 2px solid #fff;
-            box-shadow: 0 0 30px var(--alert);
-            text-transform: uppercase;
-            border-radius: 4px;
-            animation: surgeBlink 0.8s infinite;
-        }
-        @keyframes surgeBlink {
-            0% { opacity: 1; transform: translateX(-50%) scale(1); }
-            50% { opacity: 0.8; transform: translateX(-50%) scale(1.05); }
-            100% { opacity: 1; transform: translateX(-50%) scale(1); }
-        }
-
-        /* --- HEADER --- */
-        .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 2px solid var(--primary); 
-            padding-bottom: 10px; 
-            margin-bottom: 15px; 
-            text-shadow: 0 0 10px var(--primary); 
-        }
-        .title { font-size: 1.8rem; font-weight: bold; color: var(--primary); letter-spacing: 3px; }
-        .meta { font-size: 0.8rem; color: var(--secondary); display: flex; gap: 15px; align-items: center; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Share Tech Mono', monospace; margin: 0; overflow-x: hidden; }
         
-        /* --- TICKER (NEWS) --- */
-        .ticker-wrap { 
-            width: 100%; 
-            overflow: hidden; 
-            background: #000; 
-            border: 1px solid var(--primary); 
-            margin-bottom: 15px; 
-            height: 30px; 
-            line-height: 30px; 
-            position: relative; 
-        }
-        .ticker { 
-            display: inline-block; 
-            white-space: nowrap; 
-            animation-name: ticker;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-            color: var(--secondary); 
-            font-weight: bold; 
-            font-size: 1rem; 
-        }
-        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-        /* --- CONTROLS --- */
-        .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        select, button.ctrl-btn { 
-            background: #000; 
-            color: var(--primary); 
-            border: 1px solid var(--primary); 
-            padding: 5px 10px; 
-            font-family: inherit; 
-            cursor: pointer; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            font-size: 0.9rem; 
-        }
-        select:hover, button.ctrl-btn:hover { box-shadow: 0 0 10px var(--primary); }
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #000; border-bottom: 1px solid #222; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--accent); margin: 0; font-size: 1.4rem; text-shadow: 0 0 10px var(--accent); }
         
-        .voice-on { 
-            background-color: var(--alert) !important; 
-            color: #000 !important; 
-            border-color: var(--alert) !important; 
-            animation: pulse 2s infinite; 
+        /* TICKER */
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background-color: #111; border-bottom: 1px solid var(--accent);
+            height: 30px; line-height: 30px; position: relative;
         }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 60, 0); } }
+        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 45s linear infinite; padding-left: 100%; }
+        .ticker-item { display: inline-block; padding: 0 2rem; color: var(--accent); font-weight: bold; font-size: 1.1em; }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* --- LAYOUT GRID --- */
+        /* COMMAND DECK */
+        .command-deck {
+            display: flex; align-items: center; gap: 15px; background: #080808; padding: 10px 20px; border-bottom: 1px solid #333; flex-wrap: wrap;
+        }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        select, input, button {
+            background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; font-family: 'Share Tech Mono'; cursor: pointer; outline: none;
+        }
+        button:hover { background: var(--accent); color: #000; }
+        
+        /* WATCHLIST TAGS */
+        #watchlist-container { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+        .watchlist-item { background: var(--wl-bg); color: var(--wl-text); padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; cursor: pointer; border: 1px solid #444; font-weight: bold; }
+        .watchlist-item:hover { background: var(--alert); color: #fff; }
+
+        /* SECTORS LAYOUT */
+        .sector-container { margin-bottom: 40px; border-bottom: 2px dashed #333; padding-bottom: 20px; }
+        
+        .sector-title {
+            background: #111; color: #fff; padding: 8px 20px; font-family: 'Orbitron'; 
+            border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent);
+            margin-top: 0; display: flex; align-items: center; gap: 15px; font-size: 1.2rem;
+        }
+        .hf-style .sector-title { border-color: #e67e22; color: #e67e22; }
+        .vhf-style .sector-title { border-color: #e84393; color: #e84393; }
+
+        /* GRID SYSTEM */
         .main-grid {
-            display: grid;
-            grid-template-columns: 65% 33%;
-            gap: 2%;
-            align-items: start;
+            display: grid; grid-template-columns: 65% 35%; gap: 10px; padding: 10px;
+            height: 45vh; min-height: 400px;
         }
-        @media (max-width: 1000px) { .main-grid { grid-template-columns: 1fr; } }
-
-        /* --- PANELS --- */
-        .panel { 
-            background: var(--panel); 
-            border: 1px solid var(--primary); 
-            padding: 10px; 
-            box-shadow: 0 0 15px var(--grid); 
-            margin-bottom: 20px; 
-            position: relative; 
+        .secondary-grid {
+            display: grid; grid-template-columns: 50% 50%; gap: 10px; padding: 0 10px 10px 10px;
+            height: 35vh; min-height: 300px;
         }
-        .panel h2 { 
-            margin-top: 0; 
-            border-bottom: 1px solid var(--primary); 
-            padding-bottom: 5px; 
-            font-size: 1.1rem; 
-            color: var(--primary); 
-            text-transform: uppercase; 
+
+        .panel { background: var(--panel-bg); border: var(--border); padding: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .panel h3 { margin: 0; padding: 8px; background: #151515; font-size: 0.9rem; border-bottom: 1px solid #333; color: #ddd; }
+        
+        .map-wrapper { height: 100%; width: 100%; }
+        .chart-wrapper { position: relative; flex: 1; padding: 10px; min-height: 0; }
+
+        .scroll-list { flex: 1; overflow-y: auto; font-size: 0.85rem; scrollbar-width: thin; scrollbar-color: var(--accent) #000; }
+        
+        /* SPOT ROWS */
+        .spot-row { 
+            display: grid; 
+            grid-template-columns: 70px 60px 100px auto; 
+            gap: 10px; 
+            padding: 4px 8px; 
+            border-bottom: 1px solid #222; 
+            align-items: center;
         }
+        .spot-row:hover { background: #1a1a1a; color: #fff; }
         
-        /* Dimensions fixes */
-        .map-container { height: 450px; width: 100%; border: 1px solid var(--secondary); background: #000; }
-        .spots-container { height: 400px; overflow-y: auto; }
-        .chart-wrapper { position: relative; height: 200px; width: 100%; }
-        #map { height: 100%; width: 100%; }
+        /* STYLE WATCHLIST MATCH (JAUNE) */
+        .spot-row.watched {
+            background-color: var(--wl-bg) !important;
+            color: var(--wl-text) !important;
+            font-weight: bold;
+            border: 1px solid #fff;
+        }
+        .spot-row.watched .spot-freq, 
+        .spot-row.watched .spot-call, 
+        .spot-row.watched .spot-country { color: var(--wl-text) !important; }
 
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { text-align: left; color: var(--primary); padding: 4px; border-bottom: 1px solid #333; position: sticky; top: 0; background: var(--bg); z-index: 2; }
-        td { padding: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        
-        /* Couleurs Modes */
-        .mode-ft8 { color: #ff00ff; }
-        .mode-cw { color: #ffff00; }
-        .mode-ssb { color: #00ff00; }
-        .high-score { color: var(--alert); font-weight: bold; text-shadow: 0 0 5px var(--alert); }
-        
-        /* Watchlist Highlight */
-        tr.watchlist-match { background-color: #ffff00 !important; color: #000000 !important; font-weight: bold; }
-        tr.watchlist-match td { border-bottom: 1px solid #000; }
-        tr.watchlist-match .mode-ft8, tr.watchlist-match .mode-cw, tr.watchlist-match .mode-ssb, tr.watchlist-match .high-score { color: #000 !important; text-shadow: none !important; }
+        .spot-freq { color: var(--accent); text-align: right; font-family: monospace; }
+        .spot-band { text-align: center; border-radius: 3px; color: #000; font-weight: bold; font-size: 0.8rem; padding: 1px 0; }
+        .spot-call { font-weight: bold; color: #fff; letter-spacing: 1px; }
+        .spot-country { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #888; }
 
-        /* Inputs Watchlist */
-        .watchlist-input { display: flex; gap: 5px; margin-bottom: 10px; }
-        .watchlist-input input { background: #000; border: 1px solid var(--secondary); color: #fff; padding: 4px; width: 100%; font-family: inherit; text-transform: uppercase; }
-        .watchlist-input button { background: var(--secondary); color: #000; border: none; cursor: pointer; font-weight: bold; padding: 0 8px; }
-        .watchlist-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #555; font-size: 0.9rem; }
-        .btn-del { color: var(--alert); cursor: pointer; font-weight: bold; border: 1px solid var(--alert); padding: 0 4px; font-size: 0.7rem; }
-        .btn-del:hover { background: var(--alert); color: #000; }
-        
-        /* Scrollbar Custom */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); }
+        /* ALERTS */
+        .surge-banner { display: none; background: var(--alert); color: #fff; font-size: 0.8rem; padding: 2px 8px; border-radius: 2px; animation: blink 1s infinite; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
     </style>
 </head>
 <body>
-    <!-- BANNIERE D'ALERTE SURGE -->
-    <div id="surge-alert">⚠️ SURGE DETECTED ⚠️</div>
 
-    <div class="header">
-        <div class="title">NEURAL CLUSTER <span style="font-size:0.5em">{{ version }}</span></div>
-        <div class="meta">
-            <span>OP: {{ my_call }}</span>
-            <span>DATE: {{ date }}</span>
-            <select id="themeSelect" onchange="changeTheme(this.value)">
-                <option value="neon">THEME: NEON</option>
-                <option value="amber">THEME: AMBER</option>
-                <option value="matrix">THEME: MATRIX</option>
-                <option value="cyber">THEME: CYBER</option>
-                <option value="light">THEME: LIGHT</option>
-            </select>
-        </div>
+<header>
+    <h1>NEURAL DX <span style="font-size:0.6em; opacity:0.7; color:#fff">{{ version }}</span></h1>
+    <div class="control-group">
+        <button onclick="toggleTheme()">THEME</button>
+        <button onclick="toggleVoice()">VOICE: <span id="voice-status">OFF</span></button>
     </div>
+</header>
 
-    <!-- TICKER NEWS -->
-    <div class="ticker-wrap">
-        <div class="ticker" id="ticker" style="animation-duration: 60s;">INITIALISATION DU SYSTEME... CHARGEMENT FLUX RSS...</div>
+<!-- TICKER -->
+<div class="ticker-wrap">
+    <div class="ticker-move" id="ticker-content">
+        <div class="ticker-item">INITIALISATION DU SYSTEME...</div>
     </div>
+</div>
 
-    <!-- BARRE DE CONTROLE -->
-    <div class="controls">
-        <select id="bandFilter" onchange="updateSpots()">
-            <option value="All">BAND: ALL</option>
-            {% for b in bands %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+<!-- COMMAND DECK -->
+<div class="command-deck">
+    <div class="control-group">
+        <span>FILTERS:</span>
+        <select id="filter-band" onchange="updateData()">
+            <option value="All">All Bands</option>
+            {% for b in hf_bands + vhf_bands %}
+            <option value="{{ b }}">{{ b }}</option>
+            {% endfor %}
         </select>
-        <select id="modeFilter" onchange="updateSpots()">
-            <option value="All">MODE: ALL</option>
-            {% for m in modes %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+        <select id="filter-mode" onchange="updateData()">
+            <option value="All">All Modes</option>
+            <option value="CW">CW</option>
+            <option value="SSB">SSB</option>
+            <option value="FT8">FT8</option>
+            <option value="FM">FM</option>
         </select>
-        <button id="voiceBtn" class="ctrl-btn" onclick="toggleVoice()">VOICE: OFF</button>
     </div>
+    <div class="control-group" style="margin-left: auto; border-left: 1px solid #333; padding-left: 20px;">
+        <span>WATCHLIST:</span>
+        <input type="text" id="wl-input" placeholder="Call..." style="width: 70px; text-transform: uppercase;">
+        <button onclick="addToWatchlist()">ADD</button>
+        <div id="watchlist-container"></div>
+    </div>
+</div>
 
-    <!-- GRILLE PRINCIPALE -->
+<!-- ================= HF SECTOR (Inclut 6m) ================= -->
+<div class="sector-container hf-style">
+    <div class="sector-title">
+        📡 HF GLOBAL & MAGIC BAND (160m - 6m) 
+        <span id="hf-surge-alert" class="surge-banner">⚠️ SURGE</span>
+    </div>
+    
     <div class="main-grid">
-        
-        <!-- COLONNE GAUCHE -->
-        <div class="left-col">
-            
-            <!-- 1. CARTE MONDIALE -->
-            <div class="panel" style="padding:0; border:none;">
-                <div class="map-container">
-                    <div id="map"></div>
-                </div>
-            </div>
-
-            <!-- 2. TABLEAU LIVE -->
-            <div class="panel">
-                <h2>FLUX LIVE (SPOTS)</h2>
-                <div class="spots-container">
-                    <table id="spotsTable">
-                        <thead>
-                            <tr>
-                                <th>TIME</th><th>FREQ</th><th>CALL</th><th>DXCC</th><th>BAND</th><th>MODE</th><th>SCR</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
+        <div class="panel">
+            <div id="map-hf" class="map-wrapper"></div>
         </div>
-
-        <!-- COLONNE DROITE -->
-        <div class="right-col">
-            
-            <!-- 3. CLASSEMENT IA -->
-            <div class="panel">
-                <h2 style="color: var(--alert)">TOP WANTED (IA)</h2>
-                <table id="wantedTable">
-                    <thead><tr><th>CALL</th><th>FREQ</th><th>BND</th><th>SCR</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <!-- 4. WATCHLIST -->
-            <div class="panel" style="border-color: var(--secondary);">
-                <h2 style="color: var(--secondary)">WATCHLIST</h2>
-                <div class="watchlist-input">
-                    <input type="text" id="newCall" placeholder="CALL..." maxlength="10">
-                    <button onclick="addToWatchlist()">ADD</button>
-                </div>
-                <div id="watchlistContainer" style="height: 150px; overflow-y: auto;"></div>
-            </div>
-
-            <!-- 5. GRAPHIQUE -->
-            <div class="panel">
-                <h2>ACTIVITE BANDES</h2>
-                <div class="chart-wrapper">
-                    <canvas id="bandChart"></canvas>
-                </div>
-            </div>
-
+        <div class="panel">
+            <h3>🏆 TOP DX WANTED</h3>
+            <div id="wanted-hf" class="scroll-list"></div>
         </div>
     </div>
 
-    <script>
-        // --- VARIABLES GLOBALES ---
-        let map, markers = [];
-        let currentWatchlist = []; 
-        let activityChart = null;
-        let voiceEnabled = false;
-        let announcedSet = new Set(); 
-        let firstLoad = true;
-        let lastTickerText = "";
-        let activeSurges = []; // Liste des bandes en SURGE
+    <div class="secondary-grid">
+        <div class="panel">
+            <h3>🌊 LIVE STREAM</h3>
+            <div id="list-hf" class="scroll-list"></div>
+        </div>
+        <div class="panel">
+            <h3>📊 ACTIVITY</h3>
+            <div class="chart-wrapper">
+                <canvas id="chart-hf"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 
-        const bandOrder = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '4m', '2m', '70cm', '23cm', '13cm', 'QO-100'];
+<!-- ================= VHF SECTOR ================= -->
+<div class="sector-container vhf-style">
+    <div class="sector-title">
+        🛰️ VHF / UHF / SPACE 
+        <span id="vhf-surge-alert" class="surge-banner">⚠️ SURGE</span>
+    </div>
+    
+    <div class="main-grid">
+        <div class="panel">
+            <div id="map-vhf" class="map-wrapper"></div>
+        </div>
+        <div class="panel">
+            <h3>🚀 TOP VHF WANTED</h3>
+            <div id="wanted-vhf" class="scroll-list"></div>
+        </div>
+    </div>
+
+    <div class="secondary-grid">
+        <div class="panel">
+            <h3>🌊 LIVE STREAM</h3>
+            <div id="list-vhf" class="scroll-list"></div>
+        </div>
+        <div class="panel">
+            <h3>📊 ACTIVITY</h3>
+            <div class="chart-wrapper">
+                <canvas id="chart-vhf"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BAND_COLORS = {{ band_colors|tojson }};
+    const HF_BANDS = {{ hf_bands|tojson }};
+    const VHF_BANDS = {{ vhf_bands|tojson }};
+
+    const mapHF = L.map('map-hf', { attributionControl: false }).setView([25, 0], 2);
+    const mapVHF = L.map('map-vhf', { attributionControl: false }).setView([48, 10], 3);
+
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(mapHF);
+    L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(mapVHF);
+
+    let markersHF = [], markersVHF = [];
+    let voiceEnabled = false;
+    let watchlist = [];
+    let lastTickerText = "";
+
+    // Charts
+    const commonOptions = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { 
+            y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#666', font: {size: 9} } }, 
+            x: { grid: { color: '#222' }, ticks: { color: '#888', font: {size: 9} } } 
+        },
+        animation: false
+    };
+
+    function createChart(id, labels) {
+        const ctx = document.getElementById(id).getContext('2d');
+        const bgColors = labels.map(b => BAND_COLORS[b] || '#555');
+        return new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ data: [], backgroundColor: bgColors, borderRadius: 2 }] },
+            options: commonOptions
+        });
+    }
+
+    const chartHF = createChart('chart-hf', HF_BANDS);
+    const chartVHF = createChart('chart-vhf', VHF_BANDS);
+
+    // UI Utils
+    const themes = ['', 'matrix', 'amber', 'neon'];
+    let currentTheme = 0;
+    function toggleTheme() {
+        currentTheme = (currentTheme + 1) % themes.length;
+        document.body.className = themes[currentTheme];
+    }
+
+    function toggleVoice() {
+        voiceEnabled = !voiceEnabled;
+        document.getElementById('voice-status').innerText = voiceEnabled ? "ON" : "OFF";
+        if(voiceEnabled) speak("Voice systems online.");
+    }
+
+    function speak(text) {
+        if (!voiceEnabled) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US'; u.rate = 1.2; u.pitch = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+
+    // Watchlist
+    async function loadWatchlist() {
+        const r = await fetch('/watchlist.json');
+        watchlist = await r.json();
+        const container = document.getElementById('watchlist-container');
+        container.innerHTML = watchlist.map(c => 
+            `<span class="watchlist-item" onclick="removeFromWatchlist('${c}')">${c} &times;</span>`
+        ).join('');
+    }
+
+    async function addToWatchlist() {
+        const input = document.getElementById('wl-input');
+        const call = input.value.trim().toUpperCase();
+        if(!call) return;
+        await fetch('/watchlist.json', { method: 'POST', body: JSON.stringify({call: call}) });
+        input.value = ''; loadWatchlist();
+    }
+
+    async function removeFromWatchlist(call) {
+        await fetch('/watchlist.json', { method: 'DELETE', body: JSON.stringify({call: call}) });
+        loadWatchlist();
+    }
+
+    // Render Row (Updated with Yellow Highlight)
+    function createSpotRow(s) {
+        const isWatched = watchlist.includes(s.dx_call);
+        const rowClass = isWatched ? 'spot-row watched' : 'spot-row';
         
-        // Map des couleurs par défaut (backup si le backend ne répond pas)
-        const BAND_COLORS_MAP = {
-            '160m': '#5c4b51', '80m': '#8e44ad', '60m': '#2c3e50', '40m': '#2980b9',
-            '30m': '#16a085', '20m': '#27ae60', '17m': '#f1c40f', '15m': '#e67e22',
-            '12m': '#d35400', '10m': '#c0392b', '6m': '#e84393', '4m': '#ff9ff3',
-            '2m': '#ffffff', '70cm': '#7f8c8d', 'QO-100': '#00a8ff'
-        };
+        return `
+            <div class="${rowClass}">
+                <span class="spot-freq">${s.freq}</span>
+                <span class="spot-band" style="background:${s.color}">${s.band}</span>
+                <span class="spot-call">${s.dx_call}</span>
+                <span class="spot-country">${s.country}</span>
+            </div>`;
+    }
 
-        // --- SYSTEME VOCAL ---
-        function toggleVoice() {
-            voiceEnabled = !voiceEnabled;
-            const btn = document.getElementById('voiceBtn');
-            if(voiceEnabled) {
-                btn.innerText = "VOICE: ON";
-                btn.classList.add('voice-on');
-                speak("Voice system online.");
-            } else {
-                btn.innerText = "VOICE: OFF";
-                btn.classList.remove('voice-on');
+    function createWantedRow(s) {
+        return `
+            <div class="spot-row" style="border-left: 3px solid ${s.color}">
+                <span class="spot-freq" style="color:#666">${s.score}pts</span>
+                <span class="spot-band" style="background:${s.color}">${s.band}</span>
+                <span class="spot-call">${s.dx_call}</span>
+                <span class="spot-country">${s.country}</span>
+            </div>`;
+    }
+
+    // Main Loop
+    async function updateData() {
+        const fBand = document.getElementById('filter-band').value;
+        const fMode = document.getElementById('filter-mode').value;
+        
+        try {
+            const [rSpots, rWanted, rSurge, rRss] = await Promise.all([
+                fetch(`/spots.json?band=${fBand}&mode=${fMode}`),
+                fetch('/wanted.json'),
+                fetch('/surge.json'),
+                fetch('/rss.json')
+            ]);
+
+            const spots = await rSpots.json();
+            const wanted = await rWanted.json();
+            const surge = await rSurge.json();
+            const rss = await rRss.json();
+
+            // RSS Update
+            if (rss.ticker !== lastTickerText) {
+                document.getElementById('ticker-content').innerHTML = `<div class="ticker-item">${rss.ticker}</div>`;
+                lastTickerText = rss.ticker;
             }
-        }
 
-        function speak(text) {
-            if(!voiceEnabled) return;
-            window.speechSynthesis.cancel();
-            let utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1.1;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function checkVoiceAlerts(spot) {
-            if(firstLoad) return;
-            const key = `${spot.dx_call}-${spot.band}-${spot.time}`;
-            if(announcedSet.has(key)) return;
-
-            if(currentWatchlist.includes(spot.dx_call)) {
-                speak(`Alert! Watchlist hit! ${spot.dx_call} on ${spot.band}`);
-                announcedSet.add(key);
-                return;
-            }
-            if(activeSurges.includes(spot.band)) {
-                 // On ne parle pas a chaque spot de surge, sinon c'est insupportable
-                 // Mais on pourrait ajouter une logique ici
-            }
-        }
-
-        // --- GESTION THEMES ---
-        function changeTheme(themeName) {
-            document.documentElement.setAttribute('data-theme', themeName);
-            localStorage.setItem('neuralTheme', themeName);
-            if(activityChart) {
-                const style = getComputedStyle(document.body);
-                activityChart.options.scales.y.grid.color = style.getPropertyValue('--grid').trim();
-                activityChart.options.scales.x.ticks.color = style.getPropertyValue('--primary').trim();
-                activityChart.options.scales.y.ticks.color = style.getPropertyValue('--primary').trim();
-                activityChart.update();
-            }
-        }
-
-        // --- CARTE LEAFLET ---
-        function initMap() {
-            map = L.map('map').setView([20, 0], 2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-        }
-
-        // --- GRAPHIQUE CHART.JS ---
-        function initChart() {
-            const ctx = document.getElementById('bandChart');
-            if (!ctx) return;
-            const style = getComputedStyle(document.body);
+            // Clear
+            document.getElementById('list-hf').innerHTML = '';
+            document.getElementById('list-vhf').innerHTML = '';
+            markersHF.forEach(m => mapHF.removeLayer(m)); markersHF = [];
+            markersVHF.forEach(m => mapVHF.removeLayer(m)); markersVHF = [];
             
-            activityChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: bandOrder,
-                    datasets: [{
-                        label: 'Spots',
-                        data: new Array(bandOrder.length).fill(0),
-                        backgroundColor: [], // Sera rempli dynamiquement
-                        borderColor: '#000',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: style.getPropertyValue('--grid').trim() }, ticks: { color: style.getPropertyValue('--primary').trim() } },
-                        x: { ticks: { color: style.getPropertyValue('--primary').trim(), font: { size: 9 } }, grid: { display: false } }
-                    },
-                    animation: { duration: 500 }
+            const statsHF = {}, statsVHF = {};
+
+            // Process Spots
+            spots.forEach(s => {
+                if(fBand !== 'All' && s.band !== fBand) return;
+                if(fMode !== 'All' && s.mode !== fMode) return;
+
+                // Note: Backend sends type based on list inclusion. Since we moved 6m to HF list in backend,
+                // s.type will be 'HF' for 6m spots automatically.
+                const isVHF = s.type === 'VHF';
+                const targetList = isVHF ? 'list-vhf' : 'list-hf';
+                const targetMap = isVHF ? mapVHF : mapHF;
+
+                document.getElementById(targetList).insertAdjacentHTML('beforeend', createSpotRow(s));
+
+                const m = L.circleMarker([s.lat, s.lon], {
+                    radius: 4, color: s.color, fillColor: s.color, fillOpacity: 0.9, weight: 1
+                }).bindPopup(`<b>${s.dx_call}</b><br>${s.freq} (${s.mode})<br>${s.country}`);
+                
+                m.addTo(targetMap);
+                if(isVHF) markersVHF.push(m); else markersHF.push(m);
+
+                if(isVHF) statsVHF[s.band] = (statsVHF[s.band] || 0) + 1;
+                else statsHF[s.band] = (statsHF[s.band] || 0) + 1;
+
+                if (watchlist.includes(s.dx_call) && (Date.now()/1000 - s.timestamp) < 10) {
+                    speak(`Alert. Watchlist target ${s.dx_call} spotted on ${s.band}`);
                 }
             });
-        }
 
-        // --- LOGIQUE SURGE (NOUVEAU) ---
-        function checkSurgeStatus() {
-            fetch('/surge.json')
-                .then(r => r.json())
-                .then(data => {
-                    activeSurges = data.surges || [];
-                    const alertBox = document.getElementById('surge-alert');
-                    
-                    if (activeSurges.length > 0) {
-                        // Afficher l'alerte
-                        alertBox.innerText = `⚠️ SURGE DETECTED: ${activeSurges.join(', ')} OPENING! ⚠️`;
-                        alertBox.style.display = 'block';
-                        
-                        // Si c'est la première fois qu'on détecte ce surge, alerte vocale
-                        if (voiceEnabled) {
-                            // Logique simplifiée pour ne pas spammer
-                        }
-                    } else {
-                        alertBox.style.display = 'none';
-                    }
-                })
-                .catch(e => console.log("Surge check failed", e));
-        }
+            // Charts
+            chartHF.data.datasets[0].data = HF_BANDS.map(b => statsHF[b] || 0);
+            chartHF.update();
+            chartVHF.data.datasets[0].data = VHF_BANDS.map(b => statsVHF[b] || 0);
+            chartVHF.update();
 
-        // --- LOGIQUE PRINCIPALE ---
-        function getRankingIcon(score) {
-            if(score >= 90) return '🏆';
-            if(score >= 80) return '🔥';
-            if(score >= 60) return '⭐';
-            return '';
-        }
+            // Wanted
+            document.getElementById('wanted-hf').innerHTML = wanted.hf.map(createWantedRow).join('');
+            document.getElementById('wanted-vhf').innerHTML = wanted.vhf.map(createWantedRow).join('');
 
-        function updateSpots() {
-            const band = document.getElementById('bandFilter').value;
-            const mode = document.getElementById('modeFilter').value;
+            // Updated Surge Logic (Display Specific Bands)
+            const hfSurges = surge.surges.filter(b => HF_BANDS.includes(b));
+            const vhfSurges = surge.surges.filter(b => VHF_BANDS.includes(b));
             
-            fetch(`/spots.json?band=${band}&mode=${mode}`)
-                .then(r => r.json())
-                .then(data => {
-                    const tbody = document.querySelector('#spotsTable tbody');
-                    tbody.innerHTML = '';
-                    
-                    markers.forEach(m => map.removeLayer(m));
-                    markers = [];
+            const hfAlert = document.getElementById('hf-surge-alert');
+            if(hfSurges.length > 0) {
+                hfAlert.innerText = "⚠️ SURGE: " + hfSurges.join(', ');
+                hfAlert.style.display = 'inline-block';
+            } else { hfAlert.style.display = 'none'; }
 
-                    let bandCounts = {};
-                    bandOrder.forEach(b => bandCounts[b] = 0);
+            const vhfAlert = document.getElementById('vhf-surge-alert');
+            if(vhfSurges.length > 0) {
+                vhfAlert.innerText = "⚠️ SURGE: " + vhfSurges.join(', ');
+                vhfAlert.style.display = 'inline-block';
+            } else { vhfAlert.style.display = 'none'; }
 
-                    data.forEach(s => {
-                        if(bandCounts.hasOwnProperty(s.band)) bandCounts[s.band]++;
-                        else bandCounts[s.band] = (bandCounts[s.band] || 0) + 1;
+            if((hfSurges.length || vhfSurges.length) && voiceEnabled && Math.random() > 0.9) speak("Propagation alert.");
 
-                        checkVoiceAlerts(s);
+        } catch(e) { console.error(e); }
+    }
 
-                        const isWatchlisted = currentWatchlist.includes(s.dx_call);
-                        const isSurge = activeSurges.includes(s.band); // Vérifie si la bande est en feu
+    loadWatchlist();
+    setInterval(updateData, 3000);
+    updateData();
 
-                        const rowClass = isWatchlisted ? 'watchlist-match' : (s.score > 80 ? 'high-score' : '');
-                        const rankIcon = getRankingIcon(s.score);
-
-                        const row = `<tr class="${rowClass}">
-                            <td>${s.time}</td>
-                            <td>${s.freq}</td>
-                            <td>${s.dx_call}</td>
-                            <td>${s.country.substring(0,15)}</td>
-                            <td>${s.band}</td>
-                            <td class="mode-${s.mode.toLowerCase()}">${s.mode}</td>
-                            <td>${s.score} ${rankIcon}</td>
-                        </tr>`;
-                        tbody.innerHTML += row;
-
-                        if(s.lat !== 0 && s.lon !== 0) {
-                            // Priorité couleur : Watchlist > Surge > Score > Standard
-                            let markerColor = s.color || '#00f3ff'; // Couleur du backend par défaut
-                            let radius = 4;
-                            let opacity = 0.7;
-
-                            if (isWatchlisted) {
-                                markerColor = '#ffff00';
-                                radius = 8;
-                                opacity = 1.0;
-                            } else if (isSurge) {
-                                markerColor = '#ffffff'; // Blanc pur si Surge
-                                radius = 6; // Un peu plus gros
-                                opacity = 0.9;
-                            } else if (s.score > 80) {
-                                markerColor = '#ff003c';
-                            }
-
-                            const m = L.circleMarker([s.lat, s.lon], {
-                                radius: radius, 
-                                color: markerColor, 
-                                fillColor: markerColor, 
-                                fillOpacity: opacity
-                            }).bindPopup(`<b>${s.dx_call}</b><br>${s.freq} ${s.mode}<br>${s.country}`);
-                            m.addTo(map);
-                            markers.push(m);
-                        }
-                    });
-
-                    // Mise à jour du Chart avec gestion des couleurs SURGE
-                    if(activityChart) {
-                        const chartData = bandOrder.map(b => bandCounts[b] || 0);
-                        const bgColors = bandOrder.map(b => {
-                            if (activeSurges.includes(b)) return '#ffffff'; // BLANC SI SURGE
-                            return BAND_COLORS_MAP[b] || '#555'; // Couleur normale sinon
-                        });
-
-                        activityChart.data.datasets[0].data = chartData;
-                        activityChart.data.datasets[0].backgroundColor = bgColors;
-                        activityChart.update('none'); // 'none' pour éviter l'animation complète à chaque fois
-                    }
-                    firstLoad = false;
-                });
-        }
-
-        function updateRanking() {
-            fetch('/wanted.json').then(r => r.json()).then(data => {
-                const tbody = document.querySelector('#wantedTable tbody');
-                tbody.innerHTML = '';
-                data.forEach(s => {
-                    let freq = s.freq || '---';
-                    tbody.innerHTML += `<tr>
-                        <td style="color:var(--alert);font-weight:bold">${s.call}</td>
-                        <td>${freq}</td>
-                        <td style="color:${s.color}">${s.band}</td>
-                        <td>${s.score}</td>
-                    </tr>`;
-                });
-            });
-        }
-
-        function updateRSS() {
-            fetch('/rss.json')
-                .then(r => r.json())
-                .then(d => {
-                    if(d.ticker && d.ticker.length > 0 && d.ticker !== lastTickerText) {
-                        const el = document.getElementById('ticker');
-                        el.innerText = d.ticker;
-                        lastTickerText = d.ticker;
-                        const duration = Math.max(40, d.ticker.length * 0.2);
-                        el.style.animationDuration = duration + 's';
-                        el.classList.remove('ticker');
-                        void el.offsetWidth; 
-                        el.classList.add('ticker');
-                    }
-                })
-                .catch(e => console.log("RSS loading...", e));
-        }
-
-        // --- GESTION WATCHLIST ---
-        function loadWatchlist() {
-            fetch('/watchlist.json').then(r => r.json()).then(list => {
-                currentWatchlist = list;
-                const div = document.getElementById('watchlistContainer');
-                div.innerHTML = '';
-                if(list.length === 0) div.innerHTML = '<div style="color:#555;font-style:italic;padding:5px;">Liste vide...</div>';
-                list.forEach(call => {
-                    div.innerHTML += `<div class="watchlist-item"><span style="color:var(--secondary);font-weight:bold">${call}</span><span class="btn-del" onclick="removeFromWatchlist('${call}')">X</span></div>`;
-                });
-                if(!firstLoad) updateSpots();
-            });
-        }
-
-        function addToWatchlist() {
-            const input = document.getElementById('newCall');
-            const call = input.value.trim();
-            if(!call) return;
-            fetch('/watchlist.json', { method: 'POST', body: JSON.stringify({call: call}) }).then(() => { input.value = ''; loadWatchlist(); });
-        }
-
-        function removeFromWatchlist(call) {
-            fetch('/watchlist.json', { method: 'DELETE', body: JSON.stringify({call: call}) }).then(() => loadWatchlist());
-        }
-
-        // --- INITIALISATION ---
-        const savedTheme = localStorage.getItem('neuralTheme');
-        if(savedTheme) { 
-            document.getElementById('themeSelect').value = savedTheme;
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-
-        initMap();
-        setTimeout(initChart, 200);
-        loadWatchlist();
-        updateRanking();
-        updateRSS();
-        
-        // Timers
-        setInterval(checkSurgeStatus, 5000); // Vérifie le SURGE toutes les 5s
-        setInterval(updateSpots, 2000);      // Spots toutes les 2s
-        setInterval(updateRanking, 5000);    // Ranking toutes les 5s
-        setInterval(updateRSS, 60000);       // RSS toutes les minutes
-        
-        updateSpots();
-
-    </script>
+</script>
 </body>
 </html>

@@ -1,111 +1,52 @@
-# 📡 NEURAL DX CLUSTER (v2.0)
+NEURAL DX CLUSTER v2.2 📡
+Intelligent Dual-Spectrum DX Dashboard
 
-> **L'intelligence artificielle au service du DXing.**
-> Un agrégateur de spots radioamateurs nouvelle génération, doté d'analyse comportementale temps réel, de détection d'ouvertures de propagation (Surge) et d'une interface visuelle immersive.
+Version Python License
+🇫🇷 FRANÇAIS
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
-![Status](https://img.shields.io/badge/status-OPERATIONAL-green.svg)
+Neural DX Cluster est une application de surveillance DX nouvelle génération conçue pour les radioamateurs exigeants. Contrairement aux clusters traditionnels qui affichent une liste de texte brute, Neural DX utilise une interface graphique "Dual Spectrum" pour séparer le trafic HF (ondes courtes) du trafic VHF/UHF/Espace.
 
-## 📋 Présentation
+Il analyse les spots en temps réel, détecte les ouvertures de propagation (Surges), et classe les stations par intérêt grâce à un algorithme de scoring intelligent.
+✨ Fonctionnalités Clés
 
-Le **Neural DX Cluster** n'est pas un simple afficheur de spots Telnet. C'est un moteur d'analyse (écrit en Python) qui se connecte au réseau mondial, ingère les données brutes, et les traite via un algorithme de scoring pour identifier **ce qui est intéressant maintenant**.
+    🖥️ Dashboard Double Spectre :
+        Zone HF (160m - 10m) : Carte mondiale, Top Liste DX, Graphiques de propagation ionosphérique.
+        Zone VHF (6m - QO-100) : Carte locale/Europe, Top Liste Tropo/ES/EME, Graphiques d'activité spécifiques.
+    🧠 Algorithme de Scoring IA : Le système note chaque spot (0-100) en fonction de la rareté du préfixe, du mode, de la bande et des commentaires (ex: "UP", "SPLIT").
+    ⚠️ Détection de Surge (Ouvertures) : Analyse statistique glissante pour détecter les pics d'activité anormaux sur une bande (ex: ouverture soudaine du 10m ou 6m).
+    🎙️ Alertes Vocales & Watchlist : Synthèse vocale pour annoncer les ouvertures et surveillance prioritaire de vos indicatifs favoris (amis, expéditions).
+    🎨 Interface Personnalisable :
+        Thèmes visuels : Cyber, Matrix, Amber, Neon.
+        Filtres dynamiques : Par Bande et par Mode (CW, SSB, FT8, FM).
+    🗺️ Cartographie Live : Affichage des spots sur cartes interactives (Leaflet) avec distinction jour/nuit implicite via le flux.
 
-Il remplace les listes textuelles interminables par un tableau de bord visuel (Cartes, Graphiques, Alertes) inspiré des interfaces Cyberpunk/Sci-Fi.
+🛠️ Installation
 
----
-![Apercu du Dashboard](capture.png)
-## 🌟 Fonctionnalités Clés
+    Prérequis : Python 3.x installé sur votre machine.
+    Installation des dépendances :
 
-### 🧠 1. Neural Scoring (Le "Cerveau")
-Chaque spot reçu se voit attribuer une note de **0 à 100** en temps réel selon plusieurs critères :
-*   **Rareté du DXCC :** Un pays rare booste le score (ex: P5, 3Y...).
-*   **Bande/Fréquence :** Pondération intelligente.
-*   **Mode :** CW/SSB/FT8.
-*   **Distance & Géolocalisation :** Calcul via Maidenhead Locator et base de données CTY.
-
-### ⚡ 2. Système SURGE (Détection d'Ouverture)
-L'innovation majeure de la v2. Le système surveille le **débit de spots** par bande.
-*   Si une bande calme (ex: 10m) reçoit soudainement une rafale de spots, le système déclenche une alerte **SURGE**.
-*   **Visuel :** Bannière d'alerte clignotante, barres du graphique devenant blanches, marqueurs pulsants sur la carte.
-*   **Audio :** Annonce vocale immédiate.
-
-### 👁️ 3. Interface Immersive
-*   **Carte Mondiale Live :** Visualisation géographique des spots (Leaflet).
-*   **Graphique d'Activité :** Histogramme temps réel de l'activité par bande.
-*   **Thèmes Dynamiques :** Changez l'ambiance en un clic (Matrix, Cyber, Amber, Neon, Light).
-*   **News Ticker :** Flux RSS (Solar data, DX News) défilant type "Bourse".
-
----
-
-## ⚙️ Architecture & Logique Système
-
-### Structure des fichiers
-*   `webapp.py` : **Le Cœur du système.** Gère la connexion Telnet, l'analyse IA, la détection Surge et le serveur Web Flask.
-*   `templates/index.html` : L'interface utilisateur (Frontend).
-*   `cty.dat` : Base de données des pays (téléchargée automatiquement).
-*   `watchlist.json` : Sauvegarde de vos indicatifs surveillés.
-
-### Comment fonctionne la détection SURGE ?
-Le système Surge repose sur une analyse différentielle de l'historique des spots (Sliding Window Algorithm) implémentée dans `webapp.py`.
-
-1.  **Collecte :** Le backend enregistre le timestamp de chaque spot par bande.
-2.  **Analyse :** 
-    *   Il calcule la moyenne d'activité sur 15 minutes (`SURGE_WINDOW`).
-    *   Il compare l'activité de la **dernière minute** à cette moyenne.
-3.  **Déclenchement :**
-    *   Si `Activité > Moyenne * 3` (Seuil définissable) : **SURGE DETECTED**.
-    *   Le serveur envoie l'alerte au navigateur via `/surge.json`.
-
----
-
-## 🚀 Installation et Démarrage
-
-### Prérequis
-*   Python 3.8 ou supérieur.
-*   Une connexion internet stable.
-
-### 1. Installation des dépendances
-Installez les librairies nécessaires via pip :
-```bash
 pip install flask feedparser
-# Note : telnetlib est inclus par défaut dans Python < 3.13. 
-# Si vous utilisez Python 3.13+, vous devrez peut-être installer 'telnetlib3' ou une alternative.
 
- Configuration
-Ouvrez le fichier webapp.py et modifiez la section CONFIG au début du fichier :
+Configuration :
+Ouvrez le fichier webapp.py et modifiez la variable MY_CALL avec votre indicatif :
 
-MY_CALL = "F1SMV"        # Votre indicatif
-WEB_PORT = 8000          # Port du serveur web
-SURGE_THRESHOLD = 3.0    # Sensibilité de la détection d'ouverture
-3. Lancement
-Exécutez simplement le script principal :
+    MY_CALL = "VOTRE_INDICATIF"
 
-python webapp.py
-Le terminal affichera :
+![Apercu du Dashboard](capture.png)
 
-[SYSTEM] Connexion au cluster...
-[RSS] RSS OK: 20 news chargees.
-[FLASK] Running on http://0.0.0.0:8000
-4. Accès
-Ouvrez votre navigateur et allez sur : http://localhost:8000
+🚀 Démarrage
 
-📖 Guide de l'Interface
-Le Tableau de Bord
-Top Left (Carte) :
-🔵 Couleurs : Synchronisées avec le backend (10m = Rouge, 20m = Vert, etc.).
-⚪ Blanc Pulsant : Bande en SURGE.
-Top Right (Wanted IA) : Liste prioritaire triée par l'IA.
-Bottom Left (Live Flux) : La liste brute défilante.
-Bottom Right (Watchlist & Chart) :
-Entrez un indicatif pour le surveiller (alerte vocale immédiate).
-Le graphique montre quelle bande est ouverte actuellement.
-Contrôles
-VOICE : Active/Désactive la synthèse vocale.
-THEME : Change la palette de couleurs.
-FILTRES : Filtrez par Bande ou Mode pour nettoyer l'affichage.
-🤝 Crédits
-Développé par F1SMV pour la communauté Radioamateurgrace à GIMINI3 #codevibing
-Propulsé par Python, Flask et LeafletJS.
+    Lancez l'application :
 
-Happy DXing & 73!
+    python webapp.py
+
+    Ouvrez votre navigateur web et allez à l'adresse :
+    http://localhost:8000
+
+Le système va automatiquement télécharger la base de données pays (cty.dat), se connecter aux clusters Telnet et commencer à peupler les cartes.
+
+
+📜 License
+
+MIT License - Feel free to modify and share.
+Created for the Amateur Radio Community pensé par F1SMV, réalisé par gimini3 #codevibing joignable sur mon fil twitter
