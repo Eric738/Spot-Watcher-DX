@@ -10,7 +10,7 @@ from collections import deque
 from flask import Flask, render_template, jsonify, request, abort
 
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v3.1 -" # CHANGEMENT DE VERSION
+APP_VERSION = "NEURAL AI v3.2 - " # CHANGEMENT DE VERSION
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -183,24 +183,39 @@ def get_band_and_mode_smart(freq_float, comment):
 
     band = find_band(f)
     
-    mode = "SSB"
+    # --- AUTO-DETECTION PAR FREQUENCE (Priorité maximale) ---
     
-    # 1. Priorité MSK144 (2m, 144.360 MHz +/- 20 kHz -> 144340-144380 kHz)
-    # 144.360 MHz = 144360 kHz
+    # 1. MSK144 (2m: 144.360 MHz +/- 20 kHz)
     if band == "2m" and 144340.0 <= f <= 144380.0:
         mode = "MSK144"
-    # 2. Modes basés sur le commentaire (si MSK144 n'a pas été assigné)
-    elif "FT8" in comment: mode = "FT8"
+        return band, mode # Priorité absolue
+        
+    # 2. FT8 (HF/VHF)
+    if (3557.0 <= f <= 3587.0 or    # 80m FT8 (3572 +/- 15 kHz)
+        7069.0 <= f <= 7079.0 or    # 40m FT8 (7074 +/- 5 kHz)
+        10130.0 <= f <= 10140.0 or  # 30m FT8 (10135 +/- 5 kHz)
+        14071.0 <= f <= 14077.0 or  # 20m FT8 (14074 +/- 3 kHz)
+        18097.0 <= f <= 18103.0 or  # 17m FT8 (18100 +/- 3 kHz)
+        21071.0 <= f <= 21077.0 or  # 15m FT8 (21074 +/- 3 kHz)
+        24913.0 <= f <= 24919.0 or  # 12m FT8 (24916 +/- 3 kHz)
+        28069.0 <= f <= 28079.0):   # 10m FT8 (28074 +/- 5 kHz)
+        mode = "FT8"
+        return band, mode # Priorité absolue
+
+    # --- 3. DETECTION PAR COMMENTAIRE (Si non FT8/MSK144 par fréquence) ---
+    
+    mode = "SSB"
+    if "FT8" in comment: mode = "FT8" # Détection FT8 hors segment par commentaire
     elif "FT4" in comment: mode = "FT4"
     elif "CW" in comment: mode = "CW"
     elif "FM" in comment: mode = "FM"
     elif "SSTV" in comment: mode = "SSTV"
     elif "PSK31" in comment: mode = "PSK31"
     elif "RTTY" in comment: mode = "RTTY"
-    elif "DIGI" in comment: mode = "DIGI"
         
-    # 3. Correction Finale (CW sur les segments bas)
-    if band in ["30m", "20m"] and f < 14100 and mode=="SSB": mode = "CW"
+    # --- 4. CORRECTION FINALE CW ---
+    if band in ["30m", "20m"] and f < 14100 and mode=="SSB": 
+        mode = "CW"
     
     return band, mode
 
@@ -240,8 +255,6 @@ def get_country_info(call):
     return best
 
 # --- WORKERS ---
-# ... (Toutes les autres fonctions et routes restent inchangées)
-
 def history_maintenance_worker():
     global history_24h
     while True:
