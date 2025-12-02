@@ -6,16 +6,17 @@ import os
 import urllib.request
 import feedparser
 import ssl
+import math 
 from collections import deque
 from flask import Flask, render_template, jsonify, request, abort
 
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v3.3 - " # CHANGEMENT DE VERSION
+APP_VERSION = "NEURAL AI v3.4 - DRSE" # Mise à jour
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
 SPOT_LIFETIME = 1800 
-AI_SCORE_THRESHOLD = 50 
+SPD_THRESHOLD = 70 # NOUVEAU: Score de Priorité de DX (SPD) Seuil
 TOP_RANKING_LIMIT = 10 
 
 # --- CONFIGURATION SURGE ---
@@ -26,18 +27,18 @@ MIN_SPOTS_FOR_SURGE = 3
 # --- DEFINITIONS BANDES ---
 HF_BANDS = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m']
 VHF_BANDS = ['4m', '2m', '70cm', '23cm', '13cm', 'QO-100']
-HISTORY_BANDS = ['12m', '10m', '6m'] # NOUVELLE LISTE POUR L'HISTOGRAMME
+HISTORY_BANDS = ['12m', '10m', '6m'] 
 
 # Palette officielle
 BAND_COLORS = {
     '160m': '#5c4b51', '80m': '#8e44ad', '60m': '#2c3e50',
     '40m': '#2980b9', '30m': '#16a085', '20m': '#27ae60',
-    '17m': '#f1c40f', '15m': '#e67e22', '12m': '#d35400', # Orange pour 12m
-    '10m': '#c0392b', # Rouge pour 10m
-    '6m': '#e84393', # Rose pour 6m
+    '17m': '#f1c40f', '15m': '#e67e22', '12m': '#d35400', 
+    '10m': '#c0392b', 
+    '6m': '#e84393', 
     '4m': '#ff9ff3', '2m': '#f1c40f', 
     '70cm': '#c0392b', '23cm': '#8e44ad', '13cm': '#bdc3c7',
-    'QO-100': '#00a8ff' # Bleu Satellite
+    'QO-100': '#00a8ff' 
 }
 
 # Flux RSS
@@ -62,13 +63,11 @@ prefix_db = {}
 ticker_info = {"text": "SYSTEM INITIALIZATION..."}
 watchlist = set()
 
-# NOUVEAU: Historique des spots par heure (24 heures)
 history_24h = {band: [0] * 24 for band in HISTORY_BANDS}
 history_lock = threading.Lock()
 
-# --- PLAGES DE FREQUENCES CW MISES A JOUR (CORRECTION DEMANDEE) ---
+# --- PLAGES DE FREQUENCES CW MISES A JOUR ---
 CW_RANGES = [
-    # Bandes HF (Metres, Freq Mhz min, Freq Mhz max)
     ('160m', 1.810, 1.838),
     ('80m', 3.500, 3.560),
     ('40m', 7.000, 7.035),
@@ -87,7 +86,7 @@ try:
 except AttributeError: pass
 else: ssl._create_default_https_context = _create_unverified_https_context
 
-# --- Watchlist ---
+# --- Watchlist (fonctions inchangées) ---
 def load_watchlist():
     global watchlist
     if os.path.exists(WATCHLIST_FILE):
@@ -103,17 +102,14 @@ def save_watchlist():
             json.dump(sorted(list(watchlist)), f, indent=2)
     except: pass
 
-# --- SURGE ---
+# --- SURGE (fonctions inchangées) ---
 def record_surge_data(band):
     if band not in band_history: band_history[band] = deque()
     band_history[band].append(time.time())
 
-    # Mise à jour de l'historique 24h
     if band in HISTORY_BANDS:
         with history_lock:
-            # L'indice est l'heure UTC actuelle (0 à 23)
             current_hour = time.gmtime(time.time()).tm_hour
-            # Incrémente le compteur pour l'heure actuelle
             history_24h[band][current_hour] += 1
 
 def analyze_surges():
@@ -130,50 +126,75 @@ def analyze_surges():
             active_surges.append(band)
     return active_surges
 
-# --- IA & LOGIC (Pas de changement) ---
-def calculate_ai_score(call, band, mode, comment, country):
+# --- MOTEUR DRSE (Score de Priorité de DX) ---
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calcule la distance en km entre deux points GPS (formule Haversine)."""
+    R = 6371 
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c
+
+# Coordonnées du QTH de l'opérateur (F1SMV) - Simulé
+QTH_LAT = 43.10 
+QTH_LON = 5.88
+
+def calculate_spd_score(call, band, mode, comment, country, lat, lon):
+    """
+    Calcule le Score de Priorité de DX (SPD) en utilisant le Moteur DRSE.
+    """
     score = 10 
     call = call.upper(); comment = (comment or "").upper()
     
-    # LISTE DES PREFIXES RARES ET ANTARCTIQUES MISE A JOUR
+    # 1. RARETÉ DXCC (Base)
     RARE_PREFIXES = [
-        'DP0', 'DP1', 'RI1', '8J1', 'VP8', 'KC4', # Antarctique
+        'DP0', 'DP1', 'RI1', '8J1', 'VP8', 'KC4', 
         '3Y', 'P5', 'BS7', 'CE0', 'CY9', 'EZ', 'FT5', 'FT8', 'VK0', 
         'HV', '1A', '4U1UN', 'E4', 'SV/A', 'T88', '9J', 'XU', '3D2', 'S21', 
         'KH0', 'KH1', 'KH3', 'KH4', 'KH7', 'KH9', 'KP1', 'KP5', 'ZK', 'ZL7', 'ZL9'
     ]
     
+    is_rare = False
     for p in RARE_PREFIXES:
         if call.startswith(p): 
-            score += 60 # Boost énorme pour les rares
+            score += 65 
+            is_rare = True
             break 
     
-    if 'UP' in comment or 'SPLIT' in comment: score += 15
+    # 2. QUALITÉ DU SPOT
+    if 'UP' in comment or 'SPLIT' in comment: score += 15 
     if 'DX' in comment: score += 5
-    
-    # Boost spécifique QO-100
-    if band == 'QO-100': score += 40
-    elif band in VHF_BANDS: score += 30 
-    
-    if band == '10m' or band == '6m': score += 20
+    if 'QRZ' in comment: score -= 10 
     if mode == 'CW': score += 10
     if 'PIRATE' in comment: score = 0
     
-    return min(score, 100)
+    # 3. GÉOMÉTRIE DE PROPAGATION (Distance)
+    if lat != 0.0 and lon != 0.0:
+        dist_km = calculate_distance(QTH_LAT, QTH_LON, lat, lon)
+        if dist_km > 1000:
+            distance_bonus = min(20, 20 * math.log10(dist_km / 1000))
+            score += distance_bonus
+    
+    # 4. BOOSTS SPÉCIFIQUES (Band)
+    if band == 'QO-100': score += 40
+    elif band in VHF_BANDS: score += 30 
+    
+    if band in ['10m', '12m', '15m']: score += 15 
+    
+    return min(int(score), 100)
 
 def get_band_and_mode_smart(freq_float, comment):
     comment = (comment or "").upper()
     f = float(freq_float)
     
-    # --- LOGIQUE DE NORMALISATION FREQUENCE ---
-    # Les clusters envoient QO-100 en kHz (10489xxx)
-    # Si f < 1000, c'est du MHz -> on multiplie par 1000
-    # Si f > 20000000 (20 GHz), c'est du Hz -> on divise par 1000
-    # On NE TOUCHE PAS aux fréquences entre 1M et 11M (QO-100 en kHz)
-    
     if f < 1000: 
         f = f * 1000.0
-    elif f > 20000000: # Correction: seuil monté à 20M pour ne pas casser le 10GHz (10M kHz)
+    elif f > 20000000: 
         f = f / 1000.0
 
     def find_band(freq_khz):
@@ -192,48 +213,30 @@ def get_band_and_mode_smart(freq_float, comment):
         if 144000 <= freq_khz <= 146000: return "2m"
         if 430000 <= freq_khz <= 440000: return "70cm"
         if 1240000 <= freq_khz <= 1300000: return "23cm"
-        # QO-100 Downlink: 10489.500 MHz -> 10489500 kHz
         if 10489000 <= freq_khz <= 10499000: return "QO-100"
         return "Unknown"
 
     band = find_band(f)
-    
-    # --- AUTO-DETECTION PAR FREQUENCE (Priorité maximale) ---
-    
-    # Conversion de la fréquence en MHz pour les plages CW/FT8 (plus lisible)
     f_mhz = f / 1000.0 
-    mode = "SSB" # Mode par défaut
+    mode = "SSB"
     
-    # 1. Détection CW (Priorité la plus haute après MSK144/FT8)
     for cw_band, min_mhz, max_mhz in CW_RANGES:
         if cw_band == band and min_mhz <= f_mhz <= max_mhz:
             mode = "CW"
-            # On continue pour vérifier si c'est plutôt FT8 ou MSK144 dans la même plage (Priorité 2)
             break
         
-    # 2. MSK144 (2m: 144.360 MHz +/- 20 kHz)
-    # 144340.0 kHz à 144380.0 kHz -> 144.340 MHz à 144.380 MHz
     if band == "2m" and 144.340 <= f_mhz <= 144.380:
         mode = "MSK144"
-        return band, mode # Priorité absolue
+        return band, mode 
         
-    # 3. FT8 (HF/VHF)
-    if (3.557 <= f_mhz <= 3.587 or    # 80m FT8 (3.572 +/- 15 kHz)
-        7.069 <= f_mhz <= 7.079 or    # 40m FT8 (7.074 +/- 5 kHz)
-        10.130 <= f_mhz <= 10.140 or  # 30m FT8 (10.135 +/- 5 kHz)
-        14.071 <= f_mhz <= 14.077 or  # 20m FT8 (14.074 +/- 3 kHz)
-        18.097 <= f_mhz <= 18.103 or  # 17m FT8 (18.100 +/- 3 kHz)
-        21.071 <= f_mhz <= 21.077 or  # 15m FT8 (21.074 +/- 3 kHz)
-        24.913 <= f_mhz <= 24.919 or  # 12m FT8 (24.916 +/- 3 kHz)
-        28.069 <= f_mhz <= 28.079):   # 10m FT8 (28.074 +/- 5 kHz)
+    if (3.557 <= f_mhz <= 3.587 or 7.069 <= f_mhz <= 7.079 or 10.130 <= f_mhz <= 10.140 or 
+        14.071 <= f_mhz <= 14.077 or 18.097 <= f_mhz <= 18.103 or 21.071 <= f_mhz <= 21.077 or 
+        24.913 <= f_mhz <= 24.919 or 28.069 <= f_mhz <= 28.079):   
         mode = "FT8"
-        return band, mode # Priorité absolue pour les segments FT8
+        return band, mode 
 
-    # --- 4. DETECTION PAR COMMENTAIRE (Si non CW/FT8/MSK144 par fréquence) ---
-    # Si le mode est déjà CW (détecté au point 1), on ne change rien sauf si le commentaire indique un mode numérique non FT8/FT4.
-    
     if mode != "CW":
-        mode = "SSB" # Rétablissement du mode par défaut si pas CW par fréquence
+        mode = "SSB" 
         if "FT8" in comment: mode = "FT8" 
         elif "FT4" in comment: mode = "FT4"
         elif "CW" in comment: mode = "CW"
@@ -242,15 +245,9 @@ def get_band_and_mode_smart(freq_float, comment):
         elif "PSK31" in comment: mode = "PSK31"
         elif "RTTY" in comment: mode = "RTTY"
         
-    # --- 5. CORRECTION FINALE CW (Supprimé car remplacé par la vérification CW_RANGES) ---
-    # L'ancienne correction était:
-    # if band in ["30m", "20m"] and f < 14100 and mode=="SSB": mode = "CW"
-    # Elle est maintenant remplacée par la vérification stricte du CW_RANGES (Point 1).
-    
     return band, mode
 
 def load_cty_dat():
-# ... (reste de la fonction load_cty_dat inchangé)
     global prefix_db
     if not os.path.exists(CTY_FILE):
         try: urllib.request.urlretrieve(CTY_URL, CTY_FILE)
@@ -271,7 +268,6 @@ def load_cty_dat():
     except: pass
 
 def get_country_info(call):
-# ... (reste de la fonction get_country_info inchangé)
     call = call.upper()
     best = {'c': 'Unknown', 'lat': 0.0, 'lon': 0.0}
     longest = 0
@@ -284,49 +280,37 @@ def get_country_info(call):
                 longest = len(sub); best = prefix_db[sub]
     return best
 
-# --- WORKERS ---
+# --- WORKERS (inchangés) ---
 def history_maintenance_worker():
     global history_24h
     while True:
-        # Maintenance: Décalage de l'historique toutes les heures pile (UTC)
         now_utc = time.gmtime(time.time())
         next_hour = (now_utc.tm_hour + 1) % 24
-        
-        # Temps restant jusqu'au début de la prochaine heure UTC
         sleep_seconds = (3600 - (now_utc.tm_min * 60 + now_utc.tm_sec)) + 5 
-
         time.sleep(sleep_seconds) 
-        
         with history_lock:
             for band in HISTORY_BANDS:
-                # Décalage des données (l'heure actuelle va à la fin)
                 history_24h[band] = history_24h[band][1:] + [0]
             print(f"HISTORY 24H: Shifted and reset hour {next_hour}")
 
 def ticker_worker():
     while True:
         msgs = [f"SYSTEM ONLINE - {MY_CALL}"]
-        
-        # 1. Solar Data
         try:
             req = urllib.request.Request(SOLAR_URL, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=10) as r:
                 l = [x for x in r.read().decode('utf-8').split('\n') if x and not x.startswith((':','#'))]
                 if l: msgs.append(f"SOLAR: {l[-1]}")
         except: pass
-        
-        # 2. RSS Data
         try:
             feed = feedparser.parse(RSS_URLS[0])
             if feed.entries:
-                # On prend les 5 derniers titres
                 news = [entry.title for entry in feed.entries[:5]]
                 msgs.append("NEWS: " + " | ".join(news))
         except Exception as e: 
             print(f"RSS Error: {e}")
-
         ticker_info["text"] = "   +++   ".join(msgs)
-        time.sleep(1800) # Refresh RSS toutes les 30 min
+        time.sleep(1800) 
 
 def telnet_worker():
     idx = 0
@@ -364,23 +348,26 @@ def telnet_worker():
 
                         band, mode = get_band_and_mode_smart(freq_raw, comment)
                         info = get_country_info(dx_call)
-                        score = calculate_ai_score(dx_call, band, mode, comment, info['c'])
+                        
+                        # Utilisation du nouveau moteur DRSE
+                        spd_score = calculate_spd_score(dx_call, band, mode, comment, info['c'], info['lat'], info['lon'])
                         color = BAND_COLORS.get(band, '#00f3ff')
                         
-                        # Enregistrement pour le Surge et l'Historique 24h
                         record_surge_data(band)
                         
                         spot_obj = {
                             "timestamp": time.time(), "time": time.strftime("%H:%M"),
                             "freq": freq_str, "dx_call": dx_call, "band": band, "mode": mode,
                             "country": info['c'], "lat": info['lat'], "lon": info['lon'],
-                            "score": score, "is_wanted": score >= AI_SCORE_THRESHOLD,
+                            "score": spd_score, 
+                            # is_wanted: vrai si le score SPD dépasse le seuil (Tâche 2 et 4)
+                            "is_wanted": spd_score >= SPD_THRESHOLD,
                             "via_eme": ("EME" in comment),
                             "color": color,
                             "type": "VHF" if band in VHF_BANDS else "HF"
                         }
                         spots_buffer.append(spot_obj)
-                        print(f"SPOT: {dx_call} ({band}) -> {score} pts")
+                        print(f"SPOT: {dx_call} ({band}) -> SPD: {spd_score} pts (Wanted: {spot_obj['is_wanted']})")
                     except Exception as e: 
                         # print(f"Parse Error: {e}") # Debug seulement
                         pass
@@ -391,8 +378,10 @@ def telnet_worker():
 # --- ROUTES ---
 @app.route('/')
 def index():
+    # Passage du nouveau seuil au frontend (SPD_THRESHOLD)
     return render_template('index.html', version=APP_VERSION, my_call=MY_CALL, 
-                           hf_bands=HF_BANDS, vhf_bands=VHF_BANDS, band_colors=BAND_COLORS)
+                           hf_bands=HF_BANDS, vhf_bands=VHF_BANDS, band_colors=BAND_COLORS,
+                           spd_threshold=SPD_THRESHOLD) 
 
 @app.route('/spots.json')
 def get_spots():
@@ -419,6 +408,7 @@ def get_ranking():
     active = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
     
     def get_top_for_list(spot_list):
+        # Tri basé sur le nouveau SPD_SCORE
         ranked = sorted(spot_list, key=lambda x: x['score'], reverse=True)
         seen, top = set(), []
         for s in ranked:
@@ -450,40 +440,21 @@ def manage_watchlist():
 @app.route('/rss.json')
 def get_rss(): return jsonify({"ticker": ticker_info["text"]})
 
-# NOUVELLE ROUTE POUR L'HISTORIQUE 24H
 @app.route('/history.json')
 def get_history():
-    # Retourne les données historiques des 24 dernières heures UTC
-    # La liste est ordonnée: l'élément à l'index 0 est l'heure la plus ancienne
-    # Le dernier élément est l'heure en cours
-    
-    # On crée une liste de labels (H-23, H-22, ..., H-0) basée sur l'heure UTC actuelle
     now_hour = time.gmtime(time.time()).tm_hour
     
     labels = []
     for i in range(24):
-        # L'heure à l'index 'i' est l'heure actuelle - (23-i)
-        # Ex: si now_hour=10, l'index 0 est (10 - 23) % 24 = -13 % 24 = 11.
-        # En fait, c'est l'heure qui s'est terminée à cet index.
         h = (now_hour - (23 - i)) % 24
-        labels.append(f"H-{23-i} ({h:02}h)") # Exemple: H-23 (11h)
+        labels.append(f"H-{23-i} ({h:02}h)") 
         
-    # La liste history_24h contient l'historique dans l'ordre chronologique
-    # history_24h[band][now_hour] est la valeur courante (H-0)
-    
-    # Pour obtenir le bon ordre H-23 à H-0:
-    # On coupe la liste à l'heure actuelle et on la recolle (rotation)
-    
-    # history_24h[band] contient: [Heure 0, Heure 1, ..., Heure 'now_hour']
-    # On veut: [Heure 'now_hour+1', ..., Heure 23, Heure 0, ..., Heure 'now_hour']
-    
     with history_lock:
-        data = {band: list(hist) for band, hist in history_24h.items()} # Copie
+        data = {band: list(hist) for band, hist in history_24h.items()} 
 
     current_data = {}
     for band in HISTORY_BANDS:
         hist_list = data[band]
-        # On fait une rotation pour que l'index 0 soit l'heure la plus ancienne (H-23)
         rotated = hist_list[now_hour+1:] + hist_list[:now_hour+1]
         current_data[band] = rotated
         
@@ -495,5 +466,5 @@ if __name__ == "__main__":
     load_watchlist()
     threading.Thread(target=telnet_worker, daemon=True).start()
     threading.Thread(target=ticker_worker, daemon=True).start()
-    threading.Thread(target=history_maintenance_worker, daemon=True).start() # NOUVEAU THREAD
+    threading.Thread(target=history_maintenance_worker, daemon=True).start() 
     app.run(host='0.0.0.0', port=WEB_PORT, debug=False)

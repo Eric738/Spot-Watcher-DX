@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL DX v3.3 -</title>
+    <title>NEURAL DX v3.4 - DRSE</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,11 +14,11 @@
             --panel-bg: #0e0e0e;
             --text-main: #a0a0a0;
             --accent: #00f3ff;
-            --alert: #ff003c;
+            --alert: #ff003c; /* Rouge vif pour les alertes */
             --border: 1px solid #333;
-            --wl-bg: #ffeb3b; /* Jaune vif */
+            --wl-bg: #ffeb3b; 
             --wl-text: #000000;
-            --open-color: #d35400; /* Couleur pour l'alerte d'ouverture (12m/10m/6m) */
+            --open-color: #d35400; 
         }
         
         /* THEMES */
@@ -34,7 +34,7 @@
             background: #000; border-bottom: 1px solid #222; 
         }
         h1 { font-family: 'Orbitron', sans-serif; color: var(--accent); margin: 0; font-size: 1.4rem; text-shadow: 0 0 10px var(--accent); }
-        .time-display { font-size: 0.8rem; text-align: right; } /* STYLE HEURE */
+        .time-display { font-size: 0.8rem; text-align: right; } 
         
         /* TICKER */
         .ticker-wrap {
@@ -80,7 +80,7 @@
             display: grid; grid-template-columns: 50% 50%; gap: 10px; padding: 0 10px 10px 10px;
             height: 35vh; min-height: 300px;
         }
-        .tertiary-grid { /* GRILLE 24H */
+        .tertiary-grid { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 10px 10px 10px;
             height: 30vh; min-height: 250px;
         }
@@ -95,9 +95,9 @@
         
         /* SPOT ROWS */
         .spot-row { 
+            /* AJOUT DE LA COLONNE SPD (40px) */
             display: grid; 
-            /* AJOUT DE 50px POUR LE MODE (3ème colonne) */
-            grid-template-columns: 70px 60px 50px 100px auto 60px; 
+            grid-template-columns: 40px 70px 60px 50px 100px auto 60px; 
             gap: 10px; 
             padding: 4px 8px; 
             border-bottom: 1px solid #222; 
@@ -120,6 +120,34 @@
         .spot-row.watched .spot-freq, 
         .spot-row.watched .spot-call, 
         .spot-row.watched .spot-country { color: var(--wl-text) !important; }
+
+        /* NOUVEAU STYLE ALERTE DRSE (Priority Target) - ALERTE INTENSIFIEE */
+        .spot-row.priority-target, .wanted-row-grid.priority-target {
+            background-color: #580010 !important; /* Rouge très foncé */
+            color: #fff !important;
+            border-left: 6px solid var(--alert) !important; /* Bordure plus épaisse */
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.7); /* Lueur plus forte */
+            animation: pulse-border 0.5s infinite alternate; /* Clignotement plus rapide */
+        }
+        @keyframes pulse-border {
+            from { border-color: var(--alert); }
+            to { border-color: rgba(255, 100, 150, 0.5); }
+        }
+        .spot-row.priority-target .spot-call a { color: #fff !important; }
+        .spot-row.priority-target .spot-freq { color: var(--alert) !important; font-weight: bold; } 
+        .wanted-row-grid.priority-target .spot-freq { color: var(--alert) !important; font-weight: bold; }
+        /* NOUVEAU: Style spécifique pour le SPD dans la grille LIVE STREAM */
+        .spot-row .spot-spd-score {
+             text-align: center;
+             font-size: 0.9rem;
+        }
+        .spot-row.priority-target .spot-spd-score { 
+            color: #fff !important; 
+            background-color: var(--alert);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
 
         .spot-freq { color: var(--accent); text-align: right; font-family: monospace; }
         .spot-band { text-align: center; border-radius: 3px; color: #000; font-weight: bold; font-size: 0.8rem; padding: 1px 0; }
@@ -145,7 +173,7 @@
         /* STYLE DISTANCE */
         .spot-distance {
             text-align: right;
-            color: var(--accent); /* Couleur d'accentuation */
+            color: var(--accent); 
             font-weight: bold;
         }
 
@@ -160,15 +188,15 @@
         }
         
         /* QRA FEEDBACK */
-        .qra-valid { color: #0f0; } /* Vert */
-        .qra-invalid { color: var(--alert); } /* Rouge */
+        .qra-valid { color: #0f0; } 
+        .qra-invalid { color: var(--alert); } 
 
     </style>
 </head>
 <body>
 
 <header>
-    <h1>NEURAL DX <span style="font-size:0.6em; opacity:0.7; color:#fff">v3.3</span></h1>
+    <h1>NEURAL DX <span style="font-size:0.6em; opacity:0.7; color:#fff">v3.4</span></h1>
     <div class="time-display">
         <span id="utc-time"></span><br>
         <span id="local-time"></span>
@@ -233,9 +261,9 @@
             <div id="map-hf" class="map-wrapper"></div>
         </div>
         <div class="panel">
-            <h3>🏆 TOP DX WANTED</h3>
+            <h3>🏆 TOP DX WANTED (SPD Score)</h3>
             <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 70px 60px 100px auto 60px; gap: 10px;">
-                <span>Score</span><span>Band</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
+                <span>SPD</span><span>Band</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
             </div>
             <div id="wanted-hf" class="scroll-list"></div>
         </div>
@@ -244,8 +272,8 @@
     <div class="secondary-grid">
         <div class="panel">
             <h3>🌊 LIVE STREAM</h3>
-            <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 70px 60px 50px 100px auto 60px; gap: 10px;">
-                <span>Freq</span><span>Band</span><span>Mode</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
+            <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 40px 70px 60px 50px 100px auto 60px; gap: 10px;">
+                <span>SPD</span><span>Freq</span><span>Band</span><span>Mode</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
             </div>
             <div id="list-hf" class="scroll-list"></div>
         </div>
@@ -288,9 +316,9 @@
             <div id="map-vhf" class="map-wrapper"></div>
         </div>
         <div class="panel">
-            <h3>🚀 TOP VHF WANTED</h3>
+            <h3>🚀 TOP VHF WANTED (SPD Score)</h3>
             <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 70px 60px 100px auto 60px; gap: 10px;">
-                <span>Score</span><span>Band</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
+                <span>SPD</span><span>Band</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
             </div>
             <div id="wanted-vhf" class="scroll-list"></div>
         </div>
@@ -299,8 +327,8 @@
     <div class="secondary-grid">
         <div class="panel">
             <h3>🌊 LIVE STREAM</h3>
-            <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 70px 60px 50px 100px auto 60px; gap: 10px;">
-                <span>Freq</span><span>Band</span><span>Mode</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
+            <div style="font-weight: bold; padding: 4px 8px; background: #151515; display: grid; grid-template-columns: 40px 70px 60px 50px 100px auto 60px; gap: 10px;">
+                 <span>SPD</span><span>Freq</span><span>Band</span><span>Mode</span><span>Call</span><span>Country</span><span style="text-align:right;">km</span>
             </div>
             <div id="list-vhf" class="scroll-list"></div>
         </div>
@@ -319,42 +347,35 @@
     const HF_BANDS = {{ hf_bands|tojson }};
     const VHF_BANDS = {{ vhf_bands|tojson }};
     const HISTORY_BANDS = ['12m', '10m', '6m']; 
+    const SPD_THRESHOLD = {{ spd_threshold }}; 
 
-    // COORDONNÉES DE DÉPART DE L'UTILISATEUR (par défaut JN33)
     const DEFAULT_QRA = 'JN33';
     let userLatLng = null;
     
-    // Pour gérer la temporisation du feedback QRA (40 secondes)
     let qraFeedbackTimeout = null; 
 
-    // --- FONCTIONS GÉOMÉTRIQUES ---
+    // --- FONCTIONS GÉOMÉTRIQUES (Inchangées) ---
 
-    // 1. Conversion QRA Locator -> Lat/Lon
     function qraToLatLng(qra) {
         qra = qra.toUpperCase();
         if (qra.length < 4) return null;
         
         let lon = -180, lat = -90;
         
-        // 1. Field (Ex: JN) -> 18° par caractère (A=0)
         lon += (qra.charCodeAt(0) - 65) * 20;
         lat += (qra.charCodeAt(1) - 65) * 10;
         
         if (qra.length >= 4) {
-            // 2. Square (Ex: 33) -> 2° par chiffre
             lon += parseInt(qra[2]) * 2;
             lat += parseInt(qra[3]) * 1;
         }
 
         if (qra.length >= 6) {
-            // 3. Subsquare (Ex: XX) -> 5 minutes de lat/lon (1/24eme de degré)
             lon += (qra.charCodeAt(4) - 65) * (2/24);
             lat += (qra.charCodeAt(5) - 65) * (1/24);
-            // On centre au milieu de la sous-case
             lon += (1/24);
             lat += (1/48);
         } else {
-             // On centre au milieu de la case de 2x1 degrés
             lon += 1;
             lat += 0.5;
         }
@@ -362,10 +383,9 @@
         return [lat, lon];
     }
     
-    // 2. Calcul de la distance (Formule de Haversine)
     function calculateDistance(lat1, lon1, lat2, lon2) {
         if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return null;
-        const R = 6371; // Rayon de la Terre en kilomètres
+        const R = 6371; 
         const toRad = (x) => x * Math.PI / 180;
         
         const dLat = toRad(lat2 - lat1);
@@ -377,14 +397,13 @@
         
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         
-        return R * c; // Distance en km
+        return R * c; 
     }
 
 
-    // --- LOGIQUE QRA LOCATOR ET CARTE ---
+    // --- LOGIQUE QRA LOCATOR ET CARTE (Inchangées) ---
 
     function isValidQra(qra) {
-        // Validation basique: 4 ou 6 caractères
         if (qra.length === 4) {
             return /^[A-R][A-R]\d\d$/.test(qra);
         }
@@ -398,7 +417,7 @@
         const feedbackSpan = document.getElementById('qra-feedback');
         feedbackSpan.innerText = "";
         feedbackSpan.className = "";
-        qraFeedbackTimeout = null; // Réinitialise l'ID du timeout
+        qraFeedbackTimeout = null; 
     }
 
     function goToQra() {
@@ -406,7 +425,6 @@
         const feedbackSpan = document.getElementById('qra-feedback');
         const qra = qraInput.value.trim().toUpperCase();
 
-        // Annule le timeout précédent si l'utilisateur appuie rapidement sur GO
         if (qraFeedbackTimeout) {
             clearTimeout(qraFeedbackTimeout);
             qraFeedbackTimeout = null;
@@ -418,8 +436,6 @@
         if (!isValidQra(qra)) {
             feedbackSpan.innerText = "Invalid / Invalide";
             feedbackSpan.classList.add('qra-invalid');
-            
-            // Définit le nouveau timeout de 40 secondes
             qraFeedbackTimeout = setTimeout(clearQraFeedback, 40000);
             return;
         }
@@ -427,21 +443,15 @@
         const latLon = qraToLatLng(qra);
 
         if (latLon) {
-            // Success Feedback
             feedbackSpan.innerText = "Valid / Valide";
             feedbackSpan.classList.add('qra-valid');
-            
-            // Définit le nouveau timeout de 40 secondes
             qraFeedbackTimeout = setTimeout(clearQraFeedback, 40000);
 
-            // Stocke la position de l'utilisateur pour le calcul de distance
             userLatLng = latLon; 
             
-            // Determine the map and zoom level
             let targetMap = mapHF;
             let zoomLevel = qra.length === 4 ? 6 : 9; 
             
-            // Si le QRA est dans la zone Europe/Proche
             if (latLon[0] >= 30 && latLon[0] <= 60 && latLon[1] >= -10 && latLon[1] <= 30) {
                  targetMap = mapVHF;
                  zoomLevel = qra.length === 4 ? 7 : 10;
@@ -449,7 +459,6 @@
 
             targetMap.setView(latLon, zoomLevel, { animate: true });
             
-            // Si le QRA est validé, on relance updateData pour recalculer les distances
             updateData(); 
             
         } else {
@@ -473,7 +482,7 @@
     let lastTickerText = "";
     let historyChartData = {};
 
-    // Charts (Configuration inchangée)
+    // Charts (Inchangés)
     const commonOptions = {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
@@ -538,7 +547,7 @@
     const chartVHF = createChart('chart-vhf', VHF_BANDS);
     const chartHistory = createHistoryChart('chart-history'); 
 
-    // UI Utils (inchangées)
+    // UI Utils (Inchangés)
     const themes = ['', 'matrix', 'amber', 'neon'];
     let currentTheme = 0;
     function toggleTheme() {
@@ -566,16 +575,14 @@
         
         const formatOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
 
-        // UTC Time
         const utcTime = utcDate.toLocaleTimeString('fr-FR', {...formatOptions, timeZone: 'UTC' });
         document.getElementById('utc-time').innerText = `UTC: ${utcTime}`;
 
-        // Local Time
         const localTime = localDate.toLocaleTimeString('fr-FR', formatOptions);
         document.getElementById('local-time').innerText = `LOCAL: ${localTime}`;
     }
 
-    // Watchlist (inchangées)
+    // Watchlist (Inchangées)
     async function loadWatchlist() {
         const r = await fetch('/watchlist.json');
         watchlist = await r.json();
@@ -598,23 +605,26 @@
         loadWatchlist();
     }
 
-    // Render Row - LIVE STREAM (AJOUT DU MODE)
+    // Render Row - LIVE STREAM (Tâche 3 & 4) - MODIFIÉ
     function createSpotRow(s) {
         const isWatched = watchlist.includes(s.dx_call);
-        const rowClass = isWatched ? 'spot-row watched' : 'spot-row';
         
-        // Calcul de la distance
+        // TÂCHE 3/4: Définition de la classe de priorité basée sur s.is_wanted
+        let rowClass = 'spot-row';
+        if (isWatched) rowClass += ' watched';
+        if (s.is_wanted) rowClass += ' priority-target'; 
+        
         let distance = '';
         if (userLatLng && s.lat !== undefined && s.lon !== undefined) {
             const dist = calculateDistance(userLatLng[0], userLatLng[1], s.lat, s.lon);
             if (dist !== null) {
-                // Utilise toLocaleString pour les séparateurs de milliers (ex: 12 456km)
                 distance = `${Math.round(dist).toLocaleString('fr-FR')}km`;
             }
         }
         
         return `
-            <div class="${rowClass}">
+            <div class="${rowClass.trim()}">
+                <span class="spot-spd-score">${s.score}</span> 
                 <span class="spot-freq">${s.freq}</span>
                 <span class="spot-band" style="background:${s.color}">${s.band}</span>
                 <span class="spot-mode">${s.mode}</span> <span class="spot-call"><a href="https://qrz.com/db/${s.dx_call}" target="_blank">${s.dx_call}</a></span>
@@ -623,9 +633,14 @@
             </div>`;
     }
 
-    // Render Row - TOP DX WANTED (Pas de Mode, on réutilise la grille 5 colonnes)
+    // Render Row - TOP DX WANTED (Tâche 3 & 4) - MODIFIÉ
     function createWantedRow(s) {
-        // Calcul de la distance
+        // TÂCHE 3/4: Définition de la classe de priorité basée sur s.is_wanted
+        const priorityClass = s.is_wanted ? 'priority-target' : ''; 
+        
+        // TÂCHE 3: Mise en avant du SPD Score en rouge vif si cible prioritaire
+        const scoreStyle = s.is_wanted ? 'color:var(--alert)' : 'color:#fff';
+
         let distance = '';
         if (userLatLng && s.lat !== undefined && s.lon !== undefined) {
             const dist = calculateDistance(userLatLng[0], userLatLng[1], s.lat, s.lon);
@@ -635,8 +650,8 @@
         }
 
         return `
-            <div class="spot-row wanted-row-grid" style="border-left: 3px solid ${s.color}">
-                <span class="spot-freq" style="color:#666">${s.score}pts</span>
+            <div class="spot-row wanted-row-grid ${priorityClass}" style="border-left: 6px solid ${s.color}">
+                <span class="spot-freq" style="${scoreStyle}">${s.score}pts</span>
                 <span class="spot-band" style="background:${s.color}">${s.band}</span>
                 <span class="spot-call"><a href="https://qrz.com/db/${s.dx_call}" target="_blank">${s.dx_call}</a></span>
                 <span class="spot-country">${s.country}</span>
@@ -682,6 +697,8 @@
 
             // Process Spots 
             spots.forEach(s => {
+                const isNew = (Date.now() / 1000 - s.timestamp) < 10;
+                
                 if(fBand !== 'All' && s.band !== fBand) return;
                 if(fMode !== 'All' && s.mode !== fMode) return;
 
@@ -690,7 +707,6 @@
 
                 document.getElementById(targetList).insertAdjacentHTML('beforeend', createSpotRow(s));
                 
-                // Markers logic (inchangée)
                 const targetMap = isVHF ? mapVHF : mapHF;
                 const m = L.circleMarker([s.lat, s.lon], {
                     radius: 4, color: s.color, fillColor: s.color, fillOpacity: 0.9, weight: 1
@@ -702,7 +718,13 @@
                 if(isVHF) statsVHF[s.band] = (statsVHF[s.band] || 0) + 1;
                 else statsHF[s.band] = (statsHF[s.band] || 0) + 1;
 
-                if (watchlist.includes(s.dx_call) && (Date.now()/1000 - s.timestamp) < 10) {
+                // TÂCHE 4: ALERTE DE PRIORITÉ (VOCALE)
+                if (s.is_wanted && isNew) {
+                    speak(`Priority DX target. ${s.dx_call} on ${s.band} in ${s.mode}`);
+                }
+                
+                // Alerte Watchlist (conserve la logique)
+                if (watchlist.includes(s.dx_call) && isNew) {
                     speak(`Alert. Watchlist target ${s.dx_call} spotted on ${s.band}`);
                 }
             });
@@ -727,7 +749,7 @@
             document.getElementById('wanted-hf').innerHTML = wanted.hf.map(createWantedRow).join('');
             document.getElementById('wanted-vhf').innerHTML = wanted.vhf.map(createWantedRow).join('');
 
-            // Updated Surge Logic 
+            // Updated Surge Logic (Inchangé)
             const hfSurges = surge.surges.filter(b => HF_BANDS.includes(b));
             const vhfSurges = surge.surges.filter(b => VHF_BANDS.includes(b));
             
@@ -745,12 +767,11 @@
 
             if((hfSurges.length || vhfSurges.length) && voiceEnabled && Math.random() > 0.9) speak("Propagation alert.");
             
-            // Alerte d'ouverture
+            // Alerte d'ouverture (Inchangé)
             const openAlertPanel = document.getElementById('open-alert-panel');
             let openingBands = HISTORY_BANDS.filter(band => {
                 const dataList = historyChartData.data[band] || [];
                 const lastHourSpots = dataList[dataList.length - 1] || 0;
-                // On considère qu'il y a ouverture si > 5 spots dans la dernière heure
                 return lastHourSpots > 5; 
             });
 
@@ -771,7 +792,6 @@
     }
     
     // --- INITIALISATION ---
-    // Initialise la position de l'utilisateur avec un QRA par défaut
     userLatLng = qraToLatLng(DEFAULT_QRA);
 
     loadWatchlist();

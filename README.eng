@@ -1,42 +1,45 @@
-🛰️ NEURAL DX v3.3 - Real-Time DX Monitor
-💡 Project Summary
-NEURAL DX v3.3 is a real-time Amateur Radio monitoring station, built on a Python/Flask backend and a dynamic web interface (HTML/CSS/JavaScript).
+Markdown
 
-The project's goal is to aggregate and analyze DX spot data, visualize them on live maps, calculate the distance of contacts relative to the operator's position (QRA Locator), and generate targeted propagation alerts. This version is highly optimized for speed and data clarity.
+[cite_star[cite: 51] 🛰️ NEURAL DX v3.4 - **DRSE (DX Risk Scoring Engine)**
+
+💡 Project Summary
+[cite_start]NEURAL DX v3.4 is a real-time Amateur Radio monitoring station, built on a Python/Flask backend and a dynamic web interface (HTML/CSS/JavaScript)[cite: 51]. [cite_start]The project's goal is to aggregate and analyze DX spot data, visualize them on live maps, calculate the distance of contacts relative to the operator's position (QRA Locator), and generate targeted propagation alerts[cite: 52]. [cite_start]This version is highly optimized for speed and data clarity and includes an aggressive visual alert system for priority targets[cite: 53].
+
+---
 
 ✨ Key Features
-Custom Distance Calculation: Displays the distance in kilometers between the operator's QRA and every spot/entity, including within the Top DX Wanted tables.
+* **DRSE (DX Risk Scoring Engine) & Priority Alert (New v3.4):** Integration of the DX Priority Score (SPD). Spots with a high score (SPD >= 70) are immediately signaled by an **aggressive flashing** and a **thick bright red border** on the Live Stream and Top DX Wanted, ensuring maximum visibility.
+* **SPD in the Live Stream (New v3.4):** The **DX Priority Score (SPD)** is displayed in a dedicated column of the Live Stream table, with a red background for priority targets.
+* [cite_start]Custom Distance Calculation: Displays the distance in kilometers between the operator's QRA and every spot/entity, including within the Top DX Wanted tables[cite: 54].
+* [cite_start]QRA Locator Timeout: The QRA Locator validation/error message (Valid / Valide) automatically disappears after 40 seconds[cite: 55].
+* [cite_start]Dynamic Mapping (HF & VHF/UHF): Real-time spot visualization using separate Leaflet maps[cite: 56].
+* [cite_start]Live Streams & Top DX Wanted: Activity tables featuring compact distance columns and accented color digits[cite: 57].
+* [cite_start]Watchlist & Voice Alerts: Monitoring of specific call signs with audio notification and highlighting[cite: 58].
+* [cite_start]Propagation Alerts (Surge): Detection and signaling of peak activity on bands[cite: 59].
+* [cite_start]24H History: Dedicated chart for activity on the Magic Bands (12m, 10m, 6m) with a visual band opening alert[cite: 60].
+* [cite_start]Dynamic Filters: Filtering of spots by band and mode (CW, SSB, FT8, MSK144, SSTV, etc.)[cite: 61].
 
-QRA Locator Timeout: The QRA Locator validation/error message (Valid / Valide) automatically disappears after 40 seconds.
+---
 
-Dynamic Mapping (HF & VHF/UHF): Real-time spot visualization using separate Leaflet maps.
+[cite_start][cite: 62] Technical Architecture
+The project uses a simple client-server architecture:
 
-Live Streams & Top DX Wanted: Activity tables featuring compact distance columns and accented color digits.
+| Component | Technology | Rôle |
+| :--- | :--- | :--- |
+| Backend | Python (Flask) | [cite_start]Data management, connection to the DX Cluster (Telnet), score calculation (AI Score), caching, and servicing JSON endpoints[cite: 62]. |
+| Frontend | HTML/CSS/JS | [cite_start]User Interface[cite: 62]. [cite_start]Leaflet for mapping, Chart.js for charts, Vanilla JS for dynamic updates and interactions (QRA, filters)[cite: 63]. |
+| Data Flow | JSON, Telnet | [cite_start]Flask retrieves spots from the Cluster and formats them into JSON[cite: 63]. [cite_start]JavaScript queries the Flask endpoints (/spots.json, /wanted.json, etc.) every 3 seconds to update the interface[cite: 64]. |
 
-Watchlist & Voice Alerts: Monitoring of specific call signs with audio notification and highlighting.
+---
 
-Propagation Alerts (Surge): Detection and signaling of peak activity on bands.
-
-24H History: Dedicated chart for activity on the Magic Bands (12m, 10m, 6m) with a visual band opening alert.
-
-Dynamic Filters: Filtering of spots by band and mode (CW, SSB, FT8, MSK144, SSTV, etc.).
-
-Technical ArchitectureThe project uses a simple client-server architecture:
-
-ComponentTechnologyRôleBackendPython (Flask)Data management, connection to the DX Cluster (Telnet), score calculation (AI Score), 
-caching, and servicing JSON endpoints.FrontendHTML/CSS/JSUser Interface. Leaflet for mapping, Chart.js for charts, Vanilla JS for dynamic updates and interactions 
-(QRA, filters).Data FlowJSON, TelnetFlask retrieves spots from the Cluster and formats them into JSON. JavaScript queries the Flask endpoints (/spots.json, /wanted.json, etc.) 
-every 3 seconds to update the interface.
-
-Installation and Configuration
+[cite_start][cite: 65] Installation and Configuration
 Prerequisites
-You need Python 3.x installed on your Raspberry Pi (or other host machine).
+[cite_start]You need Python 3.x installed on your Raspberry Pi (or other host machine)[cite: 65].
 
-Dependencies
+[cite_start][cite: 66] Dependencies
 This project requires the following Python libraries:
 
-Bash
-
+```bash
 flask
 requests
 telnetlib
@@ -45,21 +48,18 @@ os
 threading
 feedparser
 geopy 
-Installation
-Clone the Repository:
+Installation Clone the Repository:
 
 Bash
 
-git clone https://github.com/YourUsername/radio-spo-watcher-dx.git
+git clone [https://github.com/YourUsername/radio-spo-watcher-dx.git](https://github.com/YourUsername/radio-spo-watcher-dx.git)
 cd radio-spo-watcher-dx
 Install Dependencies:
 
 Bash
 
 pip install -r requirements.txt
-
-Configuration initiale
-Before execution, you must modify the core configuration section in webapp.py:
+Configuration initiale Before execution, you must modify the core configuration section in webapp.py:
 
 Open webapp.py
 
@@ -75,34 +75,30 @@ QRA_DEFAULT = "JN33"  # <-- Your default QRA (for distance calculations)
 # Telnet DX Cluster Configuration (Example)
 TELNET_HOST = "cluster.example.com"
 TELNET_PORT = 73
-Launch
-Ensure all dependencies are installed and configuration is complete.
+Launch Ensure all dependencies are installed and configuration is complete. Launch the application using the startup script:
 
-Launch the application using the startup script:
+Bash
 
 ./start.sh
-
 Interface Usage Guide
-1. Set Your QRA Locator
-In the COMMAND DECK control panel:
 
-Enter your QRA Locator (e.g., JN33, JN33BB).
+Set Your QRA Locator In the COMMAND DECK control panel:
 
-Click on GO.
+Enter your QRA Locator (e.g., JN33, JN33BB). Click on GO.
 
-The system will center the map and update all distance calculations based on your location.
+The system will center the map and update all distance calculations based on your location. It also displays "Valid / Valide" for 40 seconds.
 
-2. Watchlist Management
-Enter a call sign (e.g., K1TTT) in the WATCHLIST field and click ADD.
+Watchlist Management Enter a call sign (e.g., K1TTT) in the WATCHLIST field and click ADD. Spots for this call sign will be highlighted in yellow and trigger a voice alert (if VOICE: ON).
 
-Spots for this call sign will be highlighted in yellow and trigger a voice alert (if VOICE: ON).
 
-3. Alert Systems
+Alert Systems
+
+Priority Target (SPD >= 70): Critical spots trigger an aggressive red flash and a thick border in the Live Stream and Top DX Wanted for immediate identification.
+
 SURGE: A banner appears when a significant burst of activity is detected on a specific band.
 
 OUVERTURE DETECTEE (OPENING DETECTED): The PROPAGATION HISTORY panel visually alerts if the Magic Bands (12m/10m/6m) are actively open.
 
-📄 Licence
-This project is released under the MIT License.
+ 📄 Licence This project is released under the MIT License.
 
-Feel free to modify and share. Created for the Amateur Radio Community by Eric F1SMV with the help of GIMINI3 #codevibing. You can reach me via my X feed.
+Feel free to modify and share. Created for the Amateur Radio Community by Eric F1SMV with the help of GIMINI3 #codevibing. You can reach me via my X feed
