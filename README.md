@@ -43,7 +43,7 @@ Le projet utilise une architecture simple client-serveur :
 
 1.  **Cloner le dépôt :**
     ```bash
-    git clone [# 🛰️ NEURAL DX v4.0 - Mobile Ready & Personnalisable 🚀
+    git clone [https://github.com/Eric738/Spot-Watcher-DX.git] 🚀
 
 ## 💡 Résumé du projet
 
