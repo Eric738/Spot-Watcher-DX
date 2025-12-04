@@ -1,126 +1,214 @@
-# 🛰️ NEURAL DX v3.5 - **calendrier Metorites integré 2 m**
+# 🛰️ NEURAL DX v4.0 - Mobile Ready & Personnalisable 🚀
 
 ## 💡 Résumé du projet
 
-**NEURAL DX v3.5** est une station de surveillance radioamateur en temps réel, basée sur Python/Flask pour le backend et une interface web dynamique (HTML/CSS/JavaScript). Le projet agrège et analyse les données de spots DX, les visualise sur des cartes en direct, calcule la distance des contacts par rapport à la position de l'opérateur (QRA Locator), et génère des alertes de propagation ciblées. La version intègre un système d'alerte visuelle agressive pour les cibles prioritaires.
+**NEURAL DX v4.0** est une station de surveillance radioamateur en temps réel. Basée sur Python/Flask (backend) et une interface web dynamique (HTML/CSS/JavaScript), cette version combine les performances des précédentes versions avec une flexibilité d'affichage et une meilleure ergonomie. Elle agrège et analyse les données de spots DX, les visualise sur des cartes en direct, calcule la distance des contacts et génère des alertes de propagation ciblées.
 
 ---
 
-## ✨ Fonctionnalités clés
+## 🆕 Nouveautés de la Version 4.0
 
-* **DRSE (DX Risk Scoring Engine) & Alerte Priorité (depuis la version 3.4) :** Intégration du score de priorité de DX (SPD). Les spots avec un score élevé (SPD >= 70) sont immédiatement signalés par un **clignotement agressif** et une **bordure rouge vif épaisse** sur le Live Stream et le Top DX Wanted, garantissant une visibilité maximale.
-* **SPD dans le Live Stream (Nouveau v3.4) :** Le **Score de Priorité de DX (SPD)** est affiché dans une colonne dédiée du tableau Live Stream, avec un fond rouge pour les cibles prioritaires.
-* **Calcul de distance personnalisé :** Affiche la distance en **kilomètres** entre le QRA de l'opérateur et chaque spot/entité, y compris dans les tableaux *Top DX Wanted*.
-* **Temporisation QRA :** Le message de validation/erreur du QRA Locator saisi (`Valid / Valide`) s'efface automatiquement après **40 secondes**.
+Cette version majeure apporte des améliorations significatives de l'interface utilisateur :
+
+* **Design Responsive (Mobile Ready) :** L'interface s'adapte désormais automatiquement aux écrans de petite et moyenne taille (smartphones, tablettes) en empilant les panneaux verticalement.
+* **Ordonnancement par Glisser-Déposer (Drag & Drop) :** Les panneaux d'information des colonnes latérales peuvent être réorganisés par l'utilisateur avec la souris. Cet ordre est sauvegardé dans le navigateur (`localStorage`).
+* **Thèmes Dynamiques :** Le bouton `THEME` affiche désormais le nom du thème actif et bascule entre les 4 styles disponibles : `SOFTTECH`, `MATRIX`, `AMBER`, `NEON`.
+* **Amélioration de la Cartographie :** L'indicatif DX (Callsign) est maintenant affiché directement dans l'infobulle (tooltip) de chaque marqueur sur les cartes HF et VHF.
+
+---
+
+## ✨ Fonctionnalités Clés
+
+* **Calcul de distance personnalisé :** Affiche la distance en **kilomètres** entre le QRA de l'opérateur et chaque spot/entité.
 * **Cartographie dynamique (HF & VHF/UHF) :** Visualisation des spots en temps réel via des cartes Leaflet distinctes.
-* **Live Streams & Top DX Wanted :** Tableaux d'activité.
 * **Watchlist & Alertes Vocales :** Surveillance d'indicatifs spécifiques avec notification audio et mise en surbrillance.
 * **Alertes de Propagation (Surge) :** Détection et signalisation des pics d'activité sur les bandes.
 * **Historique 24H :** Graphique dédié à l'activité sur les bandes magiques (**12m, 10m, 6m**) avec alerte visuelle d'ouverture.
-* **Filtres dynamiques :** Filtrage des spots par **bande** et **mode** (CW, SSB, FT8, MSK144, SSTV, etc.).
-* **Correction mineure tri mode ft8**
-* **application plan de bande cw strict**
-* **calendrier meteorites intégré pour le trafic 2 m
+* **Filtres dynamiques :** Filtrage des spots par bande et par mode (CW, SSB, FT8, MSK144, etc.).
 
 ---
-![Apercu du Dashboard](apercu.png)
 
-## 🏗️ Architecture technique
+## 🛠️ Architecture Technique
 
-Le projet utilise une architecture client-serveur simple :
+Le projet utilise une architecture simple client-serveur :
 
 | Composant | Technologie | Rôle |
 | :--- | :--- | :--- |
-| **Backend** | Python (Flask) | Gestion des données, connexion au DX Cluster (Telnet), calculs de score (AI Score), mise en cache, et service des endpoints JSON. |
-| **Frontend** | HTML/CSS/JS | Interface utilisateur. Leaflet pour la cartographie, Chart.js pour les graphiques, Vanilla JS pour la mise à jour dynamique et les interactions (QRA, filtres). |
-| **Data Flow** | JSON, Telnet | Flask récupère les spots du Cluster et les formate en JSON. Le JavaScript interroge les endpoints Flask (`/spots.json`, `/wanted.json`, etc.) toutes les 3 secondes pour mettre à jour l'interface. |
+| **Backend** | Python / Flask | Agrégation des données DX Cluster (Telnet), calculs de distance/score, gestion de la Watchlist et des alertes. |
+| **Frontend** | HTML5 / CSS3 / JavaScript | Interface utilisateur dynamique, graphiques (Chart.js), cartographie (Leaflet) et gestion de l'état (Drag & Drop via Sortable.js). |
 
 ---
 
-## 🛠️ Installation et configuration
+## 🚀 Installation
 
-### Dépendances
+1.  **Cloner le dépôt :**
+    ```bash
+    git clone [# 🛰️ NEURAL DX v4.0 - Mobile Ready & Personnalisable 🚀
 
-Ce projet nécessite les bibliothèques Python suivantes :
+## 💡 Résumé du projet
 
-* `flask`
-* `requests`
-* `telnetlib`
-* `json`
-* `os`
-* `threading`
-* `feedparser` (pour les RSS)
-* `geopy` (ou une librairie de géocoding/distance si la fonction n'est pas codée manuellement)
+**NEURAL DX v4.0** est une station de surveillance radioamateur en temps réel. Basée sur Python/Flask (backend) et une interface web dynamique (HTML/CSS/JavaScript), cette version combine les performances des précédentes versions avec une flexibilité d'affichage et une meilleure ergonomie. Elle agrège et analyse les données de spots DX, les visualise sur des cartes en direct, calcule la distance des contacts et génère des alertes de propagation ciblées.
 
-### Commandes utiles
+---
 
-| Commande | Description |
-| :--- | :--- |
-| `pip install -r requirements.txt` | Installe toutes les dépendances Python nécessaires. |
-| `python webapp.py` | Démarre le serveur Flask sur `http://localhost:8000`. |
+## 🆕 Nouveautés de la Version 4.0
 
-### Configuration initiale
+Cette version majeure apporte des améliorations significatives de l'interface utilisateur :
 
-Avant l'exécution, vous devez modifier la section de configuration de base dans `webapp.py` :
+* **Design Responsive (Mobile Ready) :** L'interface s'adapte désormais automatiquement aux écrans de petite et moyenne taille (smartphones, tablettes) en empilant les panneaux verticalement.
+* **Ordonnancement par Glisser-Déposer (Drag & Drop) :** Les panneaux d'information des colonnes latérales peuvent être réorganisés par l'utilisateur avec la souris. Cet ordre est sauvegardé dans le navigateur (`localStorage`).
+* **Thèmes Dynamiques :** Le bouton `THEME` affiche désormais le nom du thème actif et bascule entre les 4 styles disponibles : `SOFTTECH`, `MATRIX`, `AMBER`, `NEON`.
+* **Amélioration de la Cartographie :** L'indicatif DX (Callsign) est maintenant affiché directement dans l'infobulle (tooltip) de chaque marqueur sur les cartes HF et VHF.
 
-1.  **Ouvrez `webapp.py`**
-2.  **Mettez à jour les constantes suivantes :**
+---
+
+## ✨ Fonctionnalités Clés
+
+* **Calcul de distance personnalisé :** Affiche la distance en **kilomètres** entre le QRA de l'opérateur et chaque spot/entité.
+* **Cartographie dynamique (HF & VHF/UHF) :** Visualisation des spots en temps réel via des cartes Leaflet distinctes.
+* **Watchlist & Alertes Vocales :** Surveillance d'indicatifs spécifiques avec notification audio et mise en surbrillance.
+* **Alertes de Propagation (Surge) :** Détection et signalisation des pics d'activité sur les bandes.
+* **Historique 24H :** Graphique dédié à l'activité sur les bandes magiques (**12m, 10m, 6m**) avec alerte visuelle d'ouverture.
+* **Filtres dynamiques :** Filtrage des spots par bande et par mode (CW, SSB, FT8, MSK144, etc.).
+
+---
+
+## 🛠️ Architecture Technique
+
+Le projet utilise une architecture simple client-serveur :
+
+| Composant | Technologie | Rôle |
+| :--- | :--- | :--- |
+| **Backend** | Python / Flask | Agrégation des données DX Cluster (Telnet), calculs de distance/score, gestion de la Watchlist et des alertes. |
+| **Frontend** | HTML5 / CSS3 / JavaScript | Interface utilisateur dynamique, graphiques (Chart.js), cartographie (Leaflet) et gestion de l'état (Drag & Drop via Sortable.js). |
+
+---
+
+## 🚀 Installation
+
+1.  **Cloner le dépôt :**
+    ```bash
+    git clone [https://github.com/Eric738/Spot-Watcher-DX.git]
+    cd neural-dx
+    ```
+
+2.  **Installer les dépendances Python :**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Configuration initiale**
+
+    Avant l'exécution, vous devez modifier la section de configuration de base dans `webapp.py` :
 
     ```python
     # webapp.py
-    MY_CALL = "VOTRE_INDICATIF"  # <-- Indispensable
-    WEB_PORT = 8000
-    QRA_DEFAULT = "JN33"  # <-- Votre QRA par défaut (pour les calculs de distance)
-
-    # Configuration Telnet DX Cluster
-    TELNET_HOST = "cluster.example.com"
-    TELNET_PORT = 73
+    MY_CALL = "YOUR_CALLSIGN"  # <-- Votre indicatif (essentiel)
+    QRA_DEFAULT = "JN33"       # <-- Votre QRA par défaut
+    # ... et configurer l'hôte/port du DX Cluster Telnet
     ```
 
-### Lancement
+4.  **Lancement**
 
-1.  Assurez-vous que toutes les dépendances sont installées.
-2.  Lancez le serveur :
+    Lancez l'application en utilisant le script de démarrage (ou directement `python webapp.py`) :
+
     ```bash
-    python webapp.py
+    ./start.sh
     ```
-3.  Ouvrez votre navigateur à l'adresse fournie par l'application (par défaut : `http://127.0.0.1:8000`).
+    Accédez à l'interface via votre navigateur à l'adresse `http://127.0.0.1:8000` (ou le port configuré).
 
 ---
-![Apercu du Dashboard](apercu.png)
 
-## 🚀 Utilisation de l'interface
+## 💻 Aperçu de l'Interface
 
-### 1. Saisie du QRA Locator
+![Aperçu du Dashboard](apercu.png)
+
+---
+
+## 🖱️ Utilisation de l'interface
+
+### 1. Personnalisation de l'Affichage
+
+* **Thèmes :** Cliquez sur le bouton `THEME: [Nom du Thème]` dans l'en-tête pour changer l'apparence.
+* **Glisser-Déposer :** Cliquez et maintenez le clic sur l'en-tête d'un panneau (ex: `LIVE BANDS`, `WATCHLIST`) dans les colonnes gauche ou droite pour le déplacer et changer son ordre d'affichage. L'ordre est conservé au rechargement.
+
+### 2. Saisie du QRA Locator
 
 Dans la section **COMMAND DECK** :
 
 1.  Entrez votre QRA Locator (ex: `JN33`, `JN33BB`).
 2.  Cliquez sur **GO**.
-3.  Le système :
-    * Centre la carte sur votre position.
-    * Met à jour tous les tableaux en calculant la distance.
-    * Affiche **"Valid / Valide"** pendant 40 secondes.
-
-### 2. Gestion des filtres
-
-* Utilisez les listes déroulantes **FILTERS** pour affiner l'affichage des spots dans les sections *LIVE STREAM* et sur les cartes (ex: sélectionner `20m` ou `FT8`).
+3.  Le système centre les cartes sur votre position et met à jour tous les calculs de distance.
 
 ### 3. Watchlist
 
 * Entrez un indicatif (ex: `K1TTT`) dans le champ **WATCHLIST** et cliquez sur **ADD**.
-* Les spots pour cet indicatif seront mis en évidence en jaune et déclencheront une alerte vocale (si **VOICE: ON**).
+* Les spots pour cet indicatif seront mis en évidence et déclencheront une alerte vocale (si `VOICE: ON`).
 
-### 4. Systèmes d'alerte (DRSE)
+### 4. Systèmes d'alerte
 
-* **Cible Prioritaire (SPD >= 70) :** Les spots critiques déclenchent un **clignotement rouge agressif** et une bordure épaisse dans le Live Stream et le Top DX Wanted pour une identification immédiate.
-* **SURGE :** Une bannière rouge apparaît si le nombre de spots sur une bande dépasse le seuil défini dans `webapp.py`.
-* **OUVERTURE DETECTEE :** Le panneau *PROPAGATION HISTORY* alerte si l'activité sur les bandes 12m, 10m ou 6m dépasse un seuil récent.
+* **SURGE :** Une bannière apparaît si le nombre de spots sur une bande dépasse le seuil défini dans `webapp.py`.
+* **OUVERTURE DETECTEE :** Le panneau *PROPAGATION HISTORY* alerte si l'activité sur les bandes magiques (12m, 10m, 6m) dépasse un seuil récent.]
+    cd neural-dx
+    ```
 
-### 5. Demarrage
+2.  **Installer les dépendances Python :**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-lancez l'application ./start.sh dans le repertoire radio-spo-watcher-dx
-le systeme va automatiquement chargerla base cty.dat et mettre a jour la carte dès reception des spots
+3.  **Configuration initiale**
+
+    Avant l'exécution, vous devez modifier la section de configuration de base dans `webapp.py` :
+
+    ```python
+    # webapp.py
+    MY_CALL = "YOUR_CALLSIGN"  # <-- Votre indicatif (essentiel)
+    QRA_DEFAULT = "JN33"       # <-- Votre QRA par défaut
+    # ... et configurer l'hôte/port du DX Cluster Telnet
+    ```
+
+4.  **Lancement**
+
+    Lancez l'application en utilisant le script de démarrage (ou directement `python webapp.py`) :
+
+    ```bash
+    ./start.sh
+    ```
+    Accédez à l'interface via votre navigateur à l'adresse `http://127.0.0.1:8000` (ou le port configuré).
+
+---
+
+## 💻 Aperçu de l'Interface
+
+![Aperçu du Dashboard](apercu.png)
+
+---
+
+## 🖱️ Utilisation de l'interface
+
+### 1. Personnalisation de l'Affichage
+
+* **Thèmes :** Cliquez sur le bouton `THEME: [Nom du Thème]` dans l'en-tête pour changer l'apparence.
+* **Glisser-Déposer :** Cliquez et maintenez le clic sur l'en-tête d'un panneau (ex: `LIVE BANDS`, `WATCHLIST`) dans les colonnes gauche ou droite pour le déplacer et changer son ordre d'affichage. L'ordre est conservé au rechargement.
+
+### 2. Saisie du QRA Locator
+
+Dans la section **COMMAND DECK** :
+
+1.  Entrez votre QRA Locator (ex: `JN33`, `JN33BB`).
+2.  Cliquez sur **GO**.
+3.  Le système centre les cartes sur votre position et met à jour tous les calculs de distance.
+
+### 3. Watchlist
+
+* Entrez un indicatif (ex: `K1TTT`) dans le champ **WATCHLIST** et cliquez sur **ADD**.
+* Les spots pour cet indicatif seront mis en évidence et déclencheront une alerte vocale (si `VOICE: ON`).
+
+### 4. Systèmes d'alerte
+
+* **SURGE :** Une bannière apparaît si le nombre de spots sur une bande dépasse le seuil défini dans `webapp.py`.
+* **OUVERTURE DETECTEE :** Le panneau *PROPAGATION HISTORY* alerte si l'activité sur les bandes magiques (12m, 10m, 6m) dépasse un seuil récent.
 
 enjoy DX !
 

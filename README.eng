@@ -1,106 +1,106 @@
-Markdown
+# 🛰️ NEURAL DX v4.0 - Mobile Ready & Customizable 🚀
 
-[cite_star[cite: 51] 🛰️ NEURAL DX v3.5 - **ms integration calendar**
+## 💡 Project Summary
 
-💡 Project Summary
-[cite_start]NEURAL DX v3.5 is a real-time Amateur Radio monitoring station, built on a Python/Flask backend and a dynamic web interface (HTML/CSS/JavaScript)[cite: 51]. [cite_start]The project's goal is to aggregate and analyze DX spot data, visualize them on live maps, calculate the distance of contacts relative to the operator's position (QRA Locator), and generate targeted propagation alerts[cite: 52]. [cite_start]This version is highly optimized for speed and data clarity and includes an aggressive visual alert system for priority targets[cite: 53].
-
----
-
-✨ Key Features
-* ** ms (for 2 m) calendar integrated
-* **DRSE (DX Risk Scoring Engine) & Priority Alert (New v3.4):** Integration of the DX Priority Score (SPD). Spots with a high score (SPD >= 70) are immediately signaled by an **aggressive flashing** and a **thick bright red border** on the Live Stream and Top DX Wanted, ensuring maximum visibility.
-* **SPD in the Live Stream (New v3.4):** The **DX Priority Score (SPD)** is displayed in a dedicated column of the Live Stream table, with a red background for priority targets.
-* [cite_start]Custom Distance Calculation: Displays the distance in kilometers between the operator's QRA and every spot/entity, including within the Top DX Wanted tables[cite: 54].
-* [cite_start]QRA Locator Timeout: The QRA Locator validation/error message (Valid / Valide) automatically disappears after 40 seconds[cite: 55].
-* [cite_start]Dynamic Mapping (HF & VHF/UHF): Real-time spot visualization using separate Leaflet maps[cite: 56].
-* [cite_start]Live Streams & Top DX Wanted: Activity tables featuring compact distance columns and accented color digits[cite: 57].
-* [cite_start]Watchlist & Voice Alerts: Monitoring of specific call signs with audio notification and highlighting[cite: 58].
-* [cite_start]Propagation Alerts (Surge): Detection and signaling of peak activity on bands[cite: 59].
-* [cite_start]24H History: Dedicated chart for activity on the Magic Bands (12m, 10m, 6m) with a visual band opening alert[cite: 60].
-* [cite_start]Dynamic Filters: Filtering of spots by band and mode (CW, SSB, FT8, MSK144, SSTV, etc.)[cite: 61].
-
+**NEURAL DX v4.0** is a real-time Amateur Radio monitoring station. Built on a Python/Flask backend and a dynamic web interface (HTML/CSS/JavaScript), this version combines the performance of previous releases with display flexibility and improved ergonomics. It aggregates and analyzes DX spot data, visualizes them on live maps, calculates contact distances, and generates targeted propagation alerts.
 
 ---
 
-[cite_start][cite: 62] Technical Architecture
+## 🆕 Version 4.0 New Features
+
+This major release brings significant user interface improvements:
+
+* **Responsive Design (Mobile Ready):** The interface now automatically adapts to small and medium-sized screens (smartphones, tablets) by stacking the columns vertically for optimal readability.
+* **Drag & Drop Ordering:** Information panels in the side columns can be rearranged by the user via drag-and-drop. This order is saved locally in the browser's `localStorage`.
+* **Dynamic Themes:** The `THEME` button now displays the active theme name and toggles between the 4 available styles: **SOFTTECH**, **MATRIX**, **AMBER**, **NEON**.
+* **Mapping Enhancements:** The DX callsign is now displayed directly in the tooltip of each marker on the HF and VHF maps.
+
+---
+
+## ✨ Key Features
+
+* **Custom Distance Calculation:** Displays the distance in **kilometers** between the operator's QRA and every spot/entity.
+* **Dynamic Mapping (HF & VHF/UHF):** Real-time spot visualization using separate Leaflet maps.
+* **Watchlist & Voice Alerts:** Monitoring of specific call signs with audio notification and highlighting.
+* **Propagation Alerts (Surge):** Detection and signaling of peak activity on bands.
+* **24H History:** Dedicated chart for activity on the Magic Bands (**12m, 10m, 6m**) with a visual band opening alert.
+* **Dynamic Filters:** Filtering of spots by band and mode (CW, SSB, FT8, MSK144, etc.).
+
+---
+
+## 🛠️ Technical Architecture
+
 The project uses a simple client-server architecture:
 
-| Component | Technology | Rôle |
+| Component | Technology | Role |
 | :--- | :--- | :--- |
-| Backend | Python (Flask) | [cite_start]Data management, connection to the DX Cluster (Telnet), score calculation (AI Score), caching, and servicing JSON endpoints[cite: 62]. |
-| Frontend | HTML/CSS/JS | [cite_start]User Interface[cite: 62]. [cite_start]Leaflet for mapping, Chart.js for charts, Vanilla JS for dynamic updates and interactions (QRA, filters)[cite: 63]. |
-| Data Flow | JSON, Telnet | [cite_start]Flask retrieves spots from the Cluster and formats them into JSON[cite: 63]. [cite_start]JavaScript queries the Flask endpoints (/spots.json, /wanted.json, etc.) every 3 seconds to update the interface[cite: 64]. |
+| **Backend** | Python / Flask | Aggregation of DX Cluster data (Telnet), distance/score calculations, Watchlist and alert management. |
+| **Frontend** | HTML5 / CSS3 / JavaScript | Dynamic user interface, charts (Chart.js), mapping (Leaflet), and state management (Drag & Drop via Sortable.js). |
 
 ---
 
-[cite_start][cite: 65] Installation and Configuration
-Prerequisites
-[cite_start]You need Python 3.x installed on your Raspberry Pi (or other host machine)[cite: 65].
+## 🚀 Installation
 
-[cite_start][cite: 66] Dependencies
-This project requires the following Python libraries:
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/Eric738/Spot-Watcher-DX.git]
+    cd neural-dx
+    ```
 
-```bash
-flask
-requests
-telnetlib
-json
-os
-threading
-feedparser
-geopy 
-Installation Clone the Repository:
+2.  **Install Python dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Bash
+3.  **Initial Configuration**
 
-git clone [https://github.com/YourUsername/radio-spo-watcher-dx.git](https://github.com/YourUsername/radio-spo-watcher-dx.git)
-cd radio-spo-watcher-dx
-Install Dependencies:
+    Before execution, you must modify the core configuration section in `webapp.py`:
 
-Bash
+    ```python
+    # webapp.py
+    MY_CALL = "YOUR_CALLSIGN"  # <-- Your Call Sign (Essential)
+    DEFAULT_QRA = "JN33"       # <-- Your default QRA
+    # ... and configure the Telnet DX Cluster host/port
+    ```
 
-pip install -r requirements.txt
-Configuration initiale Before execution, you must modify the core configuration section in webapp.py:
+4.  **Launch**
 
-Open webapp.py
+    Launch the application using the startup script (or directly `python webapp.py`):
 
-Update the following constants:
+    ```bash
+    ./start.sh
+    ```
+    Access the interface via your browser at `http://127.0.0.1:8000` (or the configured port).
 
-Python
+---
 
-# webapp.py
-MY_CALL = "YOUR_CALLSIGN"  # <-- Essential
-WEB_PORT = 8000
-QRA_DEFAULT = "JN33"  # <-- Your default QRA (for distance calculations)
+## 💻 Dashboard Overview
 
-# Telnet DX Cluster Configuration (Example)
-TELNET_HOST = "cluster.example.com"
-TELNET_PORT = 73
-Launch Ensure all dependencies are installed and configuration is complete. Launch the application using the startup script:
+![Dashboard Overview](apercu.png)
 
-Bash
+---
 
-./start.sh
-Interface Usage Guide
+## 🖱️ Interface Usage
 
-Set Your QRA Locator In the COMMAND DECK control panel:
+### 1. Customizing the Display
 
-Enter your QRA Locator (e.g., JN33, JN33BB). Click on GO.
+* **Themes:** Click the `THEME: [Theme Name]` button in the header to change the appearance.
+* **Drag & Drop:** Click and hold the header of a panel (e.g., `LIVE BANDS`, `WATCHLIST`) in the left or right columns to move it and change its display order. The order is preserved upon reload.
 
-The system will center the map and update all distance calculations based on your location. It also displays "Valid / Valide" for 40 seconds.
+### 2. Setting Your QRA Locator
 
-Watchlist Management Enter a call sign (e.g., K1TTT) in the WATCHLIST field and click ADD. Spots for this call sign will be highlighted in yellow and trigger a voice alert (if VOICE: ON).
+In the **COMMAND DECK** section:
 
+1.  Enter your QRA Locator (e.g., `JN33`, `JN33BB`).
+2.  Click **GO**.
+3.  The system centers the maps on your location and updates all distance calculations.
 
-Alert Systems
+### 3. Watchlist Management
 
-Priority Target (SPD >= 70): Critical spots trigger an aggressive red flash and a thick border in the Live Stream and Top DX Wanted for immediate identification.
+* Enter a call sign (e.g., `K1TTT`) in the **WATCHLIST** field and click **ADD**.
+* Spots for this call sign will be highlighted and will trigger a voice alert (if `VOICE: ON`).
 
-SURGE: A banner appears when a significant burst of activity is detected on a specific band.
+### 4. Alert Systems
 
-OUVERTURE DETECTEE (OPENING DETECTED): The PROPAGATION HISTORY panel visually alerts if the Magic Bands (12m/10m/6m) are actively open.
-
- 📄 Licence This project is released under the MIT License.
-
-Feel free to modify and share. Created for the Amateur Radio Community by Eric F1SMV with the help of GIMINI3 #codevibing. You can reach me via my X feed
+* **SURGE:** A banner appears if the number of spots on a band exceeds the threshold defined in `webapp.py`.
+* **OPENING DETECTED:** The *PROPAGATION HISTORY* panel visually alerts if activity on the Magic Bands (12m, 10m, 6m) exceeds a recent threshold.
