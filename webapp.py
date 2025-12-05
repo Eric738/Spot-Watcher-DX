@@ -8,11 +8,12 @@ import feedparser
 import ssl
 import math 
 import logging
+from logging.handlers import TimedRotatingFileHandler # Importation pour la rotation des logs
 from collections import deque, Counter 
 from flask import Flask, render_template, jsonify, request, abort, redirect, url_for 
 
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v4.0 - Fixes + D&D" # Version mise à jour
+APP_VERSION = "NEURAL AI v4.1 - File Logging Fix" # Version mise à jour
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -21,12 +22,17 @@ SPD_THRESHOLD = 70
 TOP_RANKING_LIMIT = 10 
 DEFAULT_QRA = "JN23"
 
+# --- FICHIER DE LOG ---
+LOG_FILE = "radio_spot_watcher.log" 
+# La rotation se fera à minuit (UTC) chaque jour (when='midnight', interval=1)
+
+
 # --- CONFIGURATION SURGE ---
 SURGE_WINDOW = 900
 SURGE_THRESHOLD = 3.0
 MIN_SPOTS_FOR_SURGE = 3
 
-# --- CONFIGURATION ASTRO/MÉTEOR SCATTER ---
+# --- CONFIGURATION ASTRO/MÉTEOR SCATTER --
 METEOR_SHOWERS = [
     {"name": "Quadrantides", "start": (1, 1), "end": (1, 7), "peak": (1, 3)},
     {"name": "Lyrides", "start": (4, 16), "end": (4, 25), "peak": (4, 22)},
@@ -64,27 +70,51 @@ CLUSTERS = [
 ]
 CTY_URL = "https://www.country-files.com/cty/cty.dat"
 CTY_FILE = "cty.dat"
-SOLAR_URL = "https://services.swpc.noaa.gov/text/wwv.txt"
 WATCHLIST_FILE = "watchlist.json"
+SOLAR_URL = "https://services.swpc.noaa.gov/text/wwv.txt"
 
 # --- CACHES GLOBAUX et INITIALISATION QTH ---
-app = Flask(__name__)
-# Configuration du logger
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s [%(levelname)s] %(threadName)s: %(message)s',
-                    datefmt='%H:%M:%S')
-logger = logging.getLogger(__name__)
 
 spots_buffer = deque(maxlen=6000)
 band_history = {}
 prefix_db = {}
-ticker_info = {"text": "SYSTEM INITIALIZATION..."}
+ticker_info = {"text": "SYSTEM INITIALIZATION... (Waiting for RSS/Solar data)"} 
 watchlist = set()
 surge_bands = [] 
 
 history_24h = {band: [0] * 24 for band in HISTORY_BANDS}
 history_lock = threading.Lock()
 surge_lock = threading.Lock()
+
+# --- CONFIGURATION DU LOGGER (NOUVELLE) ---
+# 1. Crée un logger pour l'application
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# 2. Définit le format des messages
+LOG_FORMAT = '%(asctime)s [%(levelname)s] %(threadName)s: %(message)s'
+formatter = logging.Formatter(LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
+
+# 3. Handler pour la rotation des fichiers de log (suppression/archivage quotidien)
+file_handler = TimedRotatingFileHandler(
+    LOG_FILE, 
+    when='midnight', # Rotation à minuit UTC
+    interval=1, 
+    backupCount=1, # Garde le fichier de la veille (radio_spot_watcher.log.YYYY-MM-DD)
+    encoding='utf-8'
+)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# 4. Handler pour l'affichage dans la console (comme avant)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
+
+# --- FLASK APP INITIALIZATION ---
+# Définition de l'application Flask
+app = Flask(__name__) 
 
 
 # --- PLAGES DE FREQUENCES CW ---
@@ -95,12 +125,9 @@ CW_RANGES = [
 ]
 
 # --- FRÉQUENCES FT4/FT8 (en kHz) ---
-FT4_HF_FREQS_KHZ = [
-    7047, 10140, 14080, 18104, 21180, 24919, 28180
-]
-FT4_VHF_FREQ_KHZ = 144170
 FT8_VHF_FREQ_RANGE_KHZ = (144171, 144177) 
-
+MSK144_FREQ = 144.360 
+MSK144_TOLERANCE_KHZ = 10 / 1000
 
 # --- SSL BYPASS ---
 try:
@@ -116,7 +143,6 @@ def qra_to_lat_lon(qra):
     try:
         qra = qra.upper().strip()
         if len(qra) < 4: 
-            logger.warning(f"QRA '{qra}' est trop court.")
             return None, None
         
         lon = -180 + (ord(qra[0]) - ord('A')) * 20
@@ -134,8 +160,7 @@ def qra_to_lat_lon(qra):
             lat += 0.5
             
         return lat, lon
-    except Exception as e:
-        logger.error(f"Erreur lors de la conversion QRA '{qra}': {e}")
+    except Exception:
         return None, None
 
 # Initialisation du QTH utilisateur 
@@ -155,16 +180,17 @@ def is_meteor_shower_active():
         start_m, start_d = shower["start"]
         end_m, end_d = shower["end"]
 
-        # Cas Déc à Jan
+        # Cas Déc à Jan (cross-year)
         if start_m > end_m: 
             if (current_month == start_m and current_day >= start_d) or \
-               (current_month == end_m and current_day <= end_d):
+               (current_month == end_m and current_day <= end_d) or \
+               (start_m == 12 and current_month == 1):
                 return True, shower["name"]
         
-        # Cas simple (dans la même année) ou chevauchement de mois
+        # Cas simple
         else: 
-            if (current_month == start_m and current_day >= start_d) or \
-               (current_month == end_m and current_day <= end_d) or \
+            if (start_m == current_month and current_day >= start_d) or \
+               (end_m == current_month and current_day <= end_d) or \
                (start_m < current_month < end_m):
                 return True, shower["name"]
         
@@ -181,7 +207,7 @@ def load_watchlist():
                 watchlist = set([c.upper() for c in data if isinstance(c, str)])
             logger.info(f"Watchlist chargée: {len(watchlist)} indicatifs.")
         except Exception as e: 
-            logger.error(f"Impossible de charger la Watchlist: {e}")
+            logger.error(f"Impossible de charger la Watchlist, elle sera réinitialisée: {e}")
             watchlist = set()
 
 def save_watchlist():
@@ -192,49 +218,44 @@ def save_watchlist():
     except Exception as e: 
         logger.error(f"Impossible de sauvegarder la Watchlist: {e}")
 
+
 # --- SURGE & HISTORY ---
 def record_surge_data(band):
+    """ Enregistre le timestamp pour les analyses de surge et l'historique 24h. """
     if band not in band_history: band_history[band] = deque()
     band_history[band].append(time.time())
     
     if band in HISTORY_BANDS:
         now_hour_utc = time.gmtime(time.time()).tm_hour
         with history_lock:
-            # L'index est l'heure UTC courante (0-23)
             history_24h[band][now_hour_utc] += 1
 
 
 def analyze_surges():
-    """ Calcule les surges HF/VHF standard ET gère les surges MSK144. """
-    
+    """ Calcule et met à jour les surges actives. """
     global surge_bands 
     current_time = time.time()
     active_surges = []
     
+    # 1. LOGIQUE MSK144 / METEOR SCATTER
     recent_ms_spots_count = sum(1 for s in spots_buffer 
-                                if s.get('band') == '2m' and s.get('mode') == 'MSK144' and (current_time - s['timestamp']) < 900)
+                                if s.get('mode') == 'MSK144' and (current_time - s['timestamp']) < 900)
 
-    # --- 1. LOGIQUE MSK144 / METEOR SCATTER ---
     is_active, shower_name = is_meteor_shower_active()
     ms_surge_name = f"MSK144: {shower_name}" if is_active else "MSK144: Inactive"
     
     with surge_lock:
         
-        # A. Détection MSK144
+        # Détection MSK144
         if is_active and recent_ms_spots_count >= MIN_SPOTS_FOR_SURGE:
             if ms_surge_name not in surge_bands:
                 surge_bands.append(ms_surge_name)
-                logger.info(f"ALERTE MSK144: Surge MS détectée pendant les {shower_name} ({recent_ms_spots_count} spots)!")
             active_surges.append(ms_surge_name)
-
-        # B. Nettoyage MSK144
-        else:
-            if ms_surge_name in surge_bands:
-                surge_bands.remove(ms_surge_name)
-                logger.info(f"FIN ALERTE MSK144: L'activité a diminué ou l'essaim est terminé.")
+        # Nettoyage MSK144
+        elif ms_surge_name in surge_bands:
+            surge_bands.remove(ms_surge_name)
             
-        # --- 2. LOGIQUE HF/VHF STANDARD ---
-        
+        # 2. LOGIQUE HF/VHF STANDARD
         bands_in_surge = [s for s in surge_bands if not s.startswith("MSK144:")]
         
         for band in HF_BANDS + [b for b in VHF_BANDS if b not in ['2m', 'QO-100']]:
@@ -248,8 +269,8 @@ def analyze_surges():
             
             if count_total < MIN_SPOTS_FOR_SURGE: continue
                 
-            avg_rate = count_total / (SURGE_WINDOW / 60.0)
-            recent_count = sum(1 for t in timestamps if t > current_time - 60)
+            avg_rate = count_total / (SURGE_WINDOW / 60.0) 
+            recent_count = sum(1 for t in timestamps if t > current_time - 60) 
             
             is_surging = (recent_count > (avg_rate * SURGE_THRESHOLD)) and (recent_count >= MIN_SPOTS_FOR_SURGE)
             
@@ -260,7 +281,6 @@ def analyze_surges():
                 if band not in active_surges:
                     active_surges.append(band)
             elif band in bands_in_surge:
-                # Retirer la surge si l'activité retombe
                 surge_bands.remove(band)
                 logger.info(f"FIN ALERTE SURGE {band}: L'activité a diminué.")
 
@@ -324,12 +344,10 @@ def get_band_and_mode_smart(freq_float, comment):
     comment = (comment or "").upper()
     f = float(freq_float)
     
-    if f < 1000: 
-        f = f * 1000.0
-    elif f > 20000000: 
-        f = f / 1000.0
+    if f < 1000: f = f * 1000.0
+    elif f > 20000000: f = f / 1000.0
 
-    freq_khz = f # Frequency in kHz
+    freq_khz = f 
 
     def find_band(freq_khz):
         if 1800 <= freq_khz <= 2000: return "160m"
@@ -354,46 +372,31 @@ def get_band_and_mode_smart(freq_float, comment):
     f_mhz = freq_khz / 1000.0 
     mode = "SSB"
 
-    # --- NOUVELLE LOGIQUE DE DÉTECTION FT4/FT8 ---
     TOLERANCE_KHZ = 1 
-
-    # 1. Vérification FT4 HF (Tolérance de +/- 1 kHz)
     FT4_HF_FREQS_KHZ = [7047, 10140, 14080, 18104, 21180, 24919, 28180]
     is_ft4_hf = any(abs(freq_khz - ft4_f) <= TOLERANCE_KHZ for ft4_f in FT4_HF_FREQS_KHZ)
 
-    # 2. Vérification FT4 VHF (2m) (Tolérance de +/- 1 kHz)
     FT4_VHF_FREQ_KHZ = 144170
     is_ft4_vhf = band == "2m" and abs(freq_khz - FT4_VHF_FREQ_KHZ) <= TOLERANCE_KHZ
 
-    # 3. Vérification FT8 VHF (2m) (Plage exacte)
     ft8_vhf_min, ft8_vhf_max = FT8_VHF_FREQ_RANGE_KHZ
     is_ft8_vhf = band == "2m" and ft8_vhf_min <= freq_khz <= ft8_vhf_max
     
-    # Application des modes numériques
-    if is_ft4_hf or is_ft4_vhf:
-        mode = "FT4"
-    elif is_ft8_vhf:
-        mode = "FT8"
+    if is_ft4_hf or is_ft4_vhf: mode = "FT4"
+    elif is_ft8_vhf: mode = "FT8"
     
-    # 4. Détection CW dans les segments CW
-    if mode == "SSB": # Ne pas écraser FT4/FT8/MSK144 déjà détectés
+    if mode == "SSB": 
         for cw_band, min_mhz, max_mhz in CW_RANGES:
             if cw_band == band and min_mhz <= f_mhz <= max_mhz:
-                mode = "CW"
-                break
+                mode = "CW"; break
     
-    # 5. Détection MSK144 (précise)
     if band == "2m" and abs(f_mhz - MSK144_FREQ) <= MSK144_TOLERANCE_KHZ:
         mode = "MSK144"
         
-    # 6. Surcharge par commentaires (comme solution de secours)
     if "FT8" in comment and mode != "FT4": mode = "FT8" 
     elif "FT4" in comment and mode != "FT8": mode = "FT4"
     elif "CW" in comment and mode == "SSB": mode = "CW"
     elif "FM" in comment: mode = "FM"
-    elif "SSTV" in comment: mode = "SSTV"
-    elif "PSK31" in comment: mode = "PSK31"
-    elif "RTTY" in comment: mode = "RTTY"
         
     return band, mode
 
@@ -403,7 +406,9 @@ def load_cty_dat():
     if not os.path.exists(CTY_FILE):
         try: 
             logger.info("Téléchargement de cty.dat...")
-            urllib.request.urlretrieve(CTY_URL, CTY_FILE)
+            req = urllib.request.Request(CTY_URL, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as r, open(CTY_FILE, 'wb') as f:
+                f.write(r.read())
         except Exception as e: 
             logger.error(f"Échec du téléchargement de cty.dat: {e}")
             return
@@ -440,24 +445,21 @@ def get_country_info(call):
     return best
 
 # --- WORKERS ---
+
 def history_maintenance_worker():
     """ Tâche de maintenance pour décaler l'historique 24h à chaque heure UTC. """
     threading.current_thread().name = 'HistoryWorker'
+    logger.info("HistoryWorker démarré.")
     while True:
         now_utc = time.gmtime(time.time())
-        # Décalage juste après la fin de la minute 59:59 (plus 5s de garde)
         sleep_seconds = (3600 - (now_utc.tm_min * 60 + now_utc.tm_sec)) + 5 
         time.sleep(sleep_seconds) 
         
         with history_lock:
-            # Détermination de l'heure qui vient de commencer (new_now_hour)
             new_now_hour = time.gmtime(time.time()).tm_hour
-            
-            # L'heure qui vient de se terminer est (new_now_hour - 1) % 24
             hour_to_reset = (new_now_hour - 1 + 24) % 24 
             
             for band in HISTORY_BANDS:
-                # Réinitialisation des spots pour l'heure qui vient de se terminer
                 history_24h[band][hour_to_reset] = 0
             logger.info(f"HISTORY 24H: Réinitialisation de l'heure {hour_to_reset:02}h (qui vient de se terminer).")
 
@@ -465,6 +467,7 @@ def history_maintenance_worker():
 def ticker_worker():
     """ Tâche pour mettre à jour le message défilant avec les infos solaires et RSS. """
     threading.current_thread().name = 'TickerWorker'
+    logger.info("TickerWorker démarré.")
     while True:
         msgs = [f"SYSTEM ONLINE - {MY_CALL} ({APP_VERSION})"]
         
@@ -502,23 +505,28 @@ def ticker_worker():
             msgs.append("NEWS: RSS retrieval failed.")
 
         ticker_info["text"] = "   +++   ".join(msgs)
+        logger.info(f"Ticker mis à jour.")
         time.sleep(1800) 
 
 def telnet_worker():
     """ Tâche pour se connecter et écouter le DX Cluster. """
     threading.current_thread().name = 'TelnetWorker'
+    logger.info("TelnetWorker démarré.")
     idx = 0
     while True:
         host, port = CLUSTERS[idx]
         logger.info(f"Tentative de connexion au Cluster: {host}:{port} ({idx + 1}/{len(CLUSTERS)})")
         try:
-            tn = telnetlib.Telnet(host, port, timeout=15)
-            try: tn.read_until(b"login: ", timeout=5)
+            # Timeout réduit à 10s pour basculer rapidement
+            tn = telnetlib.Telnet(host, port, timeout=10) 
+            try: tn.read_until(b"login: ", timeout=3)
             except: pass
-            tn.write(MY_CALL.encode('ascii') + b"\n")
+            
+            # Envoi de l'indicatif avec encodage explicite
+            tn.write(MY_CALL.encode('latin-1') + b"\n")
             time.sleep(1)
             
-            # Correction du bug encoding et commandes initiales
+            # Commandes de configuration du cluster
             tn.write(b"set/dx/filter\n") 
             tn.write(b"show/dx 50\n") 
             
@@ -527,16 +535,19 @@ def telnet_worker():
             
             while True:
                 try: 
-                    line = tn.read_until(b"\n", timeout=3).decode('ascii', errors='ignore').strip()
-                except: 
+                    # Timeout très court (2s) pour ne pas bloquer
+                    line = tn.read_until(b"\n", timeout=2).decode('ascii', errors='ignore').strip()
+                except EOFError:
+                    logger.warning(f"Cluster {host} a fermé la connexion (EOFError).")
+                    break 
+                except Exception as e:
+                    logger.warning(f"Erreur de lecture Telnet: {e}")
                     line = ""
                 
                 if not line:
                     if time.time() - last_ping > KEEP_ALIVE: 
                         tn.write(b"\n"); last_ping = time.time()
-                    
                     analyze_surges() 
-                    
                     continue
                 
                 if line.startswith("DX de"):
@@ -578,16 +589,16 @@ def telnet_worker():
                         spots_buffer.append(spot_obj)
                         logger.info(f"SPOT: {dx_call} ({band}, {mode}) -> SPD: {spd_score} pts (Dist: {dist_km:.0f}km)")
                     except Exception as e: 
-                        logger.error(f"Erreur de traitement du spot '{line}': {e}")
+                        logger.error(f"Erreur de traitement du spot '{line[:50]}...': {e}")
                         
         except Exception as e: 
-            logger.error(f"ERREUR CRITIQUE Cluster {host}:{port}: {e}. Basculement.")
-            time.sleep(5)
+            logger.error(f"ERREUR CRITIQUE Cluster {host}:{port}: {e}. Basculement vers un autre cluster.")
+            time.sleep(10)
             
         idx = (idx + 1) % len(CLUSTERS)
 
 
-# --- ROUTES ---
+# --- ROUTES --- 
 @app.route('/')
 def index():
     return render_template('index.html', version=APP_VERSION, my_call=MY_CALL, 
@@ -597,47 +608,26 @@ def index():
 @app.route('/update_qra', methods=['POST'])
 def update_qra():
     global user_qra, user_lat, user_lon
-    
     new_qra = request.form.get('qra_locator', '').upper().strip()
-    
-    if not new_qra:
-        return redirect(url_for('index'))
-    
+    if not new_qra: return redirect(url_for('index'))
     new_lat, new_lon = qra_to_lat_lon(new_qra)
-    
     valid = new_lat is not None and new_lon is not None
-    
     if valid:
-        user_qra = new_qra
-        user_lat = new_lat
-        user_lon = new_lon
-        logger.info(f"QTH mis à jour: {user_qra} ({user_lat:.2f}, {user_lon:.2f})")
-    else:
-        logger.warning(f"Tentative de mise à jour QTH invalide: {new_qra}")
-    
+        user_qra = new_qra; user_lat = new_lat; user_lon = new_lon
+        logger.info(f"QTH mis à jour: {user_qra}")
+    else: logger.warning(f"Tentative de mise à jour QTH invalide: {new_qra}")
     return redirect(url_for('index')) 
 
 @app.route('/user_location.json')
-def get_user_location():
-    return jsonify({
-        'qra': user_qra,
-        'lat': user_lat,
-        'lon': user_lon
-    })
+def get_user_location(): return jsonify({'qra': user_qra, 'lat': user_lat, 'lon': user_lon})
 
 @app.route('/spots.json')
 def get_spots():
     now = time.time()
-    filter_band = request.args.get('band')
-    filter_mode = request.args.get('mode')
-    
+    filter_band = request.args.get('band'); filter_mode = request.args.get('mode')
     all_spots = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
-    
-    if filter_band and filter_band != "All":
-        all_spots = [s for s in all_spots if s['band'] == filter_band]
-    if filter_mode and filter_mode != "All":
-        all_spots = [s for s in all_spots if s['mode'] == filter_mode]
-        
+    if filter_band and filter_band != "All": all_spots = [s for s in all_spots if s['band'] == filter_band]
+    if filter_mode and filter_mode != "All": all_spots = [s for s in all_spots if s['mode'] == filter_mode]
     return jsonify(list(reversed(all_spots)))
 
 @app.route('/surge.json')
@@ -649,39 +639,25 @@ def get_surge_status():
 def get_ranking():
     now = time.time()
     active = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
-    
     def get_top_for_list(spot_list):
         ranked = sorted(spot_list, key=lambda x: x['score'], reverse=True)
         seen, top = set(), []
         for s in ranked:
-            if s['dx_call'] not in seen:
-                top.append(s)
-                seen.add(s['dx_call'])
+            if s['dx_call'] not in seen: top.append(s); seen.add(s['dx_call'])
             if len(top) >= TOP_RANKING_LIMIT: break
         return top
-
     hf_spots = [s for s in active if s['type'] == 'HF']
     vhf_spots = [s for s in active if s['type'] == 'VHF']
-
-    return jsonify({
-        "hf": get_top_for_list(hf_spots),
-        "vhf": get_top_for_list(vhf_spots)
-    })
+    return jsonify({"hf": get_top_for_list(hf_spots), "vhf": get_top_for_list(vhf_spots)})
 
 @app.route('/watchlist.json', methods=['GET', 'POST', 'DELETE'])
 def manage_watchlist():
     if request.method == 'GET': return jsonify(sorted(list(watchlist)))
     data = request.get_json(force=True, silent=True)
-    if not data or 'call' not in data: 
-        logger.warning("Tentative d'accès watchlist avec données invalides.")
-        return abort(400)
+    if not data or 'call' not in data: return abort(400)
     call = data['call'].upper().strip()
-    if request.method == 'POST': 
-        watchlist.add(call)
-        logger.info(f"Ajout à la watchlist: {call}")
-    if request.method == 'DELETE' and call in watchlist: 
-        watchlist.remove(call)
-        logger.info(f"Retrait de la watchlist: {call}")
+    if request.method == 'POST': watchlist.add(call); logger.info(f"Ajout à la watchlist: {call}")
+    if request.method == 'DELETE' and call in watchlist: watchlist.remove(call); logger.info(f"Retrait de la watchlist: {call}")
     save_watchlist()
     return jsonify({"status": "ok"})
 
@@ -691,12 +667,9 @@ def get_rss(): return jsonify({"ticker": ticker_info["text"]})
 @app.route('/history.json')
 def get_history():
     now_hour = time.gmtime(time.time()).tm_hour
-    
     labels = []
-    # 1. Générer les étiquettes de H-23 à H-0
     for i in range(24):
         hours_ago = 23 - i 
-        # target_hour est l'index UTC qui correspond à H-23 (i=0) jusqu'à H-0 (i=23)
         target_hour = (now_hour - hours_ago + 24) % 24
         labels.append(f"H-{hours_ago} ({target_hour:02}h)") 
         
@@ -706,12 +679,7 @@ def get_history():
     current_data = {}
     for band in HISTORY_BANDS:
         hist_list = data[band]
-        
-        # 2. Rotation pour avoir l'ordre H-23, H-22, ..., H-0.
-        # L'index qui correspond à H-23 est (now_hour + 1) % 24.
         start_index_for_H_23 = (now_hour + 1) % 24
-        
-        # Rotation : [Index H-23, ..., Index H-0]
         rotated = hist_list[start_index_for_H_23:] + hist_list[:start_index_for_H_23]
         current_data[band] = rotated
         
@@ -720,36 +688,23 @@ def get_history():
 @app.route('/live_bands.json')
 def get_live_bands_data():
     now = time.time()
-    # Filtrer les spots actifs (moins de SPOT_LIFETIME)
     active_spots = [s for s in spots_buffer if (now - s['timestamp']) < SPOT_LIFETIME]
-    
-    # Séparation HF et VHF
     hf_spots = [s for s in active_spots if s['type'] == 'HF']
     vhf_spots = [s for s in active_spots if s['type'] == 'VHF']
-    
-    # Compter les spots par bande
     hf_counts = Counter(s['band'] for s in hf_spots if s['band'] in HF_BANDS)
     vhf_counts = Counter(s['band'] for s in vhf_spots if s['band'] in VHF_BANDS)
     
-    # Préparer les données pour Chart.js (HF)
     hf_data = {
         "labels": [b for b in HF_BANDS if hf_counts[b] > 0],
         "data": [hf_counts[b] for b in HF_BANDS if hf_counts[b] > 0],
         "colors": [BAND_COLORS[b] for b in HF_BANDS if hf_counts[b] > 0]
     }
-    
-    # Préparer les données pour Chart.js (VHF)
     vhf_data = {
         "labels": [b for b in VHF_BANDS if vhf_counts[b] > 0],
         "data": [vhf_counts[b] for b in VHF_BANDS if vhf_counts[b] > 0],
         "colors": [BAND_COLORS[b] for b in VHF_BANDS if vhf_counts[b] > 0]
     }
-    
-    # Le graphique Live VHF doit inclure "QO-100" même s'il est techniquement SHF
-    return jsonify({
-        "hf": hf_data,
-        "vhf": vhf_data
-    })
+    return jsonify({"hf": hf_data, "vhf": vhf_data})
 
 
 if __name__ == "__main__":
@@ -759,9 +714,10 @@ if __name__ == "__main__":
     logger.info(f"\n--- {APP_VERSION} ---")
     logger.info(f"QTH de départ: {user_qra} ({user_lat:.2f}, {user_lon:.2f})")
     
+    # Démarrage des threads de travail
     threading.Thread(target=telnet_worker, daemon=True).start()
     threading.Thread(target=ticker_worker, daemon=True).start()
     threading.Thread(target=history_maintenance_worker, daemon=True).start() 
     
-    logger.info(f"Server starting on http://0.0.0.0:{WEB_PORT}")
+    logger.info("Tous les Workers ont été démarrés. Lancement du serveur Flask...")
     app.run(host='0.0.0.0', port=WEB_PORT, debug=False, use_reloader=False)
