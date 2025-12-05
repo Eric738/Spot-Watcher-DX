@@ -66,5 +66,5 @@ Dans le panneau **QTH & CONFIG** :
 * **SURGE :** Une bannière clignotante apparaît si le nombre de spots sur une bande dépasse le seuil défini dans `webapp.py`.
 
 ### Licence MIT
-feel free to modify ans share . Created for the Amateur Radio Communauty by Eric F1SMV, à l'aide de #Gimini3
+feel free to modify and share . Created for the Amateur Radio Communauty by Eric F1SMV, à l'aide de #Gimini3
 ---

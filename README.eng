@@ -1,82 +1,36 @@
-# 🛰️ NEURAL DX v4.0 - Mobile Ready & Customizable 🚀
+# 🛰️ NEURAL DX v4.2 - Enhanced Design & Ergonomics 🚀
 
 ## 💡 Project Summary
 
-**NEURAL DX v4.0** is a real-time Amateur Radio monitoring station. Built on a Python/Flask backend and a dynamic web interface (HTML/CSS/JavaScript), this version combines the performance of previous releases with display flexibility and improved ergonomics. It aggregates and analyzes DX spot data, visualizes them on live maps, calculates contact distances, and generates targeted propagation alerts.
+**NEURAL DX v4.2** is a real-time amateur radio monitoring station. Built on Python/Flask (backend) and a dynamic web interface (HTML/CSS/JavaScript), this version combines the performance of previous versions with enhanced display flexibility and better ergonomics. It aggregates and analyzes DX spot data, visualizes them on live maps, calculates contact distances, and generates targeted propagation alerts.
 
 ---
 
-## 🆕 Version 4.0 New Features
+## 🆕 New Features and Improvements in Version 4.2
 
-This major release brings significant user interface improvements:
+This version focuses on improving the user experience and the dashboard's aesthetic.
 
-* **Responsive Design (Mobile Ready):** The interface now automatically adapts to small and medium-sized screens (smartphones, tablets) by stacking the columns vertically for optimal readability.
-* **Drag & Drop Ordering:** Information panels in the side columns can be rearranged by the user via drag-and-drop. This order is saved locally in the browser's `localStorage`.
-* **Dynamic Themes:** The `THEME` button now displays the active theme name and toggles between the 4 available styles: **SOFTTECH**, **MATRIX**, **AMBER**, **NEON**.
-* **Mapping Enhancements:** The DX callsign is now displayed directly in the tooltip of each marker on the HF and VHF maps.
+* **Callsign Design (NEW) :**
+    * Callsigns in the DX Spots tables are now displayed in a **"console badge"** style (using the `.callsign-badge` class) with the neon/accent color. This significantly enhances readability and aesthetic consistency with the "system" theme.
+* **Dashboard Ergonomics :**
+    * **Watchlist Input :** A direct input field has been added to the Watchlist panel for quick addition of callsigns.
+    * **Distance Column (km) :** The `Dist (km)` column has been restored to both HF and VHF tables.
+* **Data Visualization :**
+    * **Cartography :** The background of the HF/VHF map panels is now a **dark/black background** for better contrast with propagation traces.
+    * **Live Charts :** The "LIVE BAND ACTIVITY" charts (HF and VHF) are now correctly displayed as **Bar Charts (Bargraphs)**, which are more suitable for comparing real-time band activity than ring charts.
+* **Drag & Drop Reordering :** The information panels in the side columns can be reordered by the user using drag-and-drop. This order is saved in the browser's local storage.
+* **Dynamic Themes :** The `🔆` button now displays the active theme name and correctly toggles between available styles (`SOFTTECH`, `DARK`).
 
 ---
 
 ## ✨ Key Features
 
-* **Custom Distance Calculation:** Displays the distance in **kilometers** between the operator's QRA and every spot/entity.
-* **Dynamic Mapping (HF & VHF/UHF):** Real-time spot visualization using separate Leaflet maps.
-* **Watchlist & Voice Alerts:** Monitoring of specific call signs with audio notification and highlighting.
-* **Propagation Alerts (Surge):** Detection and signaling of peak activity on bands.
-* **24H History:** Dedicated chart for activity on the Magic Bands (**12m, 10m, 6m**) with a visual band opening alert.
-* **Dynamic Filters:** Filtering of spots by band and mode (CW, SSB, FT8, MSK144, etc.).
-
----
-
-## 🛠️ Technical Architecture
-
-The project uses a simple client-server architecture:
-
-| Component | Technology | Role |
-| :--- | :--- | :--- |
-| **Backend** | Python / Flask | Aggregation of DX Cluster data (Telnet), distance/score calculations, Watchlist and alert management. |
-| **Frontend** | HTML5 / CSS3 / JavaScript | Dynamic user interface, charts (Chart.js), mapping (Leaflet), and state management (Drag & Drop via Sortable.js). |
-
----
-
-## 🚀 Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/Eric738/Spot-Watcher-DX.git]
-    cd neural-dx
-    ```
-
-2.  **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Initial Configuration**
-
-    Before execution, you must modify the core configuration section in `webapp.py`:
-
-    ```python
-    # webapp.py
-    MY_CALL = "YOUR_CALLSIGN"  # <-- Your Call Sign (Essential)
-    DEFAULT_QRA = "JN33"       # <-- Your default QRA
-    # ... and configure the Telnet DX Cluster host/port
-    ```
-
-4.  **Launch**
-
-    Launch the application using the startup script (or directly `python webapp.py`):
-
-    ```bash
-    ./start.sh
-    ```
-    Access the interface via your browser at `http://127.0.0.1:8000` (or the configured port).
-
----
-
-## 💻 Dashboard Overview
-
-![Dashboard Overview](apercu.png)
+* **Custom Distance Calculation** based on your QRA.
+* **Real-time Cartography** (Leaflet) of spots.
+* **SURGE Alert Systems** (detection of sudden band openings).
+* **Watchlist** for tracking specific callsigns.
+* **Filters** by band and mode in HF and VHF spots.
+* **Historical** (24h) and Live statistics.
 
 ---
 
@@ -84,23 +38,24 @@ The project uses a simple client-server architecture:
 
 ### 1. Customizing the Display
 
-* **Themes:** Click the `THEME: [Theme Name]` button in the header to change the appearance.
-* **Drag & Drop:** Click and hold the header of a panel (e.g., `LIVE BANDS`, `WATCHLIST`) in the left or right columns to move it and change its display order. The order is preserved upon reload.
+* **Themes :** Click the `🔆` button in the header to switch the appearance between **SoftTech** and **Dark Mode**.
+* **Drag & Drop :** Click and hold the `⋮⋮` icon in the panel header (e.g., `LIVE BANDS`, `WATCHLIST`) to drag and drop it, changing its display order. The order is preserved upon reload.
 
-### 2. Setting Your QRA Locator
+### 2. Setting the QRA Locator
 
-In the **COMMAND DECK** section:
+In the **QTH & CONFIG** panel:
 
 1.  Enter your QRA Locator (e.g., `JN33`, `JN33BB`).
-2.  Click **GO**.
+2.  Click **Update**.
 3.  The system centers the maps on your location and updates all distance calculations.
 
-### 3. Watchlist Management
+### 3. Watchlist
 
-* Enter a call sign (e.g., `K1TTT`) in the **WATCHLIST** field and click **ADD**.
-* Spots for this call sign will be highlighted and will trigger a voice alert (if `VOICE: ON`).
+* Enter a callsign (e.g., `K1TTT`) in the input field of the **WATCHLIST** panel and click **Add**.
+* Spots for this callsign will be highlighted (yellow background).
 
 ### 4. Alert Systems
 
-* **SURGE:** A banner appears if the number of spots on a band exceeds the threshold defined in `webapp.py`.
-* **OPENING DETECTED:** The *PROPAGATION HISTORY* panel visually alerts if activity on the Magic Bands (12m, 10m, 6m) exceeds a recent threshold.
+* **SURGE :** A flashing banner appears if the number of spots on a band exceeds the threshold defined in `webapp.py`.
+
+---
