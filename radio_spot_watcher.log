@@ -4698,3 +4698,46 @@
 2025-12-09 18:28:40 [INFO] TelnetWorker: SPOT: N1WMN (10m, SSB) -> SPD: 42 pts (Dist: 7721km)
 2025-12-09 18:28:42 [INFO] TelnetWorker: ALERTE SURGE 10m: Détectée (3 spots / min)
 2025-12-09 18:28:47 [INFO] TelnetWorker: SPOT: ON8DM (10m, SSB) -> SPD: 25 pts (Dist: 801km)
+2025-12-09 18:29:11 [INFO] TelnetWorker: SPOT: 3V8LL (40m, SSB) -> SPD: 10 pts (Dist: 974km)
+2025-12-09 18:29:16 [INFO] TelnetWorker: SPOT: G7PGT (10m, SSB) -> SPD: 26 pts (Dist: 1136km)
+2025-12-09 18:29:26 [INFO] TelnetWorker: FIN ALERTE SURGE 10m: L'activité a diminué.
+2025-12-09 18:29:47 [INFO] TelnetWorker: SPOT: PD0R (10m, SSB) -> SPD: 25 pts (Dist: 977km)
+2025-12-09 18:29:51 [INFO] TelnetWorker: SPOT: YO3YX (40m, SSB) -> SPD: 13 pts (Dist: 1575km)
+2025-12-09 18:30:00 [INFO] TelnetWorker: SPOT: G7PBT (10m, SSB) -> SPD: 26 pts (Dist: 1136km)
+2025-12-09 18:30:05 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:18 UTC).
+2025-12-09 18:30:10 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:15 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:20 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:25 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:26 [INFO] TelnetWorker: SPOT: DK5EW (2m, MSK144) -> SPD: 40 pts (Dist: 915km)
+2025-12-09 18:30:30 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:33 [INFO] TelnetWorker: SPOT: XW4KV (40m, FT8) -> SPD: 29 pts (Dist: 9365km)
+2025-12-09 18:30:35 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:40 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:45 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:50 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:30:55 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:31:00 [INFO] HistoryWorker: HISTORY 30min: Rotation des slots (nouveau slot pour 17:30 UTC).
+2025-12-09 18:31:17 [INFO] TelnetWorker: SPOT: VA3BOO (15m, SSB) -> SPD: 41 pts (Dist: 6391km)
+2025-12-09 18:31:37 [INFO] TelnetWorker: SPOT: EA5/IU1TKT (30m, SSB) -> SPD: 10 pts (Dist: 782km)
+2025-12-09 18:32:06 [INFO] TelnetWorker: SPOT: KQ4LBM (20m, SSB) -> SPD: 27 pts (Dist: 7721km)
+2025-12-09 18:32:06 [INFO] TelnetWorker: SPOT: HG100IT (80m, CW) -> SPD: 21 pts (Dist: 1185km)
+2025-12-09 18:32:12 [INFO] TelnetWorker: SPOT: NE8I/B (6m, CW) -> SPD: 37 pts (Dist: 7721km)
+2025-12-09 18:32:15 [INFO] TelnetWorker: SPOT: KO9V (15m, SSB) -> SPD: 42 pts (Dist: 7721km)
+2025-12-09 18:32:17 [INFO] TelnetWorker: SPOT: ON7ULM (10m, SSB) -> SPD: 25 pts (Dist: 801km)
+2025-12-09 18:32:23 [INFO] TelnetWorker: SPOT: M7IJS (20m, FT8) -> SPD: 11 pts (Dist: 1136km)
+2025-12-09 18:32:26 [INFO] TelnetWorker: SPOT: HG100RADIO (80m, CW) -> SPD: 21 pts (Dist: 1185km)
+2025-12-09 18:32:52 [INFO] TelnetWorker: SPOT: WW1L (6m, SSB) -> SPD: 27 pts (Dist: 7721km)
+2025-12-09 18:33:01 [INFO] TelnetWorker: SPOT: KA1RVM (15m, CW) -> SPD: 52 pts (Dist: 7721km)
+2025-12-09 18:33:21 [INFO] TelnetWorker: SPOT: AA1ON (6m, SSB) -> SPD: 27 pts (Dist: 7721km)
+2025-12-09 18:33:23 [INFO] TelnetWorker: SPOT: EA4HUK (40m, SSB) -> SPD: 10 pts (Dist: 782km)
+2025-12-09 18:33:23 [INFO] TelnetWorker: SPOT: YV5SSB (10m, SSB) -> SPD: 42 pts (Dist: 7867km)
+2025-12-09 18:33:36 [INFO] TelnetWorker: SPOT: KD9TQH (20m, SSB) -> SPD: 27 pts (Dist: 7721km)
+2025-12-09 18:33:45 [INFO] TelnetWorker: SPOT: EI1DG (10m, SSB) -> SPD: 28 pts (Dist: 1436km)
+2025-12-09 18:33:47 [INFO] TelnetWorker: SPOT: VR2WAZ (40m, FT8) -> SPD: 29 pts (Dist: 9750km)
+2025-12-09 18:33:50 [INFO] TelnetWorker: SPOT: EG45URF (40m, SSB) -> SPD: 10 pts (Dist: 782km)
+2025-12-09 18:33:54 [INFO] TelnetWorker: SPOT: 3V8LL (40m, SSB) -> SPD: 10 pts (Dist: 974km)
+2025-12-09 18:33:58 [INFO] TelnetWorker: SPOT: DG0FE (2m, MSK144) -> SPD: 40 pts (Dist: 915km)
+2025-12-09 18:34:01 [INFO] TelnetWorker: SPOT: ZR6BDZ (10m, SSB) -> SPD: 43 pts (Dist: 8267km)
+2025-12-09 18:34:03 [INFO] TelnetWorker: SPOT: AM1200J (40m, SSB) -> SPD: 10 pts (Dist: 782km)
+2025-12-09 18:34:05 [INFO] TelnetWorker: ALERTE SURGE 40m: Détectée (5 spots / min)
