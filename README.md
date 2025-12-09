@@ -20,9 +20,12 @@ Cette version 4.2 apporte des améliorations majeures en termes de performances,
 
     Panneaux Personnalisables: Fonctionnalité Drag & Drop pour organiser les panneaux selon vos préférences (l'ordre est sauvegardé).
 
-    Thèmes: Bascule simple entre le mode SoftTech et le mode Dark.
+    Thèmes: Bascule simple entre les mode SoftTech , Matrix, Dark.
 
 📸 Aperçu de l'Interface
+
+![Apercu du Dashboard](apercu.png)
+
 ⚙️ Installation & Démarrage
 
 Ce projet est basé sur Python (Flask) pour le backend et HTML/CSS/JavaScript (Leaflet, Chart.js) pour l'interface client.
@@ -39,7 +42,7 @@ Prérequis
     Clonez le dépôt :
     Bash
 
-git clone https://www.wordreference.com/fren/d%C3%A9p%C3%B4t
+git clone gh repo clone Eric738/Spot-Watcher-DX
 cd neural-dx-watcher-v4
 
 Installez les dépendances Python :
@@ -64,6 +67,7 @@ MY_CALL	Votre indicatif d'appel.	F1SMV
 DEFAULT_QRA	Votre localisateur QRA (ex: JN23).	JN23
 SPD_THRESHOLD	Seuil du Score de Priorité DX pour les alertes (spots en rouge).	70
 SPOT_LIFETIME	Durée pendant laquelle un spot reste actif (en secondes).	1800 (30 minutes)
+
 🎙️ Utilisation du Filtre Vocal de Distance
 
 Le filtre vocal est accessible dans l'en-tête, à côté des indicateurs de temps et du bouton 🔊 VOICE ON/OFF.
