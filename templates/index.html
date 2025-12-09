@@ -3,53 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL DX v4.1 - Final Design</title>
+    <title>NEURAL DX v4.2 - 30min History</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         /* Variables de Thème par Défaut (SoftTech V4.1 Original) */
         :root {
             --bg-color: #050505;
-            --panel-bg: #0e0e0e; 
+            --panel-bg: #0e0e0e;
             --text-main: #a0a0a0;
             --accent: #00f3ff;
             --alert: #ff003c; /* Rouge vif pour Surge */
-            --border: 1px solid #333; 
-            --wl-bg: #ffeb3b; 
+            --border: 1px solid #333;
+            --wl-bg: #ffeb3b;
             --wl-text: #000000;
-            --open-color: #d35400; 
+            --open-color: #d35400;
         }
-
         /* Thème Nuit (DarkMode V4.1 Original) */
         body[data-theme='dark'] {
             --bg-color: #1a1a1a;
             --panel-bg: #2a2a2a;
             --text-main: #f0f0f0;
-            --accent: #00ff80; 
-            --alert: #ff6347; 
+            --accent: #00ff80;
+            --alert: #ff6347;
             --border: 1px solid #555;
             --wl-bg: #ffff00;
             --wl-text: #000000;
             --open-color: #ffd700;
         }
-        
+        /* NOUVEAU: Thème Matrix (Hackergreen V4.2) */
+        body[data-theme='matrix'] {
+            --bg-color: #000000;
+            --panel-bg: #031503;
+            --text-main: #00ff41; /* Vert Matrix */
+            --accent: #00ff41;
+            --alert: #ff004c;
+            --border: 1px solid #005500;
+            --wl-bg: #4cff7e;
+            --wl-text: #000000;
+            --open-color: #00aa00;
+        }
+        /* NOUVEAU: Thème Sunset (Orange/Violet V4.2) */
+        body[data-theme='sunset'] {
+            --bg-color: #2b0c3d;
+            --panel-bg: #4a1961;
+            --text-main: #f0e6ff;
+            --accent: #ff9900; /* Orange coucher de soleil */
+            --alert: #ff3366;
+            --border: 1px solid #7c4d9e;
+            --wl-bg: #ffcc66;
+            --wl-text: #2b0c3d;
+            --open-color: #ff66a3;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Share Tech Mono', monospace;
         }
-
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             transition: background-color 0.3s, color 0.3s;
             overflow-x: hidden;
         }
-
         #header {
             background-color: var(--panel-bg);
             padding: 10px 20px;
@@ -58,14 +79,12 @@
             justify-content: space-between;
             align-items: center;
         }
-
         #title {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.5em;
             color: var(--accent);
             text-shadow: 0 0 5px var(--accent);
         }
-
         /* Ticker */
         #ticker-container {
             background-color: #0d0d0d;
@@ -76,41 +95,35 @@
             border-bottom: var(--border);
             width: 100%;
         }
-
         #ticker-content {
             display: inline-block;
-            padding-left: 100%; 
-            animation: ticker-roll 60s linear infinite; 
+            padding-left: 100%;
+            animation: ticker-roll 60s linear infinite;
         }
-        
+
         @keyframes ticker-roll {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
         }
-
-
         #main-container {
             display: flex;
             padding: 10px;
             gap: 10px;
         }
-
         .column {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-
         .panel {
             background-color: var(--panel-bg);
-            border: var(--border); 
+            border: var(--border);
             border-radius: 5px;
             padding: 10px;
             min-height: 150px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-
         .panel-header {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.1em;
@@ -122,7 +135,7 @@
             align-items: center;
             cursor: grab;
         }
-        
+
         /* Handle de Drag & Drop (le "crochet") */
         .dd-handle {
             font-size: 1.5em;
@@ -131,43 +144,39 @@
             color: var(--text-main);
             opacity: 0.5;
         }
-
         .dd-handle:hover {
             opacity: 1;
             color: var(--accent);
         }
-        
+
         /* ALERTE SURGE (clignotant ROUGE) */
         #surge-panel.active-surge {
-            border: 3px solid var(--alert); 
+            border: 3px solid var(--alert);
             box-shadow: 0 0 15px var(--alert);
             animation: pulse-red 1s infinite alternate;
         }
-
         @keyframes pulse-red {
             from { box-shadow: 0 0 10px var(--alert); }
             to { box-shadow: 0 0 20px var(--alert), 0 0 5px var(--alert); }
         }
-
-
         /* Tableaux */
         .spot-table, .wl-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85em;
         }
-        
-        /* NOUVEAU: Callsign en gras blanc (sauf Watchlist) */
+
+        /* Callsign en gras blanc (sauf Watchlist) */
         .spot-call-white-bold {
-            color: #ffffff; 
+            color: #ffffff;
             font-weight: bold;
         }
-        
+
         /* Assurer que le lien QRZ à l'intérieur est également en blanc */
         .spot-call-white-bold a {
-            color: inherit !important; 
+            color: inherit !important;
         }
-        
+
         /* Étiquettes de bande dans le tableau */
         .band-tag {
             display: inline-block;
@@ -178,54 +187,51 @@
             color: #000;
             text-shadow: none;
         }
-        
+
         /* Liens QRZ */
         .spot-table a {
             color: inherit;
             text-decoration: none;
         }
-
         .spot-table th, .spot-table td, .wl-table th, .wl-table td {
             padding: 4px;
             text-align: left;
             border-bottom: 1px dotted #1a1a1a;
         }
-
         .spot-table th {
             color: var(--text-main);
             background-color: #1a1a1a;
             position: sticky;
             top: 0;
         }
-        
+
         .high-spd {
-            color: var(--alert); 
+            color: var(--alert);
             font-weight: bold;
         }
-        
+
         .wl-table td.call {
-            color: var(--wl-text); 
+            color: var(--wl-text);
             background-color: var(--wl-bg);
             font-weight: bold;
             text-align: center;
         }
-
         #spots-container-hf, #spots-container-vhf, #watchlist-container {
-            max-height: 300px; 
+            max-height: 300px;
             overflow-y: auto;
             margin-top: 5px;
         }
-        
+
         /* Maps */
         .map-panel {
             min-height: 250px;
         }
         .map-area {
-            height: 200px;
+            height: 220px;
             border: 1px solid #555;
             border-radius: 3px;
         }
-        
+
         /* Formulaire QRA */
         #qra-form {
             display: flex;
@@ -248,7 +254,14 @@
             border: none;
             cursor: pointer;
         }
-        
+
+        /* Contrôles Header */
+        #controls {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Espace entre les éléments de contrôle */
+        }
+
         .icon-button {
             background: none;
             border: none;
@@ -257,51 +270,55 @@
             cursor: pointer;
             margin-left: 10px;
         }
+        /* Style spécifique pour le bouton Synthèse Vocale et Filtres */
+        #synth-toggle-button, #voice-distance-filter, #voice-language-filter {
+            background-color: #333;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: var(--accent);
+            font-size: 0.9em;
+            cursor: pointer;
+            border: 1px solid #555;
+            font-family: 'Share Tech Mono', monospace;
+        }
 
         #indicators {
             display: flex;
             gap: 15px;
             font-size: 0.9em;
         }
-
         .indicator-item {
             color: var(--text-main);
         }
-
         .indicator-item span {
             color: var(--accent);
             font-weight: bold;
         }
-
         .ranking-list {
             list-style: none;
             padding: 0;
         }
-
         .ranking-item {
             display: flex;
             justify-content: space-between;
             padding: 3px 0;
             border-bottom: 1px dotted #222;
         }
-
         .ranking-call {
             color: var(--accent);
             font-weight: bold;
         }
-
         .ranking-score {
             color: var(--alert);
         }
-        
+
         #surge-container {
             font-size: 1em;
             padding: 5px;
         }
-
         .surge-band {
             display: inline-block;
-            background-color: var(--alert); 
+            background-color: var(--alert);
             color: #ffffff;
             padding: 2px 6px;
             margin: 3px;
@@ -309,7 +326,7 @@
             font-family: 'Orbitron', sans-serif;
             font-weight: bold;
         }
-        
+
         .filter-controls {
             display: flex;
             gap: 10px;
@@ -322,12 +339,20 @@
             border: 1px solid #555;
         }
 
+        /* Style pour le panel du graphique d'historique */
+        #chart-history-panel {
+            min-height: 300px;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-
     <div id="header">
-        <div id="title">NEURAL DX WATCHER V4.1</div>
+        <div id="title">NEURAL DX WATCHER V4.2</div>
         <div id="controls">
             <span id="indicators">
                 <div class="indicator-item">QRA: <span id="qra-display">{{ user_qra }}</span></div>
@@ -335,25 +360,34 @@
                 <div class="indicator-item">LOC: <span id="local-time"></span></div>
                 <div class="indicator-item">MODE: <span id="display-mode">SoftTech</span></div>
             </span>
+            <select id="voice-distance-filter" title="Filtrer les annonces vocales par distance">
+                <option value="ALL">Voice Dist: ALL</option>
+                <option value="LOW">Voice Dist: < 5000 km</option>
+                <option value="MID">Voice Dist: 5000 - 10000 km</option>
+                <option value="HIGH">Voice Dist: > 10000 km</option>
+            </select>
+            <select id="voice-language-filter" title="Sélectionner la langue de l'annonce vocale">
+                <option value="fr-FR">Voice Lang: FR</option>
+                <option value="en-US">Voice Lang: EN</option>
+            </select>
+            <button id="synth-toggle-button" onclick="toggleVoiceSynth()" title="Activer/Désactiver la synthèse vocale">🔊 VOICE ON</button>
             <button class="icon-button" onclick="toggleTheme()" title="Changer de thème">🔆</button>
         </div>
     </div>
-    
+
     <div id="ticker-container">
         <div id="ticker-content">SYSTEM INITIALIZATION...</div>
     </div>
-
     <div id="main-container">
         <div class="column" id="col1">
-
             <div id="watchlist-panel" class="panel" data-panel-id="watchlist">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> WATCHLIST</div>
-                
+
                 <form id="add-wl-form" style="display: flex; gap: 5px; margin-bottom: 10px;">
                     <input type="text" id="wl_callsign" placeholder="Callsign à ajouter" style="flex-grow: 1; padding: 5px; border: 1px solid #555; background-color: #333; color: var(--text-main); text-transform: uppercase;" required>
                     <button type="submit" style="padding: 5px 10px; background-color: var(--accent); color: var(--panel-bg); border: none; cursor: pointer;">Add</button>
                 </form>
-                
+
                 <div id="watchlist-container">
                     <table class="wl-table">
                         <thead>
@@ -370,13 +404,16 @@
                     </table>
                 </div>
             </div>
-            
+
             <div id="spots-hf-panel" class="panel" data-panel-id="spots-hf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX SPOTS HF</div>
                 <div class="filter-controls">
                     <select id="hf-band-filter">
                         <option value="All">All Bands</option>
-                        </select>
+                        {% for band in hf_bands %}
+                            <option value="{{ band }}">{{ band }}</option>
+                        {% endfor %}
+                    </select>
                     <select id="hf-mode-filter">
                         <option value="All">All Modes</option>
                         <option value="FT8">FT8</option>
@@ -398,13 +435,16 @@
                     </table>
                 </div>
             </div>
-            
+
             <div id="spots-vhf-panel" class="panel" data-panel-id="spots-vhf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX SPOTS VHF/UHF</div>
                 <div class="filter-controls">
                     <select id="vhf-band-filter">
                         <option value="All">All Bands</option>
-                        </select>
+                        {% for band in vhf_bands %}
+                            <option value="{{ band }}">{{ band }}</option>
+                        {% endfor %}
+                    </select>
                     <select id="vhf-mode-filter">
                         <option value="All">All Modes</option>
                         <option value="FT8">FT8</option>
@@ -428,7 +468,6 @@
                 </div>
             </div>
 
-            
             <div id="wanted-panel" class="panel" data-panel-id="wanted">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX WANTED (TOP 10)</div>
                 <div style="display: flex; gap: 20px;">
@@ -442,16 +481,12 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
         <div class="column" id="col2">
-
             <div id="surge-panel" class="panel" data-panel-id="surge">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> SURGE ALERTS ⚡</div>
                 <div id="surge-container">No active surges...</div>
             </div>
-
             <div id="qth-panel" class="panel" data-panel-id="qth">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> QTH & CONFIG</div>
                 <form id="qra-form">
@@ -463,34 +498,33 @@
                     My Call: {{ my_call }} | SPD Threshold: {{ spd_threshold }} | Version: {{ version }}
                 </p>
             </div>
-            
+
             <div id="map-hf-panel" class="panel map-panel" data-panel-id="map-hf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX MAP HF ({{ hf_bands|length }} Bands)</div>
                 <div id="map-hf" class="map-area"></div>
             </div>
-
             <div id="map-vhf-panel" class="panel map-panel" data-panel-id="map-vhf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX MAP VHF/UHF ({{ vhf_bands|length }} Bands)</div>
                 <div id="map-vhf" class="map-area"></div>
             </div>
-            
+
             <div id="chart-history-panel" class="panel" data-panel-id="chart-history">
-                <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> ACTIVITY 24H (12m/10m/6m)</div>
-                <div style="height: 250px;"><canvas id="historyChart"></canvas></div>
+                <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> HISTORIQUE 30MIN (12H)</div>
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                </div>
             </div>
-            
+
             <div id="chart-live-hf-panel" class="panel" data-panel-id="chart-live-hf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> LIVE BAND ACTIVITY (HF)</div>
                 <div style="height: 200px;"><canvas id="liveHFChart"></canvas></div>
             </div>
-             <div id="chart-live-vhf-panel" class="panel" data-panel-id="chart-live-vhf">
+            <div id="chart-live-vhf-panel" class="panel" data-panel-id="chart-live-vhf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> LIVE BAND ACTIVITY (VHF)</div>
                 <div style="height: 200px;"><canvas id="liveVHFChart"></canvas></div>
             </div>
-
         </div>
     </div>
-
 
     <script>
         // --- VARIABLES GLOBALES (DU BACKEND) ---
@@ -499,39 +533,42 @@
         const HF_BANDS = JSON.parse('{{ hf_bands | tojson }}');
         const VHF_BANDS = JSON.parse('{{ vhf_bands | tojson }}');
         const BAND_COLORS = JSON.parse('{{ band_colors | tojson }}');
-        const DEFAULT_QRA = '{{ user_qra }}'; 
+        const DEFAULT_QRA = '{{ user_qra }}';
 
-        // --- ÉTATS GLOBALES (CLIENT) ---
-        let userLatLng = [43.10, 5.88]; 
+        // --- ÉTATS GLOBAUX (CLIENT) ---
+        let userLatLng = [43.10, 5.88];
         let mapHF, mapVHF;
         let userMarkerHF, userMarkerVHF;
         let markersHF = new L.LayerGroup();
         let markersVHF = new L.LayerGroup();
         let watchlist = new Set();
         let historyChart, liveHFChart, liveVHFChart;
-
+        let isVoiceEnabled = true;
+        let voiceDistanceFilter = 'ALL';
+        let voiceLanguageFilter = 'fr-FR'; // NOUVEAU: État du filtre de langue
+        let announcedSpots = new Set(); // Set pour mémoriser les spots déjà annoncés vocalement
 
         // --- UTILITAIRES ---
         function qraToLatLng(qra) {
             try {
                 qra = qra.toUpperCase().trim();
                 if (qra.length < 4) return [0, 0];
-                
+
                 let lon = -180 + (qra.charCodeAt(0) - 65) * 20 + (parseInt(qra[2]) * 2) + 1;
                 let lat = -90 + (qra.charCodeAt(1) - 65) * 10 + (parseInt(qra[3]) * 1) + 0.5;
-                
+
                 if (qra.length >= 6) {
                     lon += (qra.charCodeAt(4) - 65) * (2/24) + (1/24);
                     lat += (qra.charCodeAt(5) - 65) * (1/24) + (1/48);
                 }
-                
+
                 return [lat, lon];
             } catch (e) {
                 console.error("Invalid QRA format:", qra, e);
-                return [0, 0]; 
+                return [0, 0];
             }
         }
-        
+
         function updateTimeDisplay() {
             const now = new Date();
             const utcTime = now.toUTCString().split(' ')[4];
@@ -541,14 +578,81 @@
         }
 
         function getColorByScore(score) {
-            if (score >= 90) return '#FF0000'; 
-            if (score >= SPD_THRESHOLD) return '#FF8C00'; 
-            if (score >= 50) return '#FFD700'; 
-            return '#00BFFF'; 
+            if (score >= 90) return '#FF0000';
+            if (score >= SPD_THRESHOLD) return '#FF8C00';
+            if (score >= 50) return '#FFD700';
+            return '#00BFFF';
         }
-        
+
         function isWanted(call) {
             return watchlist.has(call.toUpperCase());
+        }
+
+        // --- Synthèse vocale ---
+        function toggleVoiceSynth() {
+            isVoiceEnabled = !isVoiceEnabled;
+            const button = document.getElementById('synth-toggle-button');
+            if (isVoiceEnabled) {
+                button.textContent = '🔊 VOICE ON';
+                console.log('Synthèse vocale activée.');
+            } else {
+                button.textContent = '🔇 VOICE OFF';
+                window.speechSynthesis.cancel(); // Annule toute parole en cours
+                console.log('Synthèse vocale désactivée.');
+            }
+            localStorage.setItem('voiceEnabled', isVoiceEnabled);
+        }
+
+        function isDistanceFiltered(distanceKm) {
+            const filter = voiceDistanceFilter;
+
+            if (filter === 'ALL') {
+                return true;
+            } else if (filter === 'LOW') { // < 5000 km
+                return distanceKm < 5000;
+            } else if (filter === 'MID') { // 5000 - 10000 km
+                return distanceKm >= 5000 && distanceKm <= 10000;
+            } else if (filter === 'HIGH') { // > 10000 km
+                return distanceKm > 10000;
+            }
+            return true;
+        }
+
+        function announceSpot(spot) {
+            if (!isVoiceEnabled || !('speechSynthesis' in window)) {
+                return;
+            }
+
+            // Clé unique pour identifier le spot (Call, Freq, Mode, Time)
+            const spotKey = `${spot.dx_call}-${spot.freq}-${spot.time}`; 
+
+            if (announcedSpots.has(spotKey)) {
+                // Le spot a déjà été annoncé, on ignore
+                return;
+            }
+            
+            // Vérification du filtre de distance
+            if (!isDistanceFiltered(spot.distance_km)) {
+                return;
+            }
+
+            // Si toutes les conditions sont remplies, on parle et on mémorise la clé
+            announcedSpots.add(spotKey);
+
+            const message = new SpeechSynthesisUtterance();
+            
+            // Utilisation de la langue sélectionnée
+            message.lang = voiceLanguageFilter;
+            message.rate = 1.0;
+            
+            // Adapter le message à la langue sélectionnée
+            if (voiceLanguageFilter === 'fr-FR') {
+                message.text = `Spot détecté : ${spot.dx_call} sur ${spot.band}, mode ${spot.mode}, fréquence ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilomètres.`;
+            } else { // en-US
+                message.text = `DX spot: ${spot.dx_call} on ${spot.band} band, mode ${spot.mode}, frequency ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilometers.`;
+            }
+
+            window.speechSynthesis.speak(message);
         }
 
         // --- WATCHLIST ---
@@ -563,7 +667,7 @@
                 document.getElementById('watchlist-body').innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--alert);">Watchlist Load Error</td></tr>';
             }
         }
-        
+
         function displayWatchlist() {
              const body = document.getElementById('watchlist-body');
              body.innerHTML = '';
@@ -571,18 +675,18 @@
                  body.innerHTML = '<tr><td colspan="4" style="text-align: center;">Watchlist is empty.</td></tr>';
                  return;
              }
-             
+
              watchlist.forEach(call => {
                  const row = body.insertRow();
                  row.innerHTML = `
                     <td class="call"><a href="https://qrz.com/db/${call}" target="_blank" style="color: inherit;">${call}</a></td>
-                    <td>-</td> 
-                    <td>-</td> 
+                    <td>-</td>
+                    <td>-</td>
                     <td><button onclick="removeFromWatchlist('${call}')" style="color: var(--alert); border: none; background: none; cursor: pointer;">[X]</button></td>
                  `;
              });
         }
-        
+
         async function removeFromWatchlist(call) {
             try {
                 const response = await fetch('/watchlist.json', {
@@ -598,7 +702,7 @@
                 console.error("Failed to remove from watchlist:", e);
             }
         }
-        
+
         async function addToWatchlist(call) {
              try {
                 const response = await fetch('/watchlist.json', {
@@ -608,7 +712,7 @@
                 });
                 if (response.ok) {
                     watchlist.add(call.toUpperCase());
-                    await updateData(); 
+                    await updateData();
                 }
             } catch (e) {
                 console.error("Failed to add to watchlist:", e);
@@ -619,10 +723,9 @@
         function initMap(mapId) {
             const map = L.map(mapId, {
                 worldCopyJump: true,
-                center: userLatLng, 
+                center: userLatLng,
                 zoom: 3,
                 layers: [
-                    // FOND DE CARTE SOMBRE
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                         subdomains: 'abcd',
@@ -649,127 +752,160 @@
         function updateMaps(spots) {
             markersHF.clearLayers();
             markersVHF.clearLayers();
-
             spots.forEach(spot => {
-                if (spot.lat && spot.lon) {
-                    const bandColor = spot.color || '#ccc';
-                    
-                    // Marker simple (point) sans callsign
+                if (spot.lat && spot.lon && !isNaN(spot.lat) && !isNaN(spot.lon)) {
                     const markerIcon = L.divIcon({
                         className: 'dx-marker-point',
-                        html: `<div style="width: 10px; height: 10px; background-color: ${bandColor}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px ${bandColor};"></div>`,
+                        html: `<div style="width: 10px; height: 10px; background-color: ${spot.color}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px ${spot.color};"></div>`,
                         iconSize: [14, 14],
                         iconAnchor: [7, 7]
                     });
-                    
                     const marker = L.marker([spot.lat, spot.lon], { icon: markerIcon });
-                    
-                    // Infobulle avec Call, Freq, Mode
                     marker.bindPopup(`
                         <b>${spot.dx_call}</b><br>
                         Freq: ${spot.freq} (${spot.band})<br>
                         Mode: ${spot.mode}<br>
                         SPD: ${spot.score} | Dist: ${spot.distance_km.toFixed(0)} km
                     `);
-                    
                     if (spot.type === 'HF') {
                         markersHF.addLayer(marker);
                     } else if (spot.type === 'VHF') {
                         markersVHF.addLayer(marker);
                     }
+                } else {
+                    console.warn(`Coordonnées invalides pour ${spot.dx_call}: Lat=${spot.lat}, Lon=${spot.lon}`);
                 }
             });
-
             if (!markersHF.getLayers().length) { mapHF.setView(userLatLng, 3); }
             if (!markersVHF.getLayers().length) { mapVHF.setView(userLatLng, 3); }
-            
+
             markersHF.addTo(mapHF);
             markersVHF.addTo(mapVHF);
         }
 
         // --- GRAPHIQUES (CHARTS.JS) ---
         function initCharts() {
-            // Options de base pour tous les Bar Charts
-            const barOptions = {
+            const chartOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: false,
-                plugins: { 
-                    legend: { 
-                        display: false, 
-                        labels: { color: 'var(--text-main)' } 
-                    } 
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#ffffff',  // Libellés en blanc
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'HISTORIQUE DES SPOTS (30MIN/12H)',
+                        color: 'var(--accent)',
+                        font: {
+                            size: 14,
+                            family: "'Orbitron', sans-serif"
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'var(--accent)',
+                        borderWidth: 1
+                    }
                 },
                 scales: {
-                    x: { 
-                        ticks: { 
-                            color: 'var(--text-main)',
-                            autoSkip: false, 
-                            maxRotation: 45,
-                            minRotation: 45
-                        }, 
-                        grid: { color: '#333' },
-                        title: { display: true, text: 'Bande / Heure UTC', color: 'var(--text-main)' } 
+                    x: {
+                        ticks: {
+                            color: '#ffffff',  // Libellés X en blanc
+                        },
+                        title: {
+                            display: true,
+                            text: 'Heure (UTC - 30min)',
+                            color: '#ffffff'  // Titre X en blanc
+                        },
+                        grid: {
+                            color: '#333'
+                        }
                     },
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { color: 'var(--text-main)' }, 
-                        grid: { color: '#333' },
-                        title: { display: true, text: 'Spots', color: 'var(--text-main)' } 
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#ffffff',  // Libellés Y en blanc
+                        },
+                        title: {
+                            display: true,
+                            text: 'Nombre de spots',
+                            color: '#ffffff'  // Titre Y en blanc
+                        },
+                        grid: {
+                            color: '#333'
+                        }
                     }
                 }
             };
-            
-            // 1. History Chart (24H) - Bar Chart
+
+            // 1. History Chart (30min/12h) - Line Chart
             const historyCtx = document.getElementById('historyChart').getContext('2d');
             historyChart = new Chart(historyCtx, {
-                type: 'bar', 
-                data: { labels: [], datasets: [] },
-                options: barOptions
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: chartOptions
             });
 
             // 2. Live HF Chart (Bar Chart)
             const liveHFCtx = document.getElementById('liveHFChart').getContext('2d');
             liveHFChart = new Chart(liveHFCtx, {
-                 type: 'bar', 
-                 data: { labels: [], datasets: [] },
-                 options: JSON.parse(JSON.stringify(barOptions)) 
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: JSON.parse(JSON.stringify(chartOptions))
             });
 
             // 3. Live VHF Chart (Bar Chart)
             const liveVHFCtx = document.getElementById('liveVHFChart').getContext('2d');
             liveVHFChart = new Chart(liveVHFCtx, {
-                 type: 'bar',
-                 data: { labels: [], datasets: [] },
-                 options: JSON.parse(JSON.stringify(barOptions))
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: JSON.parse(JSON.stringify(chartOptions))
             });
         }
-        
+
         function updateHistoryChart(data) {
-            historyChart.data.labels = data.labels;
-            historyChart.data.datasets = [];
-            
             const bands = Object.keys(data.data);
-            bands.forEach(band => {
-                historyChart.data.datasets.push({
-                    label: band,
+            const datasets = bands.map(band => {
+                return {
+                    label: band.toUpperCase(),
                     data: data.data[band],
-                    backgroundColor: BAND_COLORS[band] ? BAND_COLORS[band] + '80' : '#ccc80', 
                     borderColor: BAND_COLORS[band] || '#ccc',
-                    borderWidth: 1
-                });
+                    backgroundColor: (BAND_COLORS[band] || '#ccc') + '33',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: BAND_COLORS[band] || '#ccc'
+                };
             });
-            historyChart.options.scales.x.title.text = 'Heure UTC';
-            historyChart.options.scales.y.title.text = 'Spots/30 min';
+
+            historyChart.data.labels = data.labels;
+            historyChart.data.datasets = datasets;
+            historyChart.options.plugins.title.text = 'HISTORIQUE DES SPOTS (30MIN/12H)';
             historyChart.update();
         }
-        
+
         function updateLiveBandsChart(chart, chartData) {
             chart.data.labels = chartData.labels;
             chart.data.datasets = [{
                 label: 'Spots Actifs',
                 data: chartData.data,
-                backgroundColor: chartData.colors.map(c => c + 'AA'), 
+                backgroundColor: chartData.colors.map(c => c + 'AA'),
                 borderColor: chartData.colors,
                 borderWidth: 1
             }];
@@ -778,16 +914,39 @@
             chart.update();
         }
 
-        // --- MISE A JOUR DES DONNÉES (WORKERS PYTHON) ---
+        // --- GESTION DES SPOTS ANNONCÉS ---
+        function clearExpiredAnnouncedSpots(allActiveSpots) {
+             const activeKeys = new Set(allActiveSpots.map(s => `${s.dx_call}-${s.freq}-${s.time}`));
+             
+             // Créer un nouvel ensemble (Set) avec uniquement les spots actifs qui ont été annoncés
+             const newAnnouncedSpots = new Set();
+             announcedSpots.forEach(key => {
+                 if (activeKeys.has(key)) {
+                     newAnnouncedSpots.add(key);
+                 }
+             });
+             announcedSpots = newAnnouncedSpots; // Remplacer l'ancien Set par le nouveau filtré
+        }
+
+
+        // --- MISE A JOUR DES DONNÉES ---
         async function updateData() {
             console.log("Fetching new data...");
-
+            // Exécuter les mises à jour pour les deux types de spots
             await updateSpots('hf');
             await updateSpots('vhf');
             
+            // Récupérer tous les spots pour nettoyer le Set `announcedSpots`
+            try {
+                const allSpotsResponse = await fetch('/spots.json');
+                const allSpots = await allSpotsResponse.json();
+                updateMaps(allSpots);
+                clearExpiredAnnouncedSpots(allSpots); // Nettoyage des spots annoncés expirés
+            } catch(e) { console.error("Failed to fetch all spots for map/cleanup:", e); }
+
             try {
                 const wantedResponse = await fetch('/wanted.json');
-                const wantedData = await wantedResponse.json();
+                const wantedData = await await wantedResponse.json();
                 displayRanking('ranking-hf', wantedData.hf);
                 displayRanking('ranking-vhf', wantedData.vhf);
             } catch(e) { console.error("Failed to fetch ranking:", e); }
@@ -797,13 +956,13 @@
                 const surgeData = await surgeResponse.json();
                 displaySurges(surgeData.surges);
             } catch(e) { console.error("Failed to fetch surges:", e); }
-            
+
             try {
                 const rssResponse = await fetch('/rss.json');
                 const rssData = await rssResponse.json();
                 document.getElementById('ticker-content').textContent = rssData.ticker;
-            } catch(e) { 
-                console.error("Failed to fetch RSS/Ticker:", e); 
+            } catch(e) {
+                console.error("Failed to fetch RSS/Ticker:", e);
                 document.getElementById('ticker-content').textContent = "ERROR: Ticker data retrieval failed.";
             }
 
@@ -812,14 +971,14 @@
                 const historyData = await historyResponse.json();
                 updateHistoryChart(historyData);
             } catch (e) { console.error("Failed to fetch history data:", e); }
-            
+
             try {
                 const liveBandsResponse = await fetch('/live_bands.json');
                 const liveBandsData = await liveBandsResponse.json();
                 updateLiveBandsChart(liveHFChart, liveBandsData.hf);
                 updateLiveBandsChart(liveVHFChart, liveBandsData.vhf);
             } catch (e) { console.error("Failed to fetch live bands data:", e); }
-            
+
             await loadWatchlist();
         }
 
@@ -827,15 +986,15 @@
             const bodyId = `spots-body-${type}`;
             const filterBand = document.getElementById(`${type}-band-filter`).value;
             const filterMode = document.getElementById(`${type}-mode-filter`).value;
-            
+
             let url = `/spots.json?band=${filterBand}&mode=${filterMode}`;
-            
+
             try {
                 const response = await fetch(url);
                 const spots = await response.json();
                 const tbody = document.getElementById(bodyId);
-                tbody.innerHTML = ''; 
-                
+                tbody.innerHTML = '';
+
                 if (spots.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No ${type.toUpperCase()} spots received.</td></tr>`;
                 } else {
@@ -843,9 +1002,8 @@
                         if (spot.type.toLowerCase() === type) {
                             const row = tbody.insertRow();
                             const isWantedCall = isWanted(spot.dx_call);
-                            // Utilise la classe pour forcer le gras blanc si ce n'est pas dans la Watchlist
-                            const callsignClass = isWantedCall ? 'wl-table call' : 'spot-call-white-bold'; 
-                            
+                            const callsignClass = isWantedCall ? 'wl-table call' : 'spot-call-white-bold';
+
                             row.innerHTML = `
                                 <td>${spot.time}</td>
                                 <td>${spot.freq}</td>
@@ -863,31 +1021,26 @@
                                      addToWatchlist(spot.dx_call);
                                 }
                             };
+                            // Annonce vocale (vérifie à l'intérieur de la fonction si la distance correspond ET si déjà annoncé)
+                            announceSpot(spot);
                         }
                     });
                 }
-                
-                if (type === 'hf') {
-                    const allSpotsResponse = await fetch('/spots.json');
-                    const allSpots = await allSpotsResponse.json();
-                    updateMaps(allSpots); 
-                }
-
             } catch(e) {
                 console.error(`Failed to fetch ${type} spots:`, e);
                 document.getElementById(bodyId).innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--alert);">Connection Error.</td></tr>`;
             }
         }
-        
+
         function displayRanking(ulId, ranks) {
             const ul = document.getElementById(ulId);
             ul.innerHTML = '';
-            
+
             if (ranks.length === 0) {
                 ul.innerHTML = '<li>No ranking data.</li>';
                 return;
             }
-            
+
             ranks.forEach(spot => {
                 const li = document.createElement('li');
                 li.className = 'ranking-item';
@@ -898,20 +1051,20 @@
                 ul.appendChild(li);
             });
         }
-        
+
         function displaySurges(bands) {
             const container = document.getElementById('surge-container');
             const panel = document.getElementById('surge-panel');
             container.innerHTML = '';
-            
+
             if (bands.length === 0) {
                 container.textContent = 'No active surges...';
-                panel.classList.remove('active-surge'); 
+                panel.classList.remove('active-surge');
                 return;
             }
-            
-            panel.classList.add('active-surge'); 
-            
+
+            panel.classList.add('active-surge');
+
             bands.forEach(band => {
                 const span = document.createElement('span');
                 span.className = 'surge-band';
@@ -919,7 +1072,6 @@
                 container.appendChild(span);
             });
         }
-
 
         // --- DRAG & DROP / PERSISTANCE ---
         function savePanelOrder(columnId) {
@@ -939,7 +1091,6 @@
                     const id = panel.getAttribute('data-panel-id');
                     if (id) panels[id] = panel;
                 });
-
                 panelIds.forEach(id => {
                     if (panels[id]) col.appendChild(panels[id]);
                 });
@@ -949,12 +1100,12 @@
         function initDragAndDrop() {
             ['col1', 'col2'].forEach(columnId => {
                 const colElement = document.getElementById(columnId);
-                loadPanelOrder(columnId); 
-                
+                loadPanelOrder(columnId);
+
                 Sortable.create(colElement, {
                     group: 'panels',
                     animation: 150,
-                    handle: '.dd-handle', 
+                    handle: '.dd-handle',
                     onEnd: function (evt) {
                         savePanelOrder(evt.from.id);
                         if (evt.from.id !== evt.to.id) {
@@ -964,27 +1115,28 @@
                 });
             });
         }
-        
+
         // --- THÈME ---
         function toggleTheme() {
-            const themes = ['softtech', 'dark'];
+            // Liste des thèmes (incluant Matrix et Sunset)
+            const themes = ['softtech', 'dark', 'matrix', 'sunset'];
             const currentTheme = document.body.getAttribute('data-theme') || 'softtech';
             const currentIndex = themes.indexOf(currentTheme);
             const nextIndex = (currentIndex + 1) % themes.length;
             const newTheme = themes[nextIndex];
-            
+
             document.body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             initThemeDisplay();
-            
-            // Mise à jour des couleurs des axes des graphiques
-            if (historyChart) { 
-                 const color = newTheme === 'dark' ? '#f0f0f0' : '#a0a0a0';
+
+            // S'assurer que les couleurs des graphiques s'adaptent (Ticks et Titres)
+            if (historyChart) {
+                 const color = (newTheme === 'softtech') ? '#a0a0a0' : '#f0f0f0';
                  historyChart.options.scales.x.ticks.color = color;
                  historyChart.options.scales.x.title.color = color;
                  historyChart.options.scales.y.ticks.color = color;
                  historyChart.options.scales.y.title.color = color;
-                 historyChart.update(); 
+                 historyChart.update();
             }
             if (liveHFChart) { liveHFChart.update(); }
             if (liveVHFChart) { liveVHFChart.update(); }
@@ -993,43 +1145,68 @@
         function initThemeDisplay() {
             const savedTheme = localStorage.getItem('theme') || 'softtech';
             document.body.setAttribute('data-theme', savedTheme);
-            
+
             let displayName;
             switch(savedTheme) {
                 case 'dark': displayName = 'Dark'; break;
+                case 'matrix': displayName = 'Matrix'; break;
+                case 'sunset': displayName = 'Sunset'; break;
                 default: displayName = 'SoftTech';
             }
             document.getElementById('display-mode').textContent = displayName;
         }
-        
+
         // --- FILTRES ---
         function populateFilterOptions() {
             const hfBandSelect = document.getElementById('hf-band-filter');
             const vhfBandSelect = document.getElementById('vhf-band-filter');
-            
-            HF_BANDS.forEach(band => {
-                const opt = document.createElement('option');
-                opt.value = band; opt.textContent = band;
-                hfBandSelect.appendChild(opt);
-            });
-            VHF_BANDS.forEach(band => {
-                const opt = document.createElement('option');
-                opt.value = band; opt.textContent = band;
-                vhfBandSelect.appendChild(opt);
-            });
 
             hfBandSelect.addEventListener('change', () => updateSpots('hf'));
             document.getElementById('hf-mode-filter').addEventListener('change', () => updateSpots('hf'));
-            
+
             vhfBandSelect.addEventListener('change', () => updateSpots('vhf'));
             document.getElementById('vhf-mode-filter').addEventListener('change', () => updateSpots('vhf'));
+
+            // Filtre de distance vocale (persistance)
+            const distanceFilterSelect = document.getElementById('voice-distance-filter');
+            const savedDistanceFilter = localStorage.getItem('voiceDistanceFilter');
+            if (savedDistanceFilter) {
+                distanceFilterSelect.value = savedDistanceFilter;
+                voiceDistanceFilter = savedDistanceFilter;
+            }
+
+            distanceFilterSelect.addEventListener('change', function() {
+                voiceDistanceFilter = this.value;
+                localStorage.setItem('voiceDistanceFilter', voiceDistanceFilter);
+                console.log('Voice distance filter set to:', voiceDistanceFilter);
+            });
+
+            // Filtre de langue vocale (persistance)
+            const languageFilterSelect = document.getElementById('voice-language-filter');
+            const savedLanguageFilter = localStorage.getItem('voiceLanguageFilter');
+            if (savedLanguageFilter) {
+                languageFilterSelect.value = savedLanguageFilter;
+                voiceLanguageFilter = savedLanguageFilter;
+            }
+
+            languageFilterSelect.addEventListener('change', function() {
+                voiceLanguageFilter = this.value;
+                localStorage.setItem('voiceLanguageFilter', voiceLanguageFilter);
+                console.log('Voice language filter set to:', voiceLanguageFilter);
+            });
         }
 
-
-        // --- INITIALISATION SÉCURISÉE (POINT DE PIVOT) ---
+        // --- INITIALISATION SÉCURISÉE ---
         async function initApp() {
              console.log("Starting client-side initialization...");
-             
+
+             // Initialisation de l'état de la synthèse vocale (avec persistance)
+             const savedVoiceState = localStorage.getItem('voiceEnabled');
+             isVoiceEnabled = (savedVoiceState === 'true' || savedVoiceState === null); // Activé par défaut
+             if (!isVoiceEnabled) {
+                document.getElementById('synth-toggle-button').textContent = '🔇 VOICE OFF';
+             }
+
              try {
                  const locResponse = await fetch('/user_location.json');
                  const locData = await locResponse.json();
@@ -1039,50 +1216,50 @@
                  console.error("CRITICAL: Failed to load user location. Using default QRA:", e);
                  userLatLng = qraToLatLng(DEFAULT_QRA);
              }
-             
+
              try {
                  await loadWatchlist();
-                 populateFilterOptions();
+                 populateFilterOptions(); // Initialise aussi les filtres vocaux
              } catch (e) {
                   console.error("CRITICAL: Failed to load and display Watchlist/Filters.", e);
              }
-             
+
              try {
                  mapHF = initMap('map-hf');
                  mapVHF = initMap('map-vhf');
                  userMarkerHF = addUserMarker(mapHF, userLatLng[0], userLatLng[1]);
                  userMarkerVHF = addUserMarker(mapVHF, userLatLng[0], userLatLng[1]);
-                 mapHF.invalidateSize(); 
-                 mapVHF.invalidateSize(); 
+                 mapHF.invalidateSize();
+                 mapVHF.invalidateSize();
              } catch (e) {
                  console.error("CRITICAL: Failed to initialize Maps/Markers. Check Leaflet scripts.", e);
              }
-     
+
              try {
-                  initCharts(); 
+                  initCharts();
              } catch (e) {
                  console.error("CRITICAL: Failed to initialize Charts. Check Chart.js script.", e);
              }
-            
+
              try {
-                 initDragAndDrop(); 
+                 initDragAndDrop();
              } catch (e) {
                  console.error("Failed to initialize Drag and Drop. Check Sortable.js script.", e);
              }
-     
-             initThemeDisplay(); 
-             
-             setInterval(updateTimeDisplay, 1000); 
-             
+
+             initThemeDisplay();
+
+             setInterval(updateTimeDisplay, 1000);
+
              try {
-                 await updateData(); 
+                 await updateData();
              } catch (e) {
                  console.error("CRITICAL: Initial updateData() failed. Spots/Ticker may not show initially.", e);
              }
-     
-             setInterval(updateData, 30000); 
-             
-             // Listener pour la mise à jour du QRA
+
+             // Appel principal de mise à jour toutes les 30 secondes
+             setInterval(updateData, 30000);
+
              document.getElementById('qra-form').addEventListener('submit', async function(event) {
                  event.preventDefault();
                  const formData = new FormData(event.target);
@@ -1100,7 +1277,7 @@
                         userMarkerVHF.setLatLng(userLatLng);
                         mapHF.setView(userLatLng, mapHF.getZoom());
                         mapVHF.setView(userLatLng, mapVHF.getZoom());
-                        await updateData(); 
+                        await updateData();
                         alert(`QTH updated to ${locData.qra}`);
                      } else {
                         alert('QTH update failed. Please check the locator format.');
@@ -1110,19 +1287,17 @@
                      alert('Network error while updating QRA.');
                  }
              });
-             
-             // Listener pour l'ajout à la Watchlist
+
              document.getElementById('add-wl-form').addEventListener('submit', async function(event) {
                  event.preventDefault();
                  const callsignInput = document.getElementById('wl_callsign');
                  const callsign = callsignInput.value.trim().toUpperCase();
                  if (callsign) {
                      await addToWatchlist(callsign);
-                     callsignInput.value = ''; 
+                     callsignInput.value = '';
                  }
              });
          }
-
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>

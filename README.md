@@ -1,70 +1,81 @@
-# 🛰️ NEURAL DX v4.1 - Design & Ergonomie Améliorés 🚀
+NEURAL DX WATCHER V4.2
+🛰️ Introduction
 
-## 💡 Résumé du projet
+NEURAL DX WATCHER V4.2 est une application web conçue pour les radioamateurs (DXers). Elle offre un tableau de bord en temps réel pour suivre les spots DX (stations lointaines) sur les bandes HF et VHF/UHF, centralisant les alertes, les statistiques, l'historique d'activité et la cartographie.
 
-**NEURAL DX v4.1** est une station de surveillance radioamateur en temps réel. Basée sur Python/Flask (backend) et une interface web dynamique (HTML/CSS/JavaScript), cette version combine les performances des précédentes versions avec une flexibilité d'affichage et une meilleure ergonomie. Elle agrège et analyse les données de spots DX, les visualise sur des cartes en direct, calcule la distance des contacts et génère des alertes de propagation ciblées.
+Cette version 4.2 apporte des améliorations majeures en termes de performances, de graphiques historiques et intègre des contrôles avancés de la synthèse vocale pour ne manquer aucune opportunité DX.
+✨ Fonctionnalités Principales
 
----
+    Temps Réel: Affichage des spots DX en temps réel sur les bandes HF et VHF/UHF.
 
-## 🆕 Nouveautés et Améliorations de la Version 4.1
+    Synthèse Vocale Avancée (Nouveau): Annonce sonore des nouveaux spots, avec possibilité d'activer/désactiver la voix et de filtrer les alertes par distance (ex: DX > 10000 km) par rapport à votre QRA.
 
-Cette version se concentre sur l'amélioration de l'expérience utilisateur et de l'esthétique du tableau de bord.
+    Historique 30min/12h: Graphique d'activité des bandes sur une fenêtre de 12 heures, avec une granularité de 30 minutes, idéal pour suivre les ouvertures.
 
-* **Design des Callsigns (Nouveau) :**
-    * Les indicatifs dans les tableaux DX Spots sont désormais affichés dans un **badge de type "console"** (`.callsign-badge`) en couleur d'accentuation (Néon/SoftTech) pour une lisibilité maximale et une esthétique "système".
-* **Ergonomie du Dashboard :**
-    * **Watchlist :** Ajout d'un champ de saisie direct dans le panneau Watchlist pour un ajout rapide d'indicatifs.
-    * **Distance (km) :** Restauration de la colonne `Dist (km)` dans les tableaux HF et VHF.
-* **Visualisation des Données :**
-    * **Cartographie :** Le fond de carte des panneaux HF/VHF est désormais un **fond sombre/noir** pour un meilleur contraste avec les tracés de propagation.
-    * **Graphiques Live :** Les graphiques "LIVE BAND ACTIVITY" (HF et VHF) utilisent à nouveau le format **Bargraph (Barres)**, plus adapté à la comparaison d'activité en temps réel que les anneaux.
-* **Ordonnancement par Glisser-Déposer (Drag & Drop) :** Les panneaux d'information des colonnes latérales peuvent être réorganisés par l'utilisateur avec la souris. Cet ordre est sauvegardé dans le navigateur (`localStorage`).
-* **Thèmes Dynamiques :** Le bouton `THEME` affiche désormais le nom du thème actif et bascule entre les styles disponibles (`SOFTTECH`, `DARK`).
+    Cartographie Intégrée: Deux cartes distinctes (HF et VHF/UHF) affichant la localisation des spots DX par rapport à votre QTH.
 
----
+    Watchlist: Suivi prioritaire des indicatifs d'appel (Callsigns) importants.
 
-## ✨ Fonctionnalités Clés
+    Surge Alerts: Détection des pics d'activité inhabituels sur une bande donnée.
 
-* **Calcul de distance personnalisé** basé sur votre QRA.
-* **Cartographie en temps réel** (Leaflet) des spots.
-* **Systèmes d'alerte SURGE** (détection d'ouvertures subites).
-* **Watchlist** pour le suivi d'indicatifs spécifiques.
-* **Filtres** par bande et par mode dans les spots HF et VHF.
-* **Statistiques historiques** (24h) et en direct.
+    Panneaux Personnalisables: Fonctionnalité Drag & Drop pour organiser les panneaux selon vos préférences (l'ordre est sauvegardé).
 
----
+    Thèmes: Bascule simple entre le mode SoftTech et le mode Dark.
 
-## 💻 Aperçu de l'Interface
+📸 Aperçu de l'Interface
+⚙️ Installation & Démarrage
 
-![Apercu du Dashboard](apercu.png)
+Ce projet est basé sur Python (Flask) pour le backend et HTML/CSS/JavaScript (Leaflet, Chart.js) pour l'interface client.
+Prérequis
 
+    Python 3.x
 
----
+    Accès Internet
 
-## 🖱️ Utilisation de l'interface
+    Bibliothèques Python listées dans requirements.txt (ou installez manuellement flask, telnetlib, requests, feedparser, etc.)
 
-### 1. Personnalisation de l'Affichage
+Étapes de Démarrage
 
-* **Thèmes :** Cliquez sur le bouton `🔆` dans l'en-tête pour changer l'apparence entre **SoftTech** et **Dark Mode**.
-* **Glisser-Déposer :** Cliquez et maintenez le clic sur l'icône `⋮⋮` de l'en-tête d'un panneau pour le déplacer et changer son ordre d'affichage. L'ordre est conservé au rechargement.
+    Clonez le dépôt :
+    Bash
 
-### 2. Saisie du QRA Locator
+git clone https://www.wordreference.com/fren/d%C3%A9p%C3%B4t
+cd neural-dx-watcher-v4
 
-Dans le panneau **QTH & CONFIG** :
+Installez les dépendances Python :
+Bash
 
-1.  Entrez votre QRA Locator (ex: `JN33`, `JN33BB`).
-2.  Cliquez sur **Update**.
-3.  Le système centre les cartes sur votre position et met à jour tous les calculs de distance.
+pip install -r requirements.txt
 
-### 3. Watchlist
+Configurez votre QRA : Ouvrez webapp.py et modifiez les variables de configuration au début du fichier, notamment MY_CALL et DEFAULT_QRA.
 
-* Entrez un indicatif (ex: `K1TTT`) dans le champ de saisie du panneau **WATCHLIST** et cliquez sur **Add**.
-* Les spots pour cet indicatif seront mis en évidence (fond jaune).
+Lancez l'application :
+Bash
 
-### 4. Systèmes d'alerte
+    python webapp.py
 
-* **SURGE :** Une bannière clignotante apparaît si le nombre de spots sur une bande dépasse le seuil défini dans `webapp.py`.
+    L'application sera accessible via votre navigateur à l'adresse par défaut : http://127.0.0.1:8000 (ou le port configuré).
 
-### Licence MIT
-feel free to modify and share . Created for the Amateur Radio Communauty by Eric F1SMV, à l'aide de #Gimini3
----
+🛠️ Configuration (webapp.py)
+
+Les principaux paramètres de l'application se trouvent au début du fichier webapp.py :
+Variable	Description	Valeur par Défaut
+MY_CALL	Votre indicatif d'appel.	F1SMV
+DEFAULT_QRA	Votre localisateur QRA (ex: JN23).	JN23
+SPD_THRESHOLD	Seuil du Score de Priorité DX pour les alertes (spots en rouge).	70
+SPOT_LIFETIME	Durée pendant laquelle un spot reste actif (en secondes).	1800 (30 minutes)
+🎙️ Utilisation du Filtre Vocal de Distance
+
+Le filtre vocal est accessible dans l'en-tête, à côté des indicateurs de temps et du bouton 🔊 VOICE ON/OFF.
+
+Ce filtre permet de n'entendre que les annonces vocales pour les spots correspondant à la plage de distance sélectionnée par rapport à votre QRA :
+
+    ALL: Annonce tous les spots (par défaut).
+
+    < 5000 km: Annonce uniquement les spots de proximité (DX moins lointain).
+
+    5000 - 10000 km: Annonce les DX à moyenne distance.
+
+    > 10000 km: Annonce uniquement les DX "Long Haul" (DX difficiles).
+
+Feel free to modify and share. Created by F1SMV Eric for Ham Radio Communauty with #GIMINI3.
