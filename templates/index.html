@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL DX v4.2 - 30min History</title>
+    <title>NEURAL DX v4.3 - 30min History</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -269,6 +269,14 @@
             font-size: 1.2em;
             cursor: pointer;
             margin-left: 10px;
+            text-decoration: none; /* Ajout pour la balise <a> */
+            display: inline-block; /* Ajout pour la balise <a> */
+            font-family: 'Orbitron', sans-serif;
+            padding: 5px 10px;
+        }
+        .icon-button:hover {
+             background-color: rgba(0, 243, 255, 0.1);
+             border-radius: 3px;
         }
         /* Style spécifique pour le bouton Synthèse Vocale et Filtres */
         #synth-toggle-button, #voice-distance-filter, #voice-language-filter {
@@ -352,13 +360,15 @@
 </head>
 <body>
     <div id="header">
-        <div id="title">NEURAL DX WATCHER V4.2</div>
+        <div id="title">NEURAL DX WATCHER V4.3</div>
         <div id="controls">
             <span id="indicators">
                 <div class="indicator-item">QRA: <span id="qra-display">{{ user_qra }}</span></div>
                 <div class="indicator-item">UTC: <span id="utc-time"></span></div>
                 <div class="indicator-item">LOC: <span id="local-time"></span></div>
                 <div class="indicator-item">MODE: <span id="display-mode">SoftTech</span></div>
+                
+                <a href="analysis.html" class="icon-button" title="Visualiser les algorithmes d'analyse">📊 AI INSIGHT</a>
             </span>
             <select id="voice-distance-filter" title="Filtrer les annonces vocales par distance">
                 <option value="ALL">Voice Dist: ALL</option>
@@ -530,9 +540,7 @@
         // --- VARIABLES GLOBALES (DU BACKEND) ---
         const MY_CALL = '{{ my_call }}';
         const SPD_THRESHOLD = {{ spd_threshold }};
-        const HF_BANDS = JSON.parse('{{ hf_bands | tojson }}');
-        const VHF_BANDS = JSON.parse('{{ vhf_bands | tojson }}');
-        const BAND_COLORS = JSON.parse('{{ band_colors | tojson }}');
+        // NOTE: HF_BANDS, VHF_BANDS, BAND_COLORS sont supposées être parsées correctement par Jinja2 ou votre moteur de template
         const DEFAULT_QRA = '{{ user_qra }}';
 
         // --- ÉTATS GLOBAUX (CLIENT) ---
@@ -545,8 +553,8 @@
         let historyChart, liveHFChart, liveVHFChart;
         let isVoiceEnabled = true;
         let voiceDistanceFilter = 'ALL';
-        let voiceLanguageFilter = 'fr-FR'; // NOUVEAU: État du filtre de langue
-        let announcedSpots = new Set(); // Set pour mémoriser les spots déjà annoncés vocalement
+        let voiceLanguageFilter = 'fr-FR'; 
+        let announcedSpots = new Set(); 
 
         // --- UTILITAIRES ---
         function qraToLatLng(qra) {
@@ -587,6 +595,11 @@
         function isWanted(call) {
             return watchlist.has(call.toUpperCase());
         }
+        
+        // UTILITY: Récupère la valeur d'une variable CSS
+        function getCssVar(name) {
+             return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a0a0a0';
+        }
 
         // --- Synthèse vocale ---
         function toggleVoiceSynth() {
@@ -597,7 +610,7 @@
                 console.log('Synthèse vocale activée.');
             } else {
                 button.textContent = '🔇 VOICE OFF';
-                window.speechSynthesis.cancel(); // Annule toute parole en cours
+                window.speechSynthesis.cancel(); 
                 console.log('Synthèse vocale désactivée.');
             }
             localStorage.setItem('voiceEnabled', isVoiceEnabled);
@@ -605,14 +618,13 @@
 
         function isDistanceFiltered(distanceKm) {
             const filter = voiceDistanceFilter;
-
             if (filter === 'ALL') {
                 return true;
-            } else if (filter === 'LOW') { // < 5000 km
+            } else if (filter === 'LOW') { 
                 return distanceKm < 5000;
-            } else if (filter === 'MID') { // 5000 - 10000 km
+            } else if (filter === 'MID') { 
                 return distanceKm >= 5000 && distanceKm <= 10000;
-            } else if (filter === 'HIGH') { // > 10000 km
+            } else if (filter === 'HIGH') { 
                 return distanceKm > 10000;
             }
             return true;
@@ -623,32 +635,25 @@
                 return;
             }
 
-            // Clé unique pour identifier le spot (Call, Freq, Mode, Time)
             const spotKey = `${spot.dx_call}-${spot.freq}-${spot.time}`; 
 
             if (announcedSpots.has(spotKey)) {
-                // Le spot a déjà été annoncé, on ignore
                 return;
             }
             
-            // Vérification du filtre de distance
             if (!isDistanceFiltered(spot.distance_km)) {
                 return;
             }
 
-            // Si toutes les conditions sont remplies, on parle et on mémorise la clé
             announcedSpots.add(spotKey);
 
             const message = new SpeechSynthesisUtterance();
-            
-            // Utilisation de la langue sélectionnée
             message.lang = voiceLanguageFilter;
             message.rate = 1.0;
             
-            // Adapter le message à la langue sélectionnée
             if (voiceLanguageFilter === 'fr-FR') {
                 message.text = `Spot détecté : ${spot.dx_call} sur ${spot.band}, mode ${spot.mode}, fréquence ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilomètres.`;
-            } else { // en-US
+            } else { 
                 message.text = `DX spot: ${spot.dx_call} on ${spot.band} band, mode ${spot.mode}, frequency ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilometers.`;
             }
 
@@ -785,6 +790,14 @@
 
         // --- GRAPHIQUES (CHARTS.JS) ---
         function initCharts() {
+            // Utilise la fonction getCssVar pour l'initialisation des couleurs
+            const mainColor = getCssVar('--text-main');
+            const accentColor = getCssVar('--accent');
+
+            Chart.defaults.color = mainColor; // Définit la couleur par défaut pour les ticks, etc.
+            Chart.defaults.font.family = 'Share Tech Mono', 'monospace';
+
+
             const chartOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -792,13 +805,13 @@
                     legend: {
                         position: 'top',
                         labels: {
-                            color: '#ffffff',  // Libellés en blanc
+                            color: mainColor,  // COULEUR DYNAMIQUE
                         }
                     },
                     title: {
                         display: true,
                         text: 'HISTORIQUE DES SPOTS (30MIN/12H)',
-                        color: 'var(--accent)',
+                        color: accentColor, // COULEUR DYNAMIQUE ACCENT
                         font: {
                             size: 14,
                             family: "'Orbitron', sans-serif"
@@ -810,19 +823,19 @@
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         titleColor: '#ffffff',
                         bodyColor: '#ffffff',
-                        borderColor: 'var(--accent)',
+                        borderColor: accentColor,
                         borderWidth: 1
                     }
                 },
                 scales: {
                     x: {
                         ticks: {
-                            color: '#ffffff',  // Libellés X en blanc
+                            color: mainColor,  // COULEUR DYNAMIQUE
                         },
                         title: {
                             display: true,
                             text: 'Heure (UTC - 30min)',
-                            color: '#ffffff'  // Titre X en blanc
+                            color: mainColor // COULEUR DYNAMIQUE
                         },
                         grid: {
                             color: '#333'
@@ -831,12 +844,12 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: '#ffffff',  // Libellés Y en blanc
+                            color: mainColor,  // COULEUR DYNAMIQUE
                         },
                         title: {
                             display: true,
                             text: 'Nombre de spots',
-                            color: '#ffffff'  // Titre Y en blanc
+                            color: mainColor  // COULEUR DYNAMIQUE
                         },
                         grid: {
                             color: '#333'
@@ -856,7 +869,7 @@
                 options: chartOptions
             });
 
-            // 2. Live HF Chart (Bar Chart)
+            // 2. Live HF Chart (Bar Chart) - Cloner les options pour éviter les références
             const liveHFCtx = document.getElementById('liveHFChart').getContext('2d');
             liveHFChart = new Chart(liveHFCtx, {
                 type: 'bar',
@@ -867,7 +880,7 @@
                 options: JSON.parse(JSON.stringify(chartOptions))
             });
 
-            // 3. Live VHF Chart (Bar Chart)
+            // 3. Live VHF Chart (Bar Chart) - Cloner les options
             const liveVHFCtx = document.getElementById('liveVHFChart').getContext('2d');
             liveVHFChart = new Chart(liveVHFCtx, {
                 type: 'bar',
@@ -879,18 +892,56 @@
             });
         }
 
+        // NOUVEAU: Fonction de mise à jour des couleurs des graphiques après un changement de thème
+        function updateChartColors() {
+             const mainColor = getCssVar('--text-main');
+             const accentColor = getCssVar('--accent');
+            
+             // 1. Update Global Defaults (pour les nouveaux éléments)
+             Chart.defaults.color = mainColor;
+             
+             // 2. Update History Chart (et force la mise à jour des couleurs non-défaut)
+             if (historyChart) {
+                 historyChart.options.plugins.legend.labels.color = mainColor;
+                 historyChart.options.plugins.title.color = accentColor;
+                 historyChart.options.scales.x.ticks.color = mainColor;
+                 historyChart.options.scales.x.title.color = mainColor;
+                 historyChart.options.scales.y.ticks.color = mainColor;
+                 historyChart.options.scales.y.title.color = mainColor;
+                 historyChart.options.plugins.tooltip.borderColor = accentColor;
+                 historyChart.update();
+             }
+             // 3. Update Live Charts (ils héritent déjà des defaults, mais on force l'update)
+             if (liveHFChart) { 
+                liveHFChart.options.plugins.title.color = accentColor;
+                liveHFChart.options.scales.x.ticks.color = mainColor;
+                liveHFChart.options.scales.y.ticks.color = mainColor;
+                liveHFChart.update(); 
+             }
+             if (liveVHFChart) { 
+                liveVHFChart.options.plugins.title.color = accentColor;
+                liveVHFChart.options.scales.x.ticks.color = mainColor;
+                liveVHFChart.options.scales.y.ticks.color = mainColor;
+                liveVHFChart.update(); 
+             }
+        }
+
+
         function updateHistoryChart(data) {
+            // Remplacez cette variable par la version parsée par Jinja2
+            const BAND_COLORS_JS = JSON.parse('{{ band_colors | tojson }}'); 
+
             const bands = Object.keys(data.data);
             const datasets = bands.map(band => {
                 return {
                     label: band.toUpperCase(),
                     data: data.data[band],
-                    borderColor: BAND_COLORS[band] || '#ccc',
-                    backgroundColor: (BAND_COLORS[band] || '#ccc') + '33',
+                    borderColor: BAND_COLORS_JS[band] || '#ccc',
+                    backgroundColor: (BAND_COLORS_JS[band] || '#ccc') + '33',
                     tension: 0.3,
                     fill: true,
                     pointRadius: 3,
-                    pointBackgroundColor: BAND_COLORS[band] || '#ccc'
+                    pointBackgroundColor: BAND_COLORS_JS[band] || '#ccc'
                 };
             });
 
@@ -918,30 +969,27 @@
         function clearExpiredAnnouncedSpots(allActiveSpots) {
              const activeKeys = new Set(allActiveSpots.map(s => `${s.dx_call}-${s.freq}-${s.time}`));
              
-             // Créer un nouvel ensemble (Set) avec uniquement les spots actifs qui ont été annoncés
              const newAnnouncedSpots = new Set();
              announcedSpots.forEach(key => {
                  if (activeKeys.has(key)) {
                      newAnnouncedSpots.add(key);
                  }
              });
-             announcedSpots = newAnnouncedSpots; // Remplacer l'ancien Set par le nouveau filtré
+             announcedSpots = newAnnouncedSpots; 
         }
 
 
         // --- MISE A JOUR DES DONNÉES ---
         async function updateData() {
             console.log("Fetching new data...");
-            // Exécuter les mises à jour pour les deux types de spots
             await updateSpots('hf');
             await updateSpots('vhf');
             
-            // Récupérer tous les spots pour nettoyer le Set `announcedSpots`
             try {
                 const allSpotsResponse = await fetch('/spots.json');
                 const allSpots = await allSpotsResponse.json();
                 updateMaps(allSpots);
-                clearExpiredAnnouncedSpots(allSpots); // Nettoyage des spots annoncés expirés
+                clearExpiredAnnouncedSpots(allSpots); 
             } catch(e) { console.error("Failed to fetch all spots for map/cleanup:", e); }
 
             try {
@@ -1021,7 +1069,6 @@
                                      addToWatchlist(spot.dx_call);
                                 }
                             };
-                            // Annonce vocale (vérifie à l'intérieur de la fonction si la distance correspond ET si déjà annoncé)
                             announceSpot(spot);
                         }
                     });
@@ -1118,7 +1165,6 @@
 
         // --- THÈME ---
         function toggleTheme() {
-            // Liste des thèmes (incluant Matrix et Sunset)
             const themes = ['softtech', 'dark', 'matrix', 'sunset'];
             const currentTheme = document.body.getAttribute('data-theme') || 'softtech';
             const currentIndex = themes.indexOf(currentTheme);
@@ -1128,18 +1174,7 @@
             document.body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             initThemeDisplay();
-
-            // S'assurer que les couleurs des graphiques s'adaptent (Ticks et Titres)
-            if (historyChart) {
-                 const color = (newTheme === 'softtech') ? '#a0a0a0' : '#f0f0f0';
-                 historyChart.options.scales.x.ticks.color = color;
-                 historyChart.options.scales.x.title.color = color;
-                 historyChart.options.scales.y.ticks.color = color;
-                 historyChart.options.scales.y.title.color = color;
-                 historyChart.update();
-            }
-            if (liveHFChart) { liveHFChart.update(); }
-            if (liveVHFChart) { liveVHFChart.update(); }
+            updateChartColors(); // Met à jour les couleurs des graphiques
         }
 
         function initThemeDisplay() {
@@ -1200,9 +1235,8 @@
         async function initApp() {
              console.log("Starting client-side initialization...");
 
-             // Initialisation de l'état de la synthèse vocale (avec persistance)
              const savedVoiceState = localStorage.getItem('voiceEnabled');
-             isVoiceEnabled = (savedVoiceState === 'true' || savedVoiceState === null); // Activé par défaut
+             isVoiceEnabled = (savedVoiceState === 'true' || savedVoiceState === null); 
              if (!isVoiceEnabled) {
                 document.getElementById('synth-toggle-button').textContent = '🔇 VOICE OFF';
              }
@@ -1219,7 +1253,7 @@
 
              try {
                  await loadWatchlist();
-                 populateFilterOptions(); // Initialise aussi les filtres vocaux
+                 populateFilterOptions(); 
              } catch (e) {
                   console.error("CRITICAL: Failed to load and display Watchlist/Filters.", e);
              }
@@ -1235,8 +1269,10 @@
                  console.error("CRITICAL: Failed to initialize Maps/Markers. Check Leaflet scripts.", e);
              }
 
+             initThemeDisplay(); // Doit être fait avant l'initialisation des charts pour les couleurs
+
              try {
-                  initCharts();
+                  initCharts(); // Les charts sont initialisés avec les bonnes couleurs de thème
              } catch (e) {
                  console.error("CRITICAL: Failed to initialize Charts. Check Chart.js script.", e);
              }
@@ -1246,8 +1282,6 @@
              } catch (e) {
                  console.error("Failed to initialize Drag and Drop. Check Sortable.js script.", e);
              }
-
-             initThemeDisplay();
 
              setInterval(updateTimeDisplay, 1000);
 

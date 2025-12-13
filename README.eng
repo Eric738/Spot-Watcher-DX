@@ -1,61 +1,81 @@
-# 🛰️ NEURAL DX v4.2 - Enhanced Design & Ergonomics 🚀
+NEURAL DX WATCHER V4.3 🛰️ Introduction
 
-## 💡 Project Summary
+NEURAL DX WATCHER V4.3 is a next-generation web application designed specifically for amateur radio operators (DXers). It offers a real-time dashboard for tracking DX spots (distant stations) on HF and VHF/UHF bands, complemented by an advanced cognitive analysis module. The goal is to centralize propagation data, alerts, activity history, and mapping so you never miss a DX opportunity.
 
-**NEURAL DX v4.2** is a real-time amateur radio monitoring station. Built on Python/Flask (backend) and a dynamic web interface (HTML/CSS/JavaScript), this version combines the performance of previous versions with enhanced display flexibility and better ergonomics. It aggregates and analyzes DX spot data, visualizes them on live maps, calculates contact distances, and generates targeted propagation alerts.
+This version 4.3 incorporates very short-term prediction granularity (30 min / 1h) into its AI model and ensures robust, portable navigation between its modules.
 
----
+✨ General Features
 
-## 🆕 New Features and Improvements in Version 4.2
+    Real-Time: Instant display of DX spots.
 
-This version focuses on improving the user experience and the dashboard's aesthetic.
+    Customizable Panels: Drag & Drop functionality to organize panels on both pages (Dashboard and Analysis). The order is saved locally.
 
-* **Callsign Design (NEW) :**
-    * Callsigns in the DX Spots tables are now displayed in a **"console badge"** style (using the `.callsign-badge` class) with the neon/accent color. This significantly enhances readability and aesthetic consistency with the "system" theme.
-* **Dashboard Ergonomics :**
-    * **Watchlist Input :** A direct input field has been added to the Watchlist panel for quick addition of callsigns.
-    * **Distance Column (km) :** The `Dist (km)` column has been restored to both HF and VHF tables.
-* **Data Visualization :**
-    * **Cartography :** The background of the HF/VHF map panels is now a **dark/black background** for better contrast with propagation traces.
-    * **Live Charts :** The "LIVE BAND ACTIVITY" charts (HF and VHF) are now correctly displayed as **Bar Charts (Bargraphs)**, which are more suitable for comparing real-time band activity than ring charts.
-* **Drag & Drop Reordering :** The information panels in the side columns can be reordered by the user using drag-and-drop. This order is saved in the browser's local storage.
-* **Dynamic Themes :** The `🔆` button now displays the active theme name and correctly toggles between available styles (`SOFTTECH`, `DARK`).
+    Themes: Simple toggle between SoftTech, Matrix, and Dark modes (synchronized across pages).
 
----
+    Portability: Smooth navigation between the Dashboard and Analysis pages, regardless of the server environment.
 
-## ✨ Key Features
+1. DASHBOARD (index.html) - The Real-Time Control Center
 
-* **Custom Distance Calculation** based on your QRA.
-* **Real-time Cartography** (Leaflet) of spots.
-* **SURGE Alert Systems** (detection of sudden band openings).
-* **Watchlist** for tracking specific callsigns.
-* **Filters** by band and mode in HF and VHF spots.
-* **Historical** (24h) and Live statistics.
+The Dashboard is the application's main page, designed to provide an immediate and interactive view of global DX activity.
+Module	Detailed Description
+Real-Time DX Spots	Dynamic and filterable list of all received spots. Critical spots (DX Priority Score > 70) are highlighted to alert the operator.
+Advanced Voice Synthesis	Audio announcement of new spots. A 🔊 VOICE ON/OFF button allows the voice to be toggled on or off.
+Voice Distance Filter	A selector allows voice announcements to be filtered based on distance (relative to your QRA). Options include: ALL, < 5000 km, 5000 - 10000 km, and > 10000 km (for "Long Haul" DX).
+Integrated Mapping	Two separate Leaflet maps: HF and VHF/UHF. They display the location of your QTH and active DX spots in real time.
+Activity History	A band activity graph over a 12-hour window, with 30-minute granularity, essential for identifying regular opening windows.
+Watchlist	Allows adding and removing priority callsigns. Spots matching your Watchlist are highlighted.
+QRA Management	A form allows you to quickly set your QRA locator. The update is immediate, and the QRA is displayed at the top of the page.
+Surge Alerts	Detection and display of unusual activity spikes (red alerts) on a given band, signaling a sudden opening.
+2. AI INSIGHT (analysis.html) - 24H Analysis Module
 
----
+Accessible via the 📊 AI INSIGHT button, this page uses the AI model to digest DXCC data from the last 24 hours and provide projections and rarity statistics.
+Module	Detailed Description
+COGNITIVE DX FORECAST (NEXT 48H)	Global propagation prediction based on the NEURAL v4.3 model. This line graph is vital for activity planning.
+New Short-Term Forecast Horizons	The X-axis (Time) now includes very short-term horizons for immediate decision-making: H+0.5 (30 min), H+1 (1 hour), H+6, H+24, and H+48.
+Advanced DXCC Metrics	Displays three key metrics based on the last 24 hours of activity: Calls Spotted > 10,000 km, Rarity Rate (SPD > 70), and Absolute Rare Spots (SPD > 70) (list of rare DXCC spotted).
+Unique DXCC by Mode	Bar chart showing the concentration of unique DXCC worked by mode (FT8, CW, SSB...). Useful for activity prioritization.
+Unique DXCC by Band	Bar chart showing the concentration of unique DXCC worked by band (20m, 15m, 40m...). Useful for propagation optimization.
+📸 Interface Overview
+⚙️ Installation & Startup
 
-## 🖱️ Interface Usage
+This project is built on Python (Flask) for the backend and HTML/CSS/JavaScript (Leaflet, Chart.js) for the client interface.
+Prerequisites
 
-### 1. Customizing the Display
+    Python 3.x
 
-* **Themes :** Click the `🔆` button in the header to switch the appearance between **SoftTech** and **Dark Mode**.
-* **Drag & Drop :** Click and hold the `⋮⋮` icon in the panel header (e.g., `LIVE BANDS`, `WATCHLIST`) to drag and drop it, changing its display order. The order is preserved upon reload.
+    Internet Access
 
-### 2. Setting the QRA Locator
+    Python libraries listed in requirements.txt (or install manually: flask, telnetlib, requests, feedparser, etc.)
 
-In the **QTH & CONFIG** panel:
+Startup Steps
 
-1.  Enter your QRA Locator (e.g., `JN33`, `JN33BB`).
-2.  Click **Update**.
-3.  The system centers the maps on your location and updates all distance calculations.
+    Clone the repository:
+    Bash
 
-### 3. Watchlist
+git clone gh repo clone Eric738/Spot-Watcher-DX
+cd neural-dx-watcher-v4
 
-* Enter a callsign (e.g., `K1TTT`) in the input field of the **WATCHLIST** panel and click **Add**.
-* Spots for this callsign will be highlighted (yellow background).
+Install Python dependencies:
+Bash
 
-### 4. Alert Systems
+pip install -r requirements.txt
 
-* **SURGE :** A flashing banner appears if the number of spots on a band exceeds the threshold defined in `webapp.py`.
+Configure your QRA: Open webapp.py and modify the configuration variables at the beginning of the file, especially MY_CALL and DEFAULT_QRA.
 
----
+Launch the application:
+Bash
+
+    python webapp.py
+
+    The application will be accessible via your browser at the default address: http://127.0.0.1:8000 (or the configured port).
+
+🛠️ Configuration (webapp.py)
+
+The main application parameters are located at the beginning of the webapp.py file:
+Variable	Description	Default Value
+MY_CALL	Your callsign.	F1SMV
+DEFAULT_QRA	Your QRA locator (e.g., JN23).	JN23
+SPD_THRESHOLD	DX Priority Score threshold for alerts (spots in red).	70
+SPOT_LIFETIME	Duration a spot remains active (in seconds).	1800 (30 minutes)
+
+Feel free to modify and share. Created by F1SMV Eric for Ham Radio Communauty with #GIMINI3.

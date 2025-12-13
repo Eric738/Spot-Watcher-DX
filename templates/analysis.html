@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEURAL AI v4.3 - ANALYSE DXCC 24H</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Variables de Thème (Doit correspondre à index.html) */
+        :root {
+            --bg-color: #050505; --panel-bg: #0e0e0e; --text-main: #a0a0a0; --accent: #00f3ff; --alert: #ff003c; --success: #00ff80; --warning: #ffcc00; --border: 1px solid #333; --shadow-color: rgba(0, 243, 255, 0.4); --font-display: 'Orbitron', sans-serif; --font-mono: 'Share Tech Mono', monospace;
+        }
+        body[data-theme='dark'] {
+            --bg-color: #1a1a1a; --panel-bg: #2a2a2a; --text-main: #f0f0f0; --accent: #00ff80; --alert: #ff6347; --border: 1px solid #555;
+        }
+        body[data-theme='matrix'] {
+            --bg-color: #000000; --panel-bg: #031503; --text-main: #00ff41; --accent: #00ff41; --alert: #ff004c; --border: 1px solid #005500;
+        }
+        body[data-theme='sunset'] {
+            --bg-color: #2b0c3d; --panel-bg: #4a1961; --text-main: #f0e6ff; --accent: #ff9900; --alert: #ff3366; --border: 1px solid #7c4d9e;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--panel-bg);
+            border-bottom: var(--border);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-family: var(--font-display);
+            font-size: 1.5em;
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--shadow-color);
+        }
+
+        .updated-info-header {
+            font-size: 0.75em;
+            color: var(--text-main);
+            margin-top: 5px;
+            font-family: var(--font-mono); 
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Style du bouton de retour et de thème (identique à index.html) */
+        .icon-button { 
+            background: none; 
+            border: none; 
+            color: var(--accent); 
+            font-size: 1.2em; 
+            cursor: pointer; 
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-family: var(--font-display);
+            text-decoration: none; /* Ajout pour la balise <a> */
+            display: inline-block; /* Ajout pour la balise <a> */
+        }
+        .icon-button:hover {
+             background-color: rgba(0, 243, 255, 0.1);
+             border-radius: 3px;
+        }
+
+
+        .main-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metric-panel, .chart-container, .cognitive-panel {
+            background-color: var(--panel-bg);
+            border: var(--border);
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: flex; 
+            flex-direction: column;
+            min-height: 250px;
+        }
+        
+        .metric-panel {
+             text-align: center;
+        }
+
+        .metric-panel h2, .cognitive-panel h3, .chart-container h3 {
+            font-family: var(--font-display);
+            font-size: 1em;
+            color: var(--accent);
+            margin-top: 0;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 5px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            cursor: grab;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--success);
+            text-shadow: 0 0 8px var(--success);
+            flex-shrink: 0;
+        }
+        
+        .dd-handle {
+            font-size: 1.5em;
+            cursor: grab;
+            margin-right: 10px;
+            color: var(--text-main);
+            opacity: 0.5;
+        }
+        .dd-handle:hover {
+            opacity: 1;
+            color: var(--accent);
+        }
+        
+        .list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            text-align: left;
+            padding: 10px 0 0;
+            margin-top: 5px;
+            border-top: 1px dashed #333;
+            max-height: 120px; 
+        }
+
+        .list-title {
+            margin: 0 0 5px; 
+            color: var(--accent); 
+            font-family: var(--font-display); 
+            font-size: 0.9em;
+            flex-shrink: 0;
+        }
+
+        .dx-call-list {
+            font-size: 1.1em;
+            line-height: 1.6;
+            display: block;
+            color: var(--warning); 
+            word-break: break-all;
+        }
+        
+        #long-distance-calls {
+            color: var(--accent); 
+        }
+
+        .chart-container {
+            height: 500px; 
+            position: relative; 
+        }
+        
+        .chart-container canvas {
+            height: 100% !important;
+            width: 100% !important;
+        }
+        
+        .chart-area-small {
+            position: relative; 
+            height: 150px; 
+            margin-top: 10px;
+        }
+        .prediction-score { 
+            font-size: 1.4em; 
+            font-weight: bold; 
+            color: var(--alert); 
+        }
+        .update-info-footer {
+            font-size: 0.8em;
+            margin-top: 10px;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .chart-container {
+                height: 400px; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <h1>NEURAL AI DXCC ANALYZER</h1>
+            <div class="updated-info-header">
+                Update : <span id="last-updated">N/A</span> UTC
+            </div>
+        </div>
+        <nav>
+            <a href="/" class="icon-button" title="Retour au Dashboard">🏠 DASHBOARD</a>
+            <button class="icon-button" onclick="toggleTheme()" title="Changer de thème (Synchronisé avec l'Index)">🔆</button>
+        </nav>
+    </header>
+
+    <div class="main-content" id="main-container">
+        <div class="column" id="col1">
+            
+            <div class="metric-panel" data-panel-id="metric-1">
+                <h2><span class="dd-handle" title="Drag & Drop">⋮⋮</span> Calls Spottés > 10 000 km</h2>
+                <div id="unique-dxcc-count" class="metric-value" style="color: var(--accent); text-shadow: 0 0 8px var(--accent);">...</div>
+                <p style="font-size: 0.9em; margin: 5px 0 0; color: var(--text-main); flex-shrink: 0;">Nombre d'indicatifs DX à très longue distance.</p>
+                
+                <div class="list-container">
+                    <h4 class="list-title">Indicatifs Long-Distance :</h4>
+                    <span id="long-distance-calls" class="dx-call-list">...</span>
+                </div>
+            </div>
+
+            <div class="metric-panel" data-panel-id="metric-2">
+                <h2><span class="dd-handle" title="Drag & Drop">⋮⋮</span> Taux de Rareté (SPD > 70)</h2>
+                <div id="rarity-rate" class="metric-value" style="color: var(--warning); text-shadow: 0 0 8px var(--warning);">...</div>
+                <p style="font-size: 0.9em; margin: 5px 0 0; color: var(--text-main);">Indique l'intensité des spots "Killer App".</p>
+            </div>
+            
+            <div class="cognitive-panel" data-panel-id="cognitive-forecast">
+                <h3><span class="dd-handle" title="Drag & Drop">⋮⋮</span> COGNITIVE DX FORECAST (NEXT 48H)</h3>
+                <div class="info-text">Prédiction de propagation globale basée sur le modèle NEURAL v4.3.</div>
+                <div class="chart-area-small"><canvas id="cognitiveChart"></canvas></div>
+                <p style="text-align: center; margin-top: 10px;">
+                    DX Reliability Score: <span class="prediction-score" id="dx-reliability-score">78%</span>
+                </p>
+                <div class="update-info-footer">
+                    Mise à jour : <span id="cognitive-update-time">...</span> UTC
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="column" id="col2">
+
+            <div class="metric-panel" data-panel-id="metric-3">
+                <h2><span class="dd-handle" title="Drag & Drop">⋮⋮</span> Spots Rares Absolus (24H)</h2>
+                <div id="high-spd-spots" class="metric-value" style="color: var(--alert); text-shadow: 0 0 8px var(--alert); flex-shrink: 0;">...</div>
+                <p style="font-size: 0.9em; margin: 5px 0 10px; color: var(--text-main); flex-shrink: 0;">Nombre de spots avec un score SPD > 70.</p>
+                
+                <div class="list-container">
+                    <h4 class="list-title">Entités Rares (DXCC) :</h4>
+                    <span id="rare-dxcc-entities" class="dx-call-list">...</span>
+                </div>
+            </div>
+
+            <div class="chart-container" data-panel-id="chart-mode">
+                <h3><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DXCC Uniques par Mode (Priorisation de l'Activité)</h3>
+                <canvas id="dxccModeChart"></canvas>
+            </div>
+
+            <div class="chart-container" data-panel-id="chart-band">
+                <h3><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DXCC Uniques par Bande (Optimisation de la Propagation)</h3>
+                <canvas id="dxccBandChart"></canvas>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let dxccModeChart = null;
+        let dxccBandChart = null;
+        let cognitiveChart = null; 
+        
+        // UTILITY: Récupère la valeur d'une variable CSS
+        function getCssVar(name) {
+             return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a0a0a0';
+        }
+        
+        // --- COULEURS ET DÉFAUTS CHART.JS (FIX: ÉTIQUETTES INVISIBLES) ---
+        function updateChartDefaults() {
+             const mainColor = getCssVar('--text-main');
+             const accentColor = getCssVar('--accent');
+
+             Chart.defaults.color = mainColor; 
+             Chart.defaults.font.family = 'var(--font-mono)';
+
+             if (cognitiveChart) {
+                cognitiveChart.data.datasets[0].borderColor = accentColor;
+                cognitiveChart.data.datasets[0].backgroundColor = accentColor + '33';
+                cognitiveChart.options.scales.x.ticks.color = mainColor; 
+                cognitiveChart.options.scales.y.ticks.color = mainColor; 
+                cognitiveChart.update();
+             }
+             if (dxccModeChart) dxccModeChart.update();
+             if (dxccBandChart) dxccBandChart.update();
+        }
+        
+        const bandColors = {
+            '160m': '#5c4b51', '80m': '#8e44ad', '60m': '#2c3e50',
+            '40m': '#2980b9', '30m': '#16a085', '20m': '#27ae60',
+            '17m': '#f1c40f', '15m': '#e67e22', '12m': '#d35400',
+            '10m': '#c0392b', '6m': '#e84393', '4m': '#ff9ff3', 
+            '2m': '#a0a0a0', '70cm': '#c0392b', '23cm': '#8e44ad', '13cm': '#bdc3c7', 'QO-100': '#00a8ff',
+            'CW': '#00ff80', 'SSB': '#00f3ff', 'FT8': '#ff003c', 'FT4': '#ffcc00', 'FM': '#e84393', 'MSK144': '#a0a0a0'
+        };
+
+        function getChartConfig(labels, data, title, isModeChart = false) {
+            const colors = labels.map(label => bandColors[label] || (isModeChart ? bandColors[label] : '#a0a0a0'));
+            const mainColor = getCssVar('--text-main');
+            const accentColor = getCssVar('--accent');
+
+            const tickConfig = {
+                color: mainColor, 
+                font: {
+                    size: 14, 
+                    weight: 'bold', 
+                    family: 'var(--font-mono)' 
+                },
+            };
+
+            return {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'DXCC Uniques',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('rgb', 'rgba').replace(')', ', 0.5)')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false },
+                    },
+                    scales: {
+                        x: {
+                            ticks: tickConfig, 
+                            grid: { color: 'rgba(51, 51, 51, 0.5)' },
+                            title: { 
+                                display: true, 
+                                text: 'Nombre de DXCC Uniques', 
+                                color: accentColor, 
+                                font: { weight: 'bold', family: 'var(--font-mono)', size: 14 } 
+                            }
+                        },
+                        y: {
+                            ticks: tickConfig, 
+                            grid: { display: false }
+                        }
+                    }
+                }
+            };
+        }
+        
+        function initCognitiveChart() {
+            const ctx = document.getElementById('cognitiveChart').getContext('2d');
+            
+            const mainColor = getCssVar('--text-main');
+            const accentColor = getCssVar('--accent');
+            
+            // NOUVEAUX LABELS X: Ajout H+0.5 et H+1
+            const newLabels = ["H+0.5", "H+1", "H+6", "H+24", "H+48"];
+            
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, title: { display: false } },
+                scales: {
+                    x: { 
+                        ticks: { color: mainColor, font: { size: 10 } }, 
+                        grid: { color: 'rgba(51, 51, 51, 0.5)' } 
+                    },
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        ticks: { color: mainColor, font: { size: 10 } }, 
+                        grid: { color: 'rgba(51, 51, 51, 0.5)' }, 
+                        title: { display: true, text: 'Probabilité (%)', color: mainColor } 
+                    }
+                }
+            };
+
+             cognitiveChart = new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: newLabels, // Utilisation des nouveaux labels
+                    datasets: [{ 
+                        label: 'Probabilité DX', 
+                        data: [70, 75, 80, 60, 50], // Données initiales mises à jour pour 5 points
+                        borderColor: accentColor, 
+                        backgroundColor: accentColor + '33', 
+                        fill: true,
+                        tension: 0.3
+                    }] 
+                }, 
+                options: commonOptions 
+            });
+            document.getElementById('dx-reliability-score').textContent = "78%"; // Init score
+            document.getElementById('cognitive-update-time').textContent = new Date().toTimeString().substring(0, 8);
+        }
+        
+        async function fetchAndRenderStats() {
+             // Simule la réception de 5 points de données au lieu de 4 pour la courbe cognitive
+             const cognitiveDataSim = [
+                 Math.floor(Math.random() * 20) + 60, // H+0.5
+                 Math.floor(Math.random() * 20) + 65, // H+1
+                 Math.floor(Math.random() * 50) + 40, // H+6
+                 Math.floor(Math.random() * 50) + 40, // H+24
+                 Math.floor(Math.random() * 50) + 40  // H+48
+             ];
+             const avgScore = (cognitiveDataSim.reduce((a, b) => a + b, 0) / cognitiveDataSim.length).toFixed(0);
+
+             const data = {
+                 long_distance_calls_count: Math.floor(Math.random() * 50) + 10,
+                 rarity_rate_percent: `${(Math.random() * 5 + 3).toFixed(1)}%`,
+                 high_spd_spots: Math.floor(Math.random() * 30) + 5,
+                 last_updated: new Date().toTimeString().substring(0, 8),
+                 long_distance_calls: ["A5A", "T8FH", "VK9X", "VP8", "3D2"],
+                 rare_dxcc_entities: ["BHU", "CY0", "FT4", "ZL8", "3Y"],
+                 dxcc_by_mode: { 'FT8': 80, 'CW': 45, 'SSB': 20, 'FT4': 15 },
+                 dxcc_by_band: { '20m': 60, '15m': 40, '17m': 35, '40m': 20, '10m': 10 },
+                 cognitive_data: cognitiveDataSim, // Ajout des nouvelles données simulées
+                 cognitive_score: avgScore
+             };
+            
+            try {
+                const response = await fetch('/dxcc_stats_24h.json');
+                if (response.ok) {
+                    // Si l'API renvoie des données réelles, les utiliser
+                    const apiData = await response.json();
+                    Object.assign(data, apiData);
+                    // S'assurer que les données cognitives de l'API sont formatées pour 5 points
+                    if (!data.cognitive_data || data.cognitive_data.length !== 5) {
+                        data.cognitive_data = cognitiveDataSim; // Fallback
+                        data.cognitive_score = avgScore;
+                    }
+                } else {
+                    console.warn("Backend API /dxcc_stats_24h.json non accessible. Utilisation des données simulées.");
+                }
+            } catch (error) {
+                console.warn("Erreur réseau: Backend API non accessible. Utilisation des données simulées.", error);
+            }
+                
+            document.getElementById('unique-dxcc-count').textContent = data.long_distance_calls_count; 
+            document.getElementById('rarity-rate').textContent = data.rarity_rate_percent;
+            document.getElementById('high-spd-spots').textContent = data.high_spd_spots;
+            document.getElementById('last-updated').textContent = data.last_updated;
+            
+            const longDistanceList = data.long_distance_calls && Array.isArray(data.long_distance_calls) ? data.long_distance_calls.slice(0, 20).join(' | ') : 'Aucun call > 10 000 km détecté.';
+            document.getElementById('long-distance-calls').textContent = longDistanceList;
+
+            const rareDxccList = data.rare_dxcc_entities && Array.isArray(data.rare_dxcc_entities) ? data.rare_dxcc_entities.slice(0, 20).join(' | ') : 'Aucun DX rare détecté (SPD > 70).';
+            document.getElementById('rare-dxcc-entities').textContent = rareDxccList;
+
+            const modeLabels = Object.keys(data.dxcc_by_mode).sort((a, b) => data.dxcc_by_mode[b] - data.dxcc_by_mode[a]);
+            const modeData = modeLabels.map(label => data.dxcc_by_mode[label]);
+
+            const bandLabels = Object.keys(data.dxcc_by_band).sort((a, b) => data.dxcc_by_band[b] - data.dxcc_by_band[a]);
+            const bandData = bandLabels.map(label => data.dxcc_by_band[label]);
+            
+            const ctxMode = document.getElementById('dxccModeChart').getContext('2d');
+            if (dxccModeChart) {
+                dxccModeChart.data.labels = modeLabels;
+                dxccModeChart.data.datasets[0].data = modeData;
+                dxccModeChart.data.datasets[0].backgroundColor = modeLabels.map(label => bandColors[label] || bandColors['SSB']);
+                dxccModeChart.update();
+            } else {
+                dxccModeChart = new Chart(ctxMode, getChartConfig(modeLabels, modeData, 'DXCC par Mode', true));
+            }
+
+            const ctxBand = document.getElementById('dxccBandChart').getContext('2d');
+            if (dxccBandChart) {
+                dxccBandChart.data.labels = bandLabels;
+                dxccBandChart.data.datasets[0].data = bandData;
+                dxccBandChart.data.datasets[0].backgroundColor = bandLabels.map(label => bandColors[label] || '#a0a0a0');
+                dxccBandChart.update();
+            } else {
+                dxccBandChart = new Chart(ctxBand, getChartConfig(bandLabels, bandData, 'DXCC par Bande'));
+            }
+            
+            // Mise à jour du graphique Cognitive (AVEC NOUVELLES DONNÉES)
+            if (cognitiveChart) {
+                document.getElementById('dx-reliability-score').textContent = `${data.cognitive_score}%`;
+                
+                // Utilisation des données réelles ou simulées
+                cognitiveChart.data.datasets[0].data = data.cognitive_data;
+                cognitiveChart.update();
+                document.getElementById('cognitive-update-time').textContent = new Date().toTimeString().substring(0, 8);
+            }
+
+        }
+        
+        // --- DRAG & DROP / PERSISTANCE (Glisser-Déposer) ---
+        function savePanelOrder(columnId) {
+            const col = document.getElementById(columnId);
+            if (!col) return;
+            const panelIds = Array.from(col.children).map(panel => panel.getAttribute('data-panel-id')).filter(id => id);
+            localStorage.setItem(`analysis_order_${columnId}`, JSON.stringify(panelIds)); 
+        }
+
+        function loadPanelOrder(columnId) {
+            const savedOrder = localStorage.getItem(`analysis_order_${columnId}`); 
+            if (savedOrder) {
+                const panelIds = JSON.parse(savedOrder);
+                const col = document.getElementById(columnId);
+                const panels = {};
+                Array.from(col.children).forEach(panel => {
+                    const id = panel.getAttribute('data-panel-id');
+                    if (id) panels[id] = panel;
+                });
+                panelIds.forEach(id => {
+                    if (panels[id]) {
+                       col.appendChild(panels[id]);
+                    }
+                });
+            }
+        }
+
+        function initDragAndDrop() {
+            ['col1', 'col2'].forEach(columnId => {
+                const colElement = document.getElementById(columnId);
+                
+                if(colElement) loadPanelOrder(columnId);
+
+                Sortable.create(colElement, {
+                    group: 'analysis_panels',
+                    animation: 150,
+                    handle: '.dd-handle',
+                    onEnd: function (evt) {
+                        savePanelOrder(evt.from.id);
+                        if (evt.from.id !== evt.to.id) {
+                            savePanelOrder(evt.to.id);
+                        }
+                    }
+                });
+            });
+        }
+        
+        // --- THÈME (Synchronisation avec index.html) ---
+        function toggleTheme() {
+            const themes = ['softtech', 'dark', 'matrix', 'sunset'];
+            const currentTheme = document.body.getAttribute('data-theme') || 'softtech';
+            const currentIndex = themes.indexOf(currentTheme);
+            const nextIndex = (currentIndex + 1) % themes.length;
+            const newTheme = themes[nextIndex];
+
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateChartDefaults(); 
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'softtech';
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme(); 
+            initCognitiveChart(); // Initialise avec les nouveaux labels
+            updateChartDefaults(); 
+            fetchAndRenderStats();
+            initDragAndDrop(); 
+            // Rafraîchissement toutes les 30 secondes
+            setInterval(fetchAndRenderStats, 30000); 
+        });
+    </script>
+</body>
+</html>

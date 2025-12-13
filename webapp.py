@@ -13,14 +13,22 @@ from collections import deque, Counter
 from flask import Flask, render_template, jsonify, request, abort, redirect, url_for
 
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v4.2 - 30min History Fix"
+APP_VERSION = "NEURAL AI v4.3 - DXCC Analysis Complete"
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
-SPOT_LIFETIME = 1800
+SPOT_LIFETIME = 900
 SPD_THRESHOLD = 70
 TOP_RANKING_LIMIT = 10
 DEFAULT_QRA = "JN23"
+
+# --- THEMES/COULEURS RESTAURÉES ---
+TEXT_MAIN = "#a0a0a0" # Gris clair
+ACCENT = "#00f3ff"    # Cyan vif
+ALERT = "#ff003c"     # Rouge
+SUCCESS = "#00ff80"   # Vert
+WARNING = "#ffcc00"   # Jaune
+# --- FIN THEMES/COULEURS RESTAURÉES ---
 
 # --- CONFIGURATION HISTORIQUE ---
 HISTORY_BANDS = ['12m', '10m', '6m']
@@ -565,6 +573,9 @@ def telnet_worker():
 
                         spd_score = calculate_spd_score(dx_call, band, mode, comment, info['c'], dist_km)
                         color = BAND_COLORS.get(band, '#00f3ff')
+                        
+                        # Générer un spot_id unique pour le Path Optimizer
+                        spot_id = f"{dx_call}-{int(time.time())}"
 
                         record_surge_data(band)
 
@@ -577,7 +588,8 @@ def telnet_worker():
                             "via_eme": ("EME" in comment),
                             "color": color,
                             "type": "VHF" if band in VHF_BANDS else "HF",
-                            "distance_km": dist_km
+                            "distance_km": dist_km,
+                            "spot_id": spot_id # Ajout de l'ID
                         }
                         spots_buffer.append(spot_obj)
                         logger.info(f"SPOT: {dx_call} ({band}, {mode}) -> SPD: {spd_score} pts (Dist: {dist_km:.0f}km)")
@@ -634,6 +646,146 @@ def get_spots():
 def get_surge_status():
     active_surges = analyze_surges()
     return jsonify({"surges": active_surges, "timestamp": time.time()})
+
+@app.route('/analysis.html')
+def analysis_page():
+    """Route pour rendre la page d'analyse/AI Insight."""
+    return render_template('analysis.html', my_call=MY_CALL)
+
+# --- NOUVELLE ROUTE STATISTIQUES DXCC 24H ---
+
+@app.route('/dxcc_stats_24h.json')
+def dxcc_stats_24h():
+    """
+    Calcule et retourne les statistiques DXCC sur 24 heures.
+    Inclut les listes dynamiques pour les calls longue distance et les entités rares.
+    """
+    now = time.time()
+    # Spots dans les dernières 24 heures (86400 secondes)
+    all_spots_history = spots_buffer # Utiliser le buffer comme historique
+    historical_spots = [s for s in all_spots_history if (now - s['timestamp']) < 86400] 
+
+    # Initialisation des compteurs et listes
+    dxcc_by_mode = Counter()
+    dxcc_by_band = Counter()
+    unique_dxcc_set = set()
+    high_spd_spots_count = 0
+    
+    # Nouvelles listes demandées pour le front-end
+    rare_dxcc_entities = set()
+    long_distance_calls = set()
+    
+    # Itération sur les spots historiques
+    for spot in historical_spots:
+        dxcc = spot.get('country') 
+        mode = spot.get('mode')
+        band = spot.get('band')
+        spd = spot.get('score')
+        distance_km = spot.get('distance_km')
+        call = spot.get('dx_call') 
+        
+        if dxcc:
+            unique_dxcc_set.add(dxcc)
+            if mode:
+                dxcc_by_mode[mode] += 1
+            if band:
+                dxcc_by_band[band] += 1
+
+        # 1. Calcul des spots Rares (SPD > 70)
+        if spd is not None and spd >= SPD_THRESHOLD and dxcc:
+            high_spd_spots_count += 1
+            rare_dxcc_entities.add(dxcc)
+
+        # 2. Calcul des calls Longue Distance (> 10000 km)
+        # On ne compte que les indicatifs uniques pour la liste
+        if distance_km is not None and distance_km >= 10000 and call:
+            long_distance_calls.add(call)
+
+    total_spots_24h = len(historical_spots)
+    rarity_rate_percent = f"{(high_spd_spots_count / total_spots_24h * 100):.2f}%" if total_spots_24h > 0 else "0.00%"
+    last_updated_time = time.strftime("%H:%M:%S", time.gmtime(now))
+
+    return jsonify({
+        "unique_dxcc_count": len(unique_dxcc_set),
+        "total_spots_24h": total_spots_24h,
+        "rarity_rate_percent": rarity_rate_percent,
+        "high_spd_spots": high_spd_spots_count,
+        "dxcc_by_mode": dict(dxcc_by_mode),
+        "dxcc_by_band": dict(dxcc_by_band),
+        "last_updated": last_updated_time,
+        
+        # Clés pour les listes dynamiques
+        "rare_dxcc_entities": sorted(list(rare_dxcc_entities)), 
+        "long_distance_calls_count": len(long_distance_calls), 
+        "long_distance_calls": sorted(list(long_distance_calls))
+    })
+
+# --- NOUVELLES ROUTES AI INSIGHT (SIMULÉES) ---
+
+@app.route('/ai_pattern_data.json')
+def ai_pattern_data():
+    """Simule les données du Moteur de Corrélation Cognitive DX."""
+    data = {
+        "status": "PATTERN MATCH 90%",
+        "active": True,
+        "prediction": "Probabilité de DX : 85% (Bande 10m, Région Afrique de l'Ouest, Fenêtre : 19:15-20:00 UTC).",
+        "justification": "Le décalage de la Grayline combiné à la remontée de l'indice Kp suggère une ouverture F2 oblique de courte durée. Recommandation : Surveiller le 10m.",
+        "triggers": [
+            {"band": "15m", "mode": "FT8", "region": "EU-JA", "value": "+2.5 σ", "color": "var(--alert)"},
+            {"band": "20m", "mode": "CW", "region": "NA-AUS", "value": "+1.8 σ", "color": "var(--accent)"}
+        ]
+    }
+    return jsonify(data)
+
+@app.route('/ai_solar_data.json')
+def ai_solar_data():
+    """Simule les données du Propagateur Solaire-Terrestre."""
+    data = {
+        "global_score": "B+",
+        "alert_message": "Le SFI a augmenté de 5 points (SFI 145). L'IA anticipe une amélioration dans 3 heures. Poids 10m/12m augmenté de 10 SPD.",
+        "band_impact": [
+            {"band": "20m / 40m", "recommendation": "A+ (Stable)", "color": "var(--success)"},
+            {"band": "10m / 12m", "recommendation": "B (Fluctuant)", "color": "var(--open-color)"},
+            {"band": "160m", "recommendation": "C- (Absorption)", "color": "var(--alert)"}
+        ]
+    }
+    return jsonify(data)
+
+@app.route('/ai_path_data.json')
+def ai_path_data():
+    """Simule les données du Path Optimizer pour un spot donné."""
+    # Coordonnées du QTH (F1SMV, JN23)
+    user_lat, user_lon = 43.10, 5.88 
+    
+    # Spot d'exemple (ZL1ABC, RF79)
+    dx_call = "ZL1ABC"
+    dx_lat, dx_lon = -36.84, 174.74 
+    
+    # Chemin Optimal (simulant la Grayline ou un rebond)
+    optimal_path_coords = [
+        [user_lat, user_lon],
+        [30, 25],  # Point intermédiaire simulé
+        [dx_lat, dx_lon]
+    ]
+    
+    # Chemin Non Optimal (simulant le trajet long avec mauvaise propagation)
+    long_path_coords = [
+        [user_lat, user_lon],
+        [-10, 100], 
+        [dx_lat, dx_lon]
+    ]
+
+    data = {
+        "dx_call": dx_call,
+        "dx_lat": dx_lat,
+        "dx_lon": dx_lon,
+        "optimal_path_coords": optimal_path_coords,
+        "long_path_coords": long_path_coords,
+        "conclusion": "Le trajet optimal (vert) passe par la Grayline du Pacifique Nord, évitant l'absorption par l'ionosphère nocturne. Recommandé : 20m SSB."
+    }
+    return jsonify(data)
+
+# --- FIN DES NOUVELLES ROUTES AI INSIGHT ---
 
 @app.route('/wanted.json')
 def get_ranking():
