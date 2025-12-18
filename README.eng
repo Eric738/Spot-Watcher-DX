@@ -1,81 +1,119 @@
-NEURAL DX WATCHER V4.3 🛰️ Introduction
+# 📡 DX Cluster Dashboard – v4.4
 
-NEURAL DX WATCHER V4.3 is a next-generation web application designed specifically for amateur radio operators (DXers). It offers a real-time dashboard for tracking DX spots (distant stations) on HF and VHF/UHF bands, complemented by an advanced cognitive analysis module. The goal is to centralize propagation data, alerts, activity history, and mapping so you never miss a DX opportunity.
+A real-time **Ham Radio DX Cluster web dashboard**, connected via Telnet.  
+Designed for **DX monitoring**, **geographical visualization**, **activity analysis**, and **direct interaction** with the DX Cluster (manual spotting, voice synthesis, etc.).
 
-This version 4.3 incorporates very short-term prediction granularity (30 min / 1h) into its AI model and ensures robust, portable navigation between its modules.
+---
 
-✨ General Features
+## 🚀 Main Features
 
-    Real-Time: Instant display of DX spots.
+### 🔗 DX Cluster Connection
+- Persistent Telnet connection to a DX Cluster (e.g. dxfun.com)
+- Continuous DX spot reception
+- Automatic reconnection handling
 
-    Customizable Panels: Drag & Drop functionality to organize panels on both pages (Dashboard and Analysis). The order is saved locally.
+### 🗺️ World DX Map
+- Real-time display of spotted stations
+- DXCC-based geolocation using **cty.dat**
+- Automatic download and parsing of `cty.dat` at startup
+- Marker clustering for readability
 
-    Themes: Simple toggle between SoftTech, Matrix, and Dark modes (synchronized across pages).
+### 📊 Statistics & Charts
+- **12-hour activity histogram**
+- Live band activity overview
+- Surge / activity peak detection
+- Historical data available via backend API
 
-    Portability: Smooth navigation between the Dashboard and Analysis pages, regardless of the server environment.
+### 🧲 Dynamic Panels
+- **Multi-column layout**
+- All panels are **drag & drop**
+- Layout persistence (localStorage)
+- Modular architecture (easy to extend)
 
-1. DASHBOARD (index.html) - The Real-Time Control Center
+### ☀️ Solar Indices
+- Dedicated solar panel (SFI, A, K, etc.)
+- Automatic refresh (hourly)
+- XML data fetched and parsed server-side
 
-The Dashboard is the application's main page, designed to provide an immediate and interactive view of global DX activity.
-Module	Detailed Description
-Real-Time DX Spots	Dynamic and filterable list of all received spots. Critical spots (DX Priority Score > 70) are highlighted to alert the operator.
-Advanced Voice Synthesis	Audio announcement of new spots. A 🔊 VOICE ON/OFF button allows the voice to be toggled on or off.
-Voice Distance Filter	A selector allows voice announcements to be filtered based on distance (relative to your QRA). Options include: ALL, < 5000 km, 5000 - 10000 km, and > 10000 km (for "Long Haul" DX).
-Integrated Mapping	Two separate Leaflet maps: HF and VHF/UHF. They display the location of your QTH and active DX spots in real time.
-Activity History	A band activity graph over a 12-hour window, with 30-minute granularity, essential for identifying regular opening windows.
-Watchlist	Allows adding and removing priority callsigns. Spots matching your Watchlist are highlighted.
-QRA Management	A form allows you to quickly set your QRA locator. The update is immediate, and the QRA is displayed at the top of the page.
-Surge Alerts	Detection and display of unusual activity spikes (red alerts) on a given band, signaling a sudden opening.
-2. AI INSIGHT (analysis.html) - 24H Analysis Module
+### 🗣️ Voice Synthesis (TTS)
+- Spoken announcements for new DX spots
+- Supported languages:
+  - 🇫🇷 French (fr-FR)
+  - 🇬🇧 English (en-US)
+  - 🇪🇸 Spanish (es-ES)
+  - 🇮🇱 Hebrew (he-IL)
+- Works on desktop and mobile (after user interaction)
 
-Accessible via the 📊 AI INSIGHT button, this page uses the AI model to digest DXCC data from the last 24 hours and provide projections and rarity statistics.
-Module	Detailed Description
-COGNITIVE DX FORECAST (NEXT 48H)	Global propagation prediction based on the NEURAL v4.3 model. This line graph is vital for activity planning.
-New Short-Term Forecast Horizons	The X-axis (Time) now includes very short-term horizons for immediate decision-making: H+0.5 (30 min), H+1 (1 hour), H+6, H+24, and H+48.
-Advanced DXCC Metrics	Displays three key metrics based on the last 24 hours of activity: Calls Spotted > 10,000 km, Rarity Rate (SPD > 70), and Absolute Rare Spots (SPD > 70) (list of rare DXCC spotted).
-Unique DXCC by Mode	Bar chart showing the concentration of unique DXCC worked by mode (FT8, CW, SSB...). Useful for activity prioritization.
-Unique DXCC by Band	Bar chart showing the concentration of unique DXCC worked by band (20m, 15m, 40m...). Useful for propagation optimization.
-📸 Interface Overview
-⚙️ Installation & Startup
+### ✍️ Manual Spotting
+- “Manual Spot” panel
+- Input:
+  - Callsign
+  - Frequency (MHz or kHz)
+  - Comment
+- Direct transmission to the DX Cluster
+- Immediate status feedback
 
-This project is built on Python (Flask) for the backend and HTML/CSS/JavaScript (Leaflet, Chart.js) for the client interface.
-Prerequisites
+### 📡 Watchlist & Alerts
+- Callsign watchlist
+- Visual and voice alerts
+- REST API ready for automation
 
-    Python 3.x
+---
 
-    Internet Access
+## 🧠 Architecture
 
-    Python libraries listed in requirements.txt (or install manually: flask, telnetlib, requests, feedparser, etc.)
+- **Backend**: Python / Flask
+- **Frontend**: HTML + Vanilla JavaScript
+- **Mapping**: Leaflet
+- **DXCC Data**: `cty.dat` (auto-downloaded)
+- **API endpoints**:
+  - `/spots.json`
+  - `/history.json`
+  - `/live_bands.json`
+  - `/surge.json`
+  - `/rss.json`
+  - `/spot` (POST)
+  - `/api/*` compatibility aliases
 
-Startup Steps
+---
 
-    Clone the repository:
-    Bash
+## 📸 Dashboard Preview
 
-git clone gh repo clone Eric738/Spot-Watcher-DX
-cd neural-dx-watcher-v4
+![Apercu du Dashboard](apercu.png)
 
-Install Python dependencies:
-Bash
+---
 
+## 🛠️ Quick Installation
+
+```bash
+git clone https://github.com/Eric738/Spot-Watcher-DX.git
+cd dx-cluster-dashboard
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
+python webapp.py
+Then open:
+👉 http://127.0.0.1:5000
+⚠️ Notes
 
-Configure your QRA: Open webapp.py and modify the configuration variables at the beginning of the file, especially MY_CALL and DEFAULT_QRA.
+The first voice announcement requires a user interaction (browser policy).
 
-Launch the application:
-Bash
+On mobile devices, ensure a TTS engine and voices are installed.
 
-    python webapp.py
+cty.dat is automatically downloaded if missing or outdated.
 
-    The application will be accessible via your browser at the default address: http://127.0.0.1:8000 (or the configured port).
+🧩 Possible Enhancements
 
-🛠️ Configuration (webapp.py)
+Advanced filtering by band / mode
 
-The main application parameters are located at the beginning of the webapp.py file:
-Variable	Description	Default Value
-MY_CALL	Your callsign.	F1SMV
-DEFAULT_QRA	Your QRA locator (e.g., JN23).	JN23
-SPD_THRESHOLD	DX Priority Score threshold for alerts (spots in red).	70
-SPOT_LIFETIME	Duration a spot remains active (in seconds).	1800 (30 minutes)
+DX heatmap by region
 
-Feel free to modify and share. Created by F1SMV Eric for Ham Radio Communauty with #GIMINI3.
+Abnormal propagation detection
+
+CSV / ADIF export
+
+SDR and WSJT-X integration
+
+Feel free to modify and share.
+Created by F1SMV Eric for Ham Radio Communauty with #GIMINI3 #chatGPT.
+You can contact me via X.
