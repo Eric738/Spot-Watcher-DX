@@ -1,0 +1,22 @@
+2025-12-17 05:56:39,361 [INFO] MainThread: Base de données DXCC chargée: 346 préfixes.
+2025-12-17 05:56:39,362 [INFO] MainThread: Watchlist chargée: 5 indicatifs.
+2025-12-17 05:56:39,362 [INFO] MainThread: 
+--- NEURAL AI v4.5 - Solar & Multilingual (FIXED) ---
+2025-12-17 05:56:39,362 [INFO] MainThread: QTH de départ: JN23 (43.50, 5.00)
+2025-12-17 05:56:39,362 [INFO] MainThread: Tous les Workers ont été démarrés.
+2025-12-17 05:56:39,362 [INFO] telnet_worker: Tentative de connexion au Cluster: dxfun.com:8000 (Réseau: 1/3)
+2025-12-17 05:56:39,365 [INFO] MainThread: Lancement du serveur Flask sur http://0.0.0.0:8000 (SO_REUSEADDR actif)...
+2025-12-17 05:56:39,422 [WARNING] ticker_worker: Impossible de récupérer les données solaires. Le flux est vide.
+2025-12-17 05:56:44,436 [INFO] telnet_worker: Connexion établie sur dxfun.com:8000 avec F1SMV. Écoute des spots en cours.
+2025-12-17 06:00:55,479 [INFO] MainThread: Base de données DXCC chargée: 346 préfixes.
+2025-12-17 06:00:55,480 [INFO] MainThread: Watchlist chargée: 5 indicatifs.
+2025-12-17 06:00:55,480 [INFO] MainThread: 
+--- NEURAL AI v4.5 - Solar & Multilingual (FIXED) ---
+2025-12-17 06:00:55,480 [INFO] MainThread: QTH de départ: JN23 (43.50, 5.00)
+2025-12-17 06:00:55,480 [INFO] MainThread: Tous les Workers ont été démarrés.
+2025-12-17 06:00:55,480 [INFO] telnet_worker: Tentative de connexion au Cluster: dxfun.com:8000 (Réseau: 1/3)
+2025-12-17 06:00:55,482 [INFO] MainThread: Lancement du serveur Flask sur http://0.0.0.0:8000 (SO_REUSEADDR actif)...
+2025-12-17 06:00:55,540 [WARNING] ticker_worker: Impossible de récupérer les données solaires. Le flux est vide.
+2025-12-17 06:01:00,557 [INFO] telnet_worker: Connexion établie sur dxfun.com:8000 avec F1SMV. Écoute des spots en cours.
+2025-12-17 06:01:55,589 [WARNING] ticker_worker: Impossible de récupérer les données solaires. Le flux est vide.
+2025-12-17 06:02:56,216 [WARNING] ticker_worker: Impossible de récupérer les données solaires. Le flux est vide.

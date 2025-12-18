@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL DX v4.3 - 30min History</title>
+    <title>NEURAL DX v4.4 - 30min History</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -360,7 +360,7 @@
 </head>
 <body>
     <div id="header">
-        <div id="title">NEURAL DX WATCHER V4.3</div>
+        <div id="title">NEURAL DX WATCHER V4.4</div>
         <div id="controls">
             <span id="indicators">
                 <div class="indicator-item">QRA: <span id="qra-display">{{ user_qra }}</span></div>
@@ -379,6 +379,8 @@
             <select id="voice-language-filter" title="Sélectionner la langue de l'annonce vocale">
                 <option value="fr-FR">Voice Lang: FR</option>
                 <option value="en-US">Voice Lang: EN</option>
+                <option value="es-ES">Voice Lang: ES</option>
+                <option value="he-IL">Voice Lang: HE</option>   
             </select>
             <button id="synth-toggle-button" onclick="toggleVoiceSynth()" title="Activer/Désactiver la synthèse vocale">🔊 VOICE ON</button>
             <button class="icon-button" onclick="toggleTheme()" title="Changer de thème">🔆</button>
@@ -415,7 +417,38 @@
                 </div>
             </div>
 
-            <div id="spots-hf-panel" class="panel" data-panel-id="spots-hf">
+            
+            <div id="spotter-panel" class="panel" data-panel-id="spotter">
+                <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> SPOT MANUEL</div>
+                <div class="panel-body">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; align-items:end;">
+                        <div>
+                            <label style="display:block; font-size:.85em; opacity:.8; margin-bottom:4px;">Indicatif (CALL)</label>
+                            <input id="spot-call" type="text" placeholder="ex: DU2W" style="width:100%; padding:8px; background:#111; border:1px solid #333; color:#eee; border-radius:6px; text-transform:uppercase;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:.85em; opacity:.8; margin-bottom:4px;">Fréquence (MHz ou kHz)</label>
+                            <input id="spot-freq" type="text" placeholder="ex: 14.074 ou 14074.0" style="width:100%; padding:8px; background:#111; border:1px solid #333; color:#eee; border-radius:6px;">
+                        </div>
+                        <div style="grid-column:1 / -1;">
+                            <label style="display:block; font-size:.85em; opacity:.8; margin-bottom:4px;">Commentaire (optionnel)</label>
+                            <input id="spot-comment" type="text" placeholder="ex: FT4, loud, QO-100, etc." style="width:100%; padding:8px; background:#111; border:1px solid #333; color:#eee; border-radius:6px;">
+                        </div>
+                        <div style="grid-column:1 / -1; display:flex; gap:8px; align-items:center;">
+                            <button id="spot-send" style="padding:10px 14px; border-radius:8px; border:1px solid #355; background:rgba(0,243,255,.12); color:#e8ffff; cursor:pointer;">
+                                📡 SPOT
+                            </button>
+                            <span id="spot-status" style="font-size:.9em; opacity:.85;"></span>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px; font-size:.8em; opacity:.65;">
+                        Astuce : si tu saisis <b>14.074</b> (MHz), ça sera envoyé au cluster en <b>14074.0</b>. Si tu saisis déjà <b>14074.0</b>, c’est envoyé tel quel.
+                    </div>
+                </div>
+            </div>
+
+
+<div id="spots-hf-panel" class="panel" data-panel-id="spots-hf">
                 <div class="panel-header"><span class="dd-handle" title="Drag & Drop">⋮⋮</span> DX SPOTS HF</div>
                 <div class="filter-controls">
                     <select id="hf-band-filter">
@@ -631,34 +664,46 @@
         }
 
         function announceSpot(spot) {
-            if (!isVoiceEnabled || !('speechSynthesis' in window)) {
-                return;
-            }
+    if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
 
-            const spotKey = `${spot.dx_call}-${spot.freq}-${spot.time}`; 
+    const spotKey = `${spot.dx_call}-${spot.freq}-${spot.time}`;
+    if (announcedSpots.has(spotKey)) return;
+    if (!isDistanceFiltered(spot.distance_km)) return;
 
-            if (announcedSpots.has(spotKey)) {
-                return;
-            }
-            
-            if (!isDistanceFiltered(spot.distance_km)) {
-                return;
-            }
+    announcedSpots.add(spotKey);
 
-            announcedSpots.add(spotKey);
+    const message = new SpeechSynthesisUtterance();
+    message.lang = voiceLanguageFilter;
+    message.rate = 1.0;
 
-            const message = new SpeechSynthesisUtterance();
-            message.lang = voiceLanguageFilter;
-            message.rate = 1.0;
-            
-            if (voiceLanguageFilter === 'fr-FR') {
-                message.text = `Spot détecté : ${spot.dx_call} sur ${spot.band}, mode ${spot.mode}, fréquence ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilomètres.`;
-            } else { 
-                message.text = `DX spot: ${spot.dx_call} on ${spot.band} band, mode ${spot.mode}, frequency ${spot.freq}. Distance ${spot.distance_km.toFixed(0)} kilometers.`;
-            }
+    if (voiceLanguageFilter === 'fr-FR') {
+        message.text =
+            `Spot détecté : ${spot.dx_call} sur ${spot.band}, ` +
+            `mode ${spot.mode}, fréquence ${spot.freq}. ` +
+            `Distance ${spot.distance_km.toFixed(0)} kilomètres.`;
 
-            window.speechSynthesis.speak(message);
-        }
+    } else if (voiceLanguageFilter === 'es-ES') {
+        message.text =
+            `Spot detectado: ${spot.dx_call} en la banda ${spot.band}, ` +
+            `modo ${spot.mode}, frecuencia ${spot.freq}. ` +
+            `Distancia ${spot.distance_km.toFixed(0)} kilómetros.`;
+
+    } else if (voiceLanguageFilter === 'he-IL') {
+        message.text =
+            `זוהתה תחנה ${spot.dx_call} ` +
+            `בתחום ${spot.band}, מצב ${spot.mode}, ` +
+            `תדר ${spot.freq}. ` +
+            `מרחק ${spot.distance_km.toFixed(0)} קילומטרים.`;
+
+    } else {
+        message.text =
+            `DX spot: ${spot.dx_call} on ${spot.band} band, ` +
+            `mode ${spot.mode}, frequency ${spot.freq}. ` +
+            `Distance ${spot.distance_km.toFixed(0)} kilometers.`;
+    }
+
+    window.speechSynthesis.speak(message);
+}
 
         // --- WATCHLIST ---
         async function loadWatchlist() {
@@ -1334,6 +1379,65 @@
          }
 
         document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+    
+// --- Spot manuel vers DX Cluster ---
+(function(){
+  const elCall = document.getElementById('spot-call');
+  const elFreq = document.getElementById('spot-freq');
+  const elCom  = document.getElementById('spot-comment');
+  const elBtn  = document.getElementById('spot-send');
+  const elSt   = document.getElementById('spot-status');
+  if(!elBtn) return;
+
+  function setStatus(msg, ok=true){
+    elSt.textContent = msg;
+    elSt.style.opacity = ok ? '0.85' : '1';
+    elSt.style.color = ok ? 'var(--text-main)' : 'var(--alert)';
+  }
+
+  async function doSpot(){
+    const call = (elCall.value || '').trim().toUpperCase();
+    const freq = (elFreq.value || '').trim();
+    const comment = (elCom.value || '').trim();
+    if(!call || !freq){
+      setStatus('CALL + fréquence requis.', false);
+      return;
+    }
+    elBtn.disabled = true;
+    setStatus('Envoi au cluster…');
+    try{
+      const r = await fetch('/spot', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({call, freq, comment})
+      });
+      const j = await r.json().catch(()=>({ok:false, error:'Réponse invalide'}));
+      if(!r.ok || !j.ok){
+        setStatus(j.error || ('Erreur HTTP ' + r.status), false);
+        return;
+      }
+      setStatus('Spot envoyé ✔');
+      // Optionnel: annonce vocale si activée
+      try{
+        if(typeof speakText === 'function' && (window.ttsEnabled || document.getElementById('tts-toggle')?.checked)){
+          speakText(`Spot envoyé ${call}`);
+        }
+      }catch(e){}
+    }catch(e){
+      setStatus('Erreur réseau: '+e.message, false);
+    }finally{
+      elBtn.disabled = false;
+    }
+  }
+
+  elBtn.addEventListener('click', doSpot);
+  [elCall, elFreq, elCom].forEach(inp=>{
+    inp.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter'){ ev.preventDefault(); doSpot(); }
+    });
+  });
+})();
+
+</script>
 </body>
 </html>

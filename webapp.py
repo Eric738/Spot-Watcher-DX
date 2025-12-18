@@ -7,13 +7,19 @@ import urllib.request
 import feedparser
 import ssl
 import math
+import re
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from collections import deque, Counter
 from flask import Flask, render_template, jsonify, request, abort, redirect, url_for
 
+
+# --- CLUSTER TX (Spot) ---
+tn_lock = threading.Lock()
+tn_current = None  # telnetlib.Telnet when connected
+# --- FIN CLUSTER TX ---
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v4.3 - DXCC Analysis Complete"
+APP_VERSION = "NEURAL AI v4.4 - Spotter + update cty.dat auto + send spots"
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -394,39 +400,70 @@ def get_band_and_mode_smart(freq_float, comment):
 
     return band, mode
 
-def load_cty_dat():
+def load_cty_dat(force_download: bool = False):
+    """Charge cty.dat (DXCC/prefixes). Télécharge si absent (ou si force_download=True).
+    NOTE: certains miroirs renvoient 406 sans header Accept -> on force Accept: */*.
+    """
     global prefix_db
-    if not os.path.exists(CTY_FILE):
+
+    def download_cty() -> bool:
         try:
-            logger.info("Téléchargement de cty.dat...")
-            req = urllib.request.Request(CTY_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=10) as r, open(CTY_FILE, 'wb') as f:
+            logger.info("Tentative de téléchargement de cty.dat...")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+                "Accept": "*/*",
+            }
+            req = urllib.request.Request(CTY_URL, headers=headers)
+            with urllib.request.urlopen(req, timeout=30) as r, open(CTY_FILE, "wb") as f:
                 f.write(r.read())
+            # petit garde-fou: fichier trop petit = téléchargement foireux
+            if os.path.exists(CTY_FILE) and os.path.getsize(CTY_FILE) < 50_000:
+                logger.warning("cty.dat téléchargé mais taille suspecte (<50KB).")
+            logger.info("Téléchargement de cty.dat réussi.")
+            return True
         except Exception as e:
-            logger.error(f"Échec du téléchargement de cty.dat: {e}")
+            logger.error(f"Échec du téléchargement de cty.dat. Vérifie l'URL ou la connexion: {e}")
+            return False
+
+    # Télécharger si absent, si demandé, ou si fichier vide/suspect
+    if force_download or (not os.path.exists(CTY_FILE)) or (os.path.exists(CTY_FILE) and os.path.getsize(CTY_FILE) < 50_000):
+        if not download_cty():
             return
+
     try:
-        logger.info("Chargement de la base de données DXCC.")
+        logger.info("Chargement de la base de données DXCC (cty.dat).")
+        prefix_db.clear()
         with open(CTY_FILE, "rb") as f:
-            raw = f.read().decode('latin-1')
-        for rec in raw.replace('\r', '').replace('\n', ' ').split(';'):
-            if ':' in rec:
-                p = rec.split(':')
+            raw = f.read().decode("latin-1", errors="ignore")
+
+        for rec in raw.replace("\r", "").replace("\n", " ").split(";"):
+            if ":" in rec:
+                p = rec.split(":")
                 country = p[0].strip()
                 try:
                     lat, lon = float(p[4]), float(p[5]) * -1
-                except:
+                except Exception:
                     lat, lon = 0.0, 0.0
-                prefixes = p[7].strip().split(',')
+
+                prefixes = p[7].strip().split(",")
                 if len(p) > 8:
-                    prefixes += p[8].strip().split(',')
+                    prefixes += p[8].strip().split(",")
+
                 for px in prefixes:
-                    clean = px.split('(')[0].split('[')[0].strip().lstrip('=')
+                    clean = px.split("(")[0].split("[")[0].strip().lstrip("=")
                     if clean:
-                        prefix_db[clean] = {'c': country, 'lat': lat, 'lon': lon}
+                        prefix_db[clean] = {"c": country, "lat": lat, "lon": lon}
+
+        if not prefix_db:
+            # si parsing vide, on retente un download "propre"
+            logger.warning("prefix_db vide après parsing cty.dat -> re-téléchargement et retry.")
+            if download_cty():
+                return load_cty_dat(force_download=False)
+
         logger.info(f"Base de données DXCC chargée: {len(prefix_db)} préfixes.")
     except Exception as e:
         logger.error(f"Erreur lors du parsing de cty.dat: {e}")
+
 
 def get_country_info(call):
     call = call.upper()
@@ -520,6 +557,10 @@ def telnet_worker():
         logger.info(f"Tentative de connexion au Cluster: {host}:{port} ({idx + 1}/{len(CLUSTERS)})")
         try:
             tn = telnetlib.Telnet(host, port, timeout=10)
+            # Expose current connection for TX (spotting)
+            global tn_current
+            with tn_lock:
+                tn_current = tn
             try:
                 tn.read_until(b"login: ", timeout=3)
             except:
@@ -625,6 +666,55 @@ def update_qra():
     else:
         logger.warning(f"Tentative de mise à jour QTH invalide: {new_qra}")
     return redirect(url_for('index'))
+
+
+def cluster_send_line(line: str) -> bool:
+    """Send a raw line to the connected DX cluster. Returns True if sent."""
+    global tn_current
+    if not line:
+        return False
+    with tn_lock:
+        tn = tn_current
+    if tn is None:
+        return False
+    try:
+        # Cluster expects latin-1 compatible bytes in most cases
+        tn.write(line.encode('latin-1', errors='ignore') + b"\n")
+        return True
+    except Exception:
+        return False
+
+@app.route('/spot', methods=['POST'])
+@app.route('/api/spot', methods=['POST'])
+def api_spot():
+    """Spot a callsign to the DX cluster: expects JSON {freq, call, comment}."""
+    data = request.get_json(silent=True) or {}
+    call = (data.get('call') or '').strip().upper()
+    freq = (data.get('freq') or '').strip()
+    comment = (data.get('comment') or '').strip()
+    if not call or not re.match(r"^[A-Z0-9/]{3,}$", call):
+        return jsonify({'ok': False, 'error': 'CALL invalid'}), 400
+    # freq: allow "14074.0" or "14.074" etc. We send what user provided if numeric
+    try:
+        f = float(freq.replace(',', '.'))
+    except Exception:
+        return jsonify({'ok': False, 'error': 'FREQ invalid'}), 400
+    if f <= 0:
+        return jsonify({'ok': False, 'error': 'FREQ invalid'}), 400
+    # Keep formatting close to what clusters commonly show
+    # If user entered MHz (< 1000), convert to kHz-ish? Here we assume: < 1000 => MHz*1000 (14.074 -> 14074.0)
+    if f < 1000:
+        f_out = f * 1000.0
+    else:
+        f_out = f
+    freq_out = f"{f_out:.1f}"
+    # Build cluster command
+    cmd = f"DX {freq_out} {call} {comment}".strip()
+    sent = cluster_send_line(cmd)
+    if not sent:
+        return jsonify({'ok': False, 'error': 'Cluster not connected'}), 503
+    logger.info(f"Spot TX: {cmd}")
+    return jsonify({'ok': True, 'sent': cmd})
 
 @app.route('/user_location.json')
 def get_user_location():
