@@ -105,7 +105,7 @@ Puis ouvrez votre navigateur sur : http://localhost:8000
 
     [ ] Intégration réelle du moteur de corrélation cognitive (Pattern Matching).
 
-    [ ] Export des logs au format ADIF pour carnet de trafic.
+    [ ] Import/Export des logs au format ADIF pour carnet de trafic.Pour analyse
 
     [ ] Heatmap de propagation basée sur le rapport signal/bruit (si disponible via cluster).
 
