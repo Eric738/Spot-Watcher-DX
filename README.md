@@ -1,9 +1,9 @@
-📡 DX Cluster Dashboard – v4.6 (Neural AI Edition)
+📡 DX Cluster Dashboard – v4.7 (Neural AI Edition)
 
 Dashboard web temps réel nouvelle génération pour radioamateurs, piloté par un moteur d'analyse statistique et connecté à un DX Cluster via Telnet.
 
 Conçu pour la veille DX proactive, la visualisation géographique avancée, et l'optimisation de propagation.
-🚀 Quoi de neuf dans la v4.6 ?
+🚀 Quoi de neuf dans la v4.7 ?
 
 Cette version introduit le label "Neural AI", ajoutant une couche d'intelligence et d'analyse aux données brutes du cluster :
 🧠 Moteur de Score SPD (Spot Priority/Difficulty)
@@ -35,6 +35,8 @@ Cette version introduit le label "Neural AI", ajoutant une couche d'intelligence
     Détection automatique d'activité MSK144 sur 2m avec alertes de "Surge" dédiées.
 
 🛠️ Fonctionnalités Historiques
+   correction liste pays DXCC suivant "most wanted list"
+ 
 🔗 Connectivité Cluster
 
     Connexion Telnet persistante multi-source (dxfun.com, cluster.dx.de, etc.) avec reconnexion auto.
@@ -69,7 +71,7 @@ Cette version introduit le label "Neural AI", ajoutant une couche d'intelligence
 
     Bases de données : Géolocalisation via cty.dat (mise à jour auto) et watchlist.json.
 
-Nouvelles Routes API v4.6 :
+Nouvelles Routes API v4.7 :
 
     /dxcc_stats_24h.json : Données analytiques journalières.
 

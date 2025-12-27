@@ -19,12 +19,22 @@ tn_lock = threading.Lock()
 tn_current = None  # telnetlib.Telnet when connected
 # --- FIN CLUSTER TX ---
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v4.6 - Spotter + update cty.dat auto + send spots + Solar thresholds + new mode"
+APP_VERSION = "NEURAL AI v4.7 - corrections mineures + DXCC update"
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
 SPOT_LIFETIME = 900
 SPD_THRESHOLD = 70
+
+# --- LISTE DES PRÉFIXES RARES (pour entités réellement rares) ---
+RARE_PREFIXES = [
+    'DP0', 'DP1', 'RI1', '8J1', 'VP8', 'KC4',
+    '3Y', '3C', 'P5', 'BS7', 'BV9', 'CE0', 'CY9', 'EZ', 'FT5', 'FT8', 'VK0', 'VK7',
+    'HV', '1A', '4U', 'E4', 'SV/A', 'T88', '9J', 'XU', '3D2', 'S21', 'H40',
+    'KH0', 'KH1', 'KH3', 'KH4', 'KH7', 'KH9', 'KP1', 'KP5', 'T5', 'T31', 'T33', 'YV0',
+    'YK', 'VK0', 'VK9', 'VP0' , 'V21', 'XF4', 'XZ', 'ZK', 'ZL8', 'ZL7', 'ZL9',
+]
+
 TOP_RANKING_LIMIT = 10
 DEFAULT_QRA = "JN23"
 
@@ -346,14 +356,6 @@ def calculate_spd_score(call, band, mode, comment, country, dist_km):
     score = 10
     call = call.upper()
     comment = (comment or "").upper()
-
-    RARE_PREFIXES = [
-        'DP0', 'DP1', 'RI1', '8J1', 'VP8', 'KC4',
-        '3Y', 'P5', 'BS7', 'CE0', 'CY9', 'EZ', 'FT5', 'FT8', 'VK0',
-        'HV', '1A', '4U1UN', 'E4', 'SV/A', 'T88', '9J', 'XU', '3D2', 'S21',
-        'KH0', 'KH1', 'KH3', 'KH4', 'KH7', 'KH9', 'KP1', 'KP5', 'ZK', 'ZL7', 'ZL9'
-    ]
-
     for p in RARE_PREFIXES:
         if call.startswith(p):
             score += 65
@@ -383,6 +385,15 @@ def calculate_spd_score(call, band, mode, comment, country, dist_km):
         score += 15
 
     return min(int(score), 100)
+
+def is_rare_prefix(call: str) -> bool:
+    """True si l'indicatif commence par un préfixe explicitement déclaré rare."""
+    c = (call or "").upper().strip()
+    for p in RARE_PREFIXES:
+        if c.startswith(p):
+            return True
+    return False
+
 
 def get_band_and_mode_smart(freq_float, comment):
     comment = (comment or "").upper()
@@ -694,6 +705,7 @@ def telnet_worker():
                             "country": info['c'], "lat": lat, "lon": lon,
                             "score": spd_score,
                             "is_wanted": spd_score >= SPD_THRESHOLD,
+                            "is_rare": is_rare_prefix(dx_call),
                             "via_eme": ("EME" in comment),
                             "color": color,
                             "type": "VHF" if band in VHF_BANDS else "HF",
@@ -849,9 +861,10 @@ def dxcc_stats_24h():
             if band:
                 dxcc_by_band[band] += 1
 
-        # 1. Calcul des spots Rares (SPD > 70)
+        # 1. Spots rares (SPD>=seuil) + entités rares (préfixes explicitement rares)
         if spd is not None and spd >= SPD_THRESHOLD and dxcc:
             high_spd_spots_count += 1
+        if spot.get('is_rare') and dxcc:
             rare_dxcc_entities.add(dxcc)
 
         # 2. Calcul des calls Longue Distance (> 10000 km)
@@ -863,6 +876,16 @@ def dxcc_stats_24h():
     rarity_rate_percent = f"{(high_spd_spots_count / total_spots_24h * 100):.2f}%" if total_spots_24h > 0 else "0.00%"
     last_updated_time = time.strftime("%H:%M:%S", time.gmtime(now))
 
+    # --- Fenêtre courte pour anomalies (2 heures) ---
+    recent_spots = [s for s in all_spots_history if (now - s['timestamp']) < 7200]
+    recent_by_band = Counter(s.get('band') for s in recent_spots if s.get('band'))
+
+    # Fréquence la plus vue sur 6m (pour affichage anomalies)
+    freq6 = [s.get('freq') for s in recent_spots if s.get('band') == '6m' and s.get('freq')]
+    top6 = Counter(freq6).most_common(1)
+    top_freq_6m = top6[0][0] if top6 else None
+
+
     return jsonify({
         "unique_dxcc_count": len(unique_dxcc_set),
         "total_spots_24h": total_spots_24h,
@@ -871,6 +894,10 @@ def dxcc_stats_24h():
         "dxcc_by_mode": dict(dxcc_by_mode),
         "dxcc_by_band": dict(dxcc_by_band),
         "last_updated": last_updated_time,
+
+        # Fenêtre courte (2h) pour anomalies
+        "recent_by_band": dict(recent_by_band),
+        "recent_top_freq": {"6m": top_freq_6m},
         
         # Clés pour les listes dynamiques
         "rare_dxcc_entities": sorted(list(rare_dxcc_entities)), 
@@ -1000,6 +1027,249 @@ def get_solar_json():
         data = dict(solar_cache)
     return jsonify(data)
 # --- END SOLAR ROUTES ---
+
+
+# --- DX BRIEFING (Data-to-Text, deterministic, cached) ---
+dx_briefing_lock = threading.Lock()
+dx_briefing_cache = {
+    "ts": 0.0,
+    "fr": None,
+    "en": None,
+}
+
+def _to_int(x):
+    try:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return int(x)
+        s = str(x)
+        m = re.search(r"(-?\d+)", s)
+        return int(m.group(1)) if m else None
+    except Exception:
+        return None
+
+def _to_float(x):
+    try:
+        if x is None:
+            return None
+        if isinstance(x, (int, float)):
+            return float(x)
+        s = str(x)
+        m = re.search(r"(-?\d+(?:\.\d+)?)", s)
+        return float(m.group(1)) if m else None
+    except Exception:
+        return None
+
+def _sfi_status(sfi):
+    if sfi is None:
+        return ("UNKNOWN", "N/A")
+    if sfi < 90:
+        return ("POOR", "SFI<90")
+    if sfi < 120:
+        return ("FAIR", "90≤SFI<120")
+    if sfi < 160:
+        return ("GOOD", "120≤SFI<160")
+    return ("EXCELLENT", "SFI≥160")
+
+def _geomag_status(a_idx, k_idx):
+    # Simple, readable status
+    if a_idx is None and k_idx is None:
+        return ("UNKNOWN", "A/K=N/A")
+    # Prefer K when available (more direct short-term indicator)
+    if k_idx is not None:
+        if k_idx <= 2:
+            return ("QUIET", "K≤2")
+        if k_idx <= 4:
+            return ("UNSETTLED", "2<K≤4")
+        if k_idx <= 6:
+            return ("ACTIVE", "4<K≤6")
+        return ("STORM", "K>6")
+    # Fallback to A
+    if a_idx is not None:
+        if a_idx <= 10:
+            return ("QUIET", "A≤10")
+        if a_idx <= 20:
+            return ("UNSETTLED", "10<A≤20")
+        if a_idx <= 50:
+            return ("ACTIVE", "20<A≤50")
+        return ("STORM", "A>50")
+    return ("UNKNOWN", "A/K=N/A")
+
+def _hf_outlook_text(sfi, k_idx, lang="fr"):
+    # Keep it practical and short. K makes things unstable.
+    k_penalty = (k_idx is not None and k_idx >= 4)
+    if lang == "en":
+        if sfi is None:
+            base = "HF outlook uncertain (missing SFI)."
+        elif sfi < 90:
+            base = "HF likely poor: focus on 40/80m at night; 10/12m mostly closed."
+        elif sfi < 120:
+            base = "HF fair: 15–20m often workable; 10–12m unstable."
+        elif sfi < 160:
+            base = "HF good: 10–12–15m may open daytime; 20m strong."
+        else:
+            base = "HF excellent: 10–12m wide open potential; strong 15–20m."
+        if k_penalty:
+            base += " Geomagnetic conditions are unsettled: expect fades/auroral skew."
+        return base
+
+    # FR
+    if sfi is None:
+        base = "Prévision HF incertaine (SFI manquant)."
+    elif sfi < 90:
+        base = "HF faible : privilégie 40/80m la nuit ; 10/12m souvent fermés."
+    elif sfi < 120:
+        base = "HF correcte : 15–20m souvent praticables ; 10–12m instables."
+    elif sfi < 160:
+        base = "HF bonne : 10–12–15m possibles en journée ; 20m solide."
+    else:
+        base = "HF excellente : gros potentiel 10–12m ; 15–20m très forts."
+    if k_penalty:
+        base += " Géomagnétique agité : fades possibles, trajets polaires perturbés."
+    return base
+
+def build_dx_briefing(lang="fr"):
+    lang = (lang or "fr").lower()
+    lang = "en" if lang.startswith("en") else "fr"
+
+    now = time.time()
+    # Snapshot data (avoid holding locks too long)
+    with solar_lock:
+        sc = dict(solar_cache)
+
+    sfi = _to_int(sc.get("sfi"))
+    a_idx = _to_int(sc.get("a"))
+    k_idx = _to_float(sc.get("k"))
+    ts_utc = sc.get("ts_utc") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    # Analyze recent spots (lightweight)
+    recent_window = 2 * 3600  # 2h for briefing
+    active_window = 30 * 60   # 30m for "what's hot"
+    now_ts = time.time()
+
+    recent = [s for s in spots_buffer if (now_ts - s.get("timestamp", 0)) < recent_window]
+    active = [s for s in recent if (now_ts - s.get("timestamp", 0)) < active_window]
+
+    # Band activity (active 30m)
+    band_counts = Counter(s.get("band") for s in active if s.get("band"))
+    top_bands = [b for b, _ in band_counts.most_common(5)]
+
+    # Mode activity (active 30m)
+    mode_counts = Counter(s.get("mode") for s in active if s.get("mode"))
+    top_modes = [m for m, _ in mode_counts.most_common(4)]
+
+    # DXCC / Countries in 2h
+    dxcc_counts = Counter(s.get("country") for s in recent if s.get("country") and s.get("country") != "Unknown")
+    top_dxcc = [c for c, _ in dxcc_counts.most_common(5)]
+
+    # Long distance calls (2h)
+    long_calls = {s.get("dx_call") for s in recent if (s.get("distance_km") or 0) >= 10000 and s.get("dx_call")}
+    long_calls_count = len(long_calls)
+
+    # High SPD (rare)
+    high_spd = [s for s in recent if (s.get("score") or 0) >= SPD_THRESHOLD]
+    high_spd_count = len(high_spd)
+
+    # Surges
+    try:
+        surges = analyze_surges()
+    except Exception:
+        surges = []
+
+    sfi_stat, sfi_rule = _sfi_status(sfi)
+    geo_stat, geo_rule = _geomag_status(a_idx, k_idx)
+
+    if lang == "en":
+        title = "DX Briefing"
+        bullets = []
+
+        bullets.append(f"Solar: SFI={sfi if sfi is not None else 'N/A'} ({sfi_stat}), A={a_idx if a_idx is not None else 'N/A'}, K={k_idx if k_idx is not None else 'N/A'} ({geo_stat}).")
+        bullets.append(_hf_outlook_text(sfi, k_idx, lang="en"))
+
+        if top_bands:
+            bullets.append("Hot bands (30m): " + ", ".join(top_bands))
+        if top_modes:
+            bullets.append("Hot modes (30m): " + ", ".join(top_modes))
+        if surges:
+            bullets.append("Surge alerts: " + ", ".join(surges))
+        if top_dxcc:
+            bullets.append("Top DXCC (2h): " + ", ".join(top_dxcc))
+        bullets.append(f"Long-distance calls (≥10,000 km / 2h): {long_calls_count}. High-SPD spots (2h): {high_spd_count}.")
+
+        text = " ".join(bullets)
+
+    else:
+        title = "DX Briefing"
+        bullets = []
+
+        bullets.append(f"Solaire : SFI={sfi if sfi is not None else 'N/A'} ({sfi_stat}), A={a_idx if a_idx is not None else 'N/A'}, K={k_idx if k_idx is not None else 'N/A'} ({geo_stat}).")
+        bullets.append(_hf_outlook_text(sfi, k_idx, lang="fr"))
+
+        if top_bands:
+            bullets.append("Bandes chaudes (30 min) : " + ", ".join(top_bands))
+        if top_modes:
+            bullets.append("Modes chauds (30 min) : " + ", ".join(top_modes))
+        if surges:
+            bullets.append("Alertes surge : " + ", ".join(surges))
+        if top_dxcc:
+            bullets.append("Top DXCC (2h) : " + ", ".join(top_dxcc))
+        bullets.append(f"Longue distance (≥10 000 km / 2h) : {long_calls_count}. Spots rares (SPD≥{SPD_THRESHOLD}) sur 2h : {high_spd_count}.")
+
+        text = " ".join(bullets)
+
+    payload = {
+        "ok": True,
+        "version": APP_VERSION,
+        "title": title,
+        "lang": lang,
+        "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)),
+        "solar_ts_utc": ts_utc,
+        "briefing": text,
+        "bullets": bullets,
+        "metrics": {
+            "sfi": sfi if sfi is not None else "N/A",
+            "a": a_idx if a_idx is not None else "N/A",
+            "k": k_idx if k_idx is not None else "N/A",
+            "sfi_status": sfi_stat,
+            "geomag_status": geo_stat,
+            "top_bands_30m": top_bands,
+            "top_modes_30m": top_modes,
+            "surges": surges,
+            "top_dxcc_2h": top_dxcc,
+            "long_distance_calls_2h": long_calls_count,
+            "high_spd_spots_2h": high_spd_count,
+        }
+    }
+    return payload
+
+@app.route('/api/dx_briefing.json')
+@app.route('/dx_briefing.json')
+def api_dx_briefing():
+    """
+    Deterministic DX briefing (cached, lightweight for Raspberry Pi).
+    Query params:
+      - lang=fr|en
+      - force=1 to bypass cache
+    """
+    lang = (request.args.get('lang') or 'fr').lower()
+    force = request.args.get('force') in ('1', 'true', 'yes')
+    now = time.time()
+
+    with dx_briefing_lock:
+        cache_age = now - (dx_briefing_cache.get('ts') or 0.0)
+        cached = dx_briefing_cache.get('en' if lang.startswith('en') else 'fr')
+        if (not force) and cached is not None and cache_age < 600:  # 10 minutes
+            return jsonify(cached)
+
+    payload = build_dx_briefing(lang=lang)
+    with dx_briefing_lock:
+        dx_briefing_cache['ts'] = now
+        dx_briefing_cache[payload['lang']] = payload
+    return jsonify(payload)
+# --- END DX BRIEFING ---
+
+
 
 
 @app.route('/history.json')

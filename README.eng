@@ -1,10 +1,12 @@
-📡 DX Cluster Dashboard – v4.6 (Neural AI Edition)
+📡 DX Cluster Dashboard – v4.7 (Neural AI Edition)
 
 A next-generation real-time web dashboard for radio amateurs, powered by a statistical analysis engine and connected to a DX Cluster via Telnet.
 
 Designed for proactive DX monitoring, advanced geographical visualization, and propagation optimization.
 
-🚀 What's New in v4.6?
+🚀 What's New in v4.7?
+
+Mosted wanted list DXCC updated
 
 This version introduces the "Neural AI" label, adding a layer of intelligence and analysis to raw cluster data:
 
@@ -71,7 +73,7 @@ Frontend: HTML5 / Vanilla JavaScript / Leaflet (Mapping).
 
 Data: Geolocation via cty.dat (auto-updated) and watchlist.json.
 
-New API Endpoints v4.6:
+New API Endpoints v4.7:
 
     /dxcc_stats_24h.json: Daily analytical data.
 
