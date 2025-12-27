@@ -304,24 +304,58 @@ function runAIAnalysis(stats, solar) {
                 runAIAnalysis(stats, solar);
                 renderBandChart(stats.dxcc_by_band);
 
-                fillList('rare-list', stats.rare_dxcc_entities, 'RARE');
+                fillRareSpots('rare-list', stats.recent_rare_spots);
                 fillList('ld-list', stats.long_distance_calls, 'DX');
                 
                 // Anomalies
                 const anomalyContainer = document.getElementById('anomaly-list');
                 anomalyContainer.innerHTML = "";
-                const recentByBand = stats.recent_by_band || {};
-                const recentTopFreq = stats.recent_top_freq || {};
-                const c6 = recentByBand['6m'] || 0;
-                const f6 = recentTopFreq['6m'] || null;
-                if (c6 > 2) anomalyContainer.innerHTML += `<div class="list-item" style="color:var(--success)">[+] Sudden 6m activity (2h)${f6 ? ' • freq ' + f6 : ''}</div>`;
-                if (solar && !isNaN(parseFloat(solar.k)) && parseFloat(solar.k) >= 4) anomalyContainer.innerHTML += '<div class="list-item" style="color:var(--alert)">[!] Geomagnetic activity (K≥4)</div>';
-                if (anomalyContainer.innerHTML === "") anomalyContainer.innerHTML = '<div class="list-item">Ionosphere stable.</div>';
+
+                // 6m: affichage uniquement si le dernier spot 6m date de moins de 2h
+                const last6 = stats.last_6m || {};
+                const last6Age = (last6.age_sec !== undefined && last6.age_sec !== null) ? parseInt(last6.age_sec) : null;
+                const last6Time = last6.time || null;
+                const last6Call = last6.call || null;
+                const last6Freq = last6.freq || null;
+
+                if (last6Age !== null && last6Age < 7200) {
+                    const when = last6Time ? (' • ' + last6Time) : '';
+                    const who = last6Call ? (' • ' + last6Call) : '';
+                    const frq = last6Freq ? (' • ' + last6Freq) : '';
+                    anomalyContainer.innerHTML += `<div class="list-item" style="color:var(--success)">[+] Sudden 6m activity${when}${who}${frq}</div>`;
+                }
+
+                // Solaire: garde-fou simple
+                if (solar && parseFloat(solar.k) >= 4) {
+                    anomalyContainer.innerHTML += '<div class="list-item" style="color:var(--alert)">[!] Geomagnetic activity (K≥4)</div>';
+                }
+
+if (anomalyContainer.innerHTML === "") anomalyContainer.innerHTML = '<div class="list-item">Ionosphere stable.</div>';
 
             } catch (err) { console.error("Update Error:", err); }
         }
 
-        function fillList(id, items, tag) {
+        
+        function fillRareSpots(id, items) {
+            const container = document.getElementById(id);
+            container.innerHTML = '';
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div class="list-item"><i>Aucune activité rare récente.</i></div>';
+                return;
+            }
+            for (const it of items) {
+                const call = it.call || 'N/A';
+                const time = it.time || '--:--';
+                const freq = it.freq ? String(it.freq) : '';
+                const band = it.band || '';
+                const mode = it.mode || '';
+                const suffix = [band, mode].filter(Boolean).join(' ');
+                const ftxt = freq ? (' • ' + freq) : '';
+                container.innerHTML += `<div class="list-item"><b>${call}</b> • ${time}${ftxt}${suffix ? ' • ' + suffix : ''}</div>`;
+            }
+        }
+
+function fillList(id, items, tag) {
             const container = document.getElementById(id);
             container.innerHTML = items && items.length > 0 
                 ? items.map(i => `<div class="list-item"><span>${i}</span><span style="color:var(--accent); font-weight:bold;">${tag}</span></div>`).join('')

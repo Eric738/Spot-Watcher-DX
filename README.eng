@@ -1,116 +1,138 @@
-📡 DX Cluster Dashboard – v4.7 (Neural AI Edition)
+📡 DX Cluster Dashboard – v4.8 (Neural AI Edition)
 
-A next-generation real-time web dashboard for radio amateurs, powered by a statistical analysis engine and connected to a DX Cluster via Telnet.
+Next-generation real-time web dashboard for radio amateurs, powered by a statistical analysis engine and connected to DX Clusters via Telnet.
 
-Designed for proactive DX monitoring, advanced geographical visualization, and propagation optimization.
+Designed for proactive DX monitoring, advanced geographic visualization, and propagation optimization.
 
-🚀 What's New in v4.7?
+🚀 What’s new in v4.8?
 
-Mosted wanted list DXCC updated
+Timestamping of spots on the Analysis page and in the “Anomaly Detector” panel
 
-This version introduces the "Neural AI" label, adding a layer of intelligence and analysis to raw cluster data:
+Regular automatic reset of detected anomalies
 
-🧠 SPD (Spot Priority/Difficulty) Scoring Engine
+🚀 What’s new in v4.7?
 
-    Assigns a score from 0 to 100 for each spot based on prefix rarity, mode (CW bonus), distance, and comments (Split, Up, DX).
+This release introduces the “Neural AI” label, adding an intelligence and analysis layer on top of raw DX Cluster data.
 
-Immediately identifies "Wanted" stations with a Score > 70.
+🧠 SPD Scoring Engine (Spot Priority / Difficulty)
+
+Assignment of a score from 0 to 100 for each spot, based on:
+
+Prefix rarity
+
+Operating mode (CW bonus)
+
+Distance
+
+Spot comments (Split, UP, DX)
+
+Immediate identification of “Wanted” stations (Score > 70)
 
 🗺️ AI Path Optimizer & Grayline
 
-    Path Visualization: Calculates and displays the optimal path vs. Long Path for each spot.
+Path visualization: calculation and display of the optimal path vs. long path for each spot
 
-Propagation Analysis: Recommendations based on the Grayline to avoid ionospheric absorption.
+Propagation analysis: Grayline-based recommendations to avoid ionospheric absorption
 
 📊 24h DXCC Statistics & Rarity
 
-    New analytical dashboard including:
+New analytical dashboard including:
 
-        Number of unique DXCC entities contacted/seen in 24 hours.
+Number of unique DXCC entities worked/seen in the last 24 hours
 
-Global Rarity Rate (%).
+Global rarity rate (Rarity Rate %)
 
-Dynamic list of "Long Distance" calls (> 10,000 km).
+Dynamic list of long-distance calls (> 10,000 km)
 
 🌠 Meteor Scatter (MS) Monitoring
 
-    Integration of meteor shower calendars (Perseids, Leonids, etc.).
+Integration of meteor shower calendars (Perseids, Leonids, etc.)
 
-Automatic detection of MSK144 activity on 2m with dedicated "Surge" alerts.
+Automatic detection of MSK144 activity on 2m, with dedicated Surge alerts
 
-🛠️ Core Features
+🛠️ Historical Features
+
+Correction of the DXCC country list according to the Most Wanted List
+
 🔗 Cluster Connectivity
 
-    Persistent Telnet connection to multiple sources (dxfun.com, cluster.dx.de, etc.) with auto-reconnection.
+Persistent multi-source Telnet connections (dxfun.com, cluster.dx.de, etc.) with automatic reconnection
 
-Send manual spots directly from the interface.
+Manual spot submission directly from the interface
 
 ☀️ NOAA Solar Data
 
-    Real-time retrieval of SFI, A, and K indices from NOAA servers.
+Real-time retrieval of SFI, A, and K indices from NOAA servers
 
-Solar data export via API in XML and JSON formats.
+Solar data export via API in XML and JSON formats
 
 🗣️ Voice Synthesis & Alerts
 
-    Multilingual voice announcements (FR, EN, ES, HE) for new spots.
+Multilingual voice announcements (FR, EN, ES, HE) for new spots
 
-Personalized Watchlist management with visual and audio notifications.
+Custom Watchlist management with visual notifications
 
 📊 Modular Interface
 
-    Drag & Drop dashboard panels.
+Column-based dashboard with drag & drop panels
 
-12-hour activity histograms by band.
+12-hour activity histograms by band
 
 🧠 Technical Architecture
 
-    Backend: Python 3.x / Flask.
+Backend: Python 3.x / Flask
 
-Processing: Multithreading (Dedicated workers for Telnet, Solar, RSS, and Statistics).
+Processing: Multithreading (dedicated workers for Telnet, Solar, RSS, and Statistics)
 
-Frontend: HTML5 / Vanilla JavaScript / Leaflet (Mapping).
+Frontend: HTML5 / Vanilla JavaScript / Leaflet (mapping)
 
-Data: Geolocation via cty.dat (auto-updated) and watchlist.json.
+Databases: Geolocation via cty.dat (auto-updated) and watchlist.json
 
-New API Endpoints v4.7:
+New API Routes (v4.7)
 
-    /dxcc_stats_24h.json: Daily analytical data.
+/dxcc_stats_24h.json – Daily analytical data
 
-/ai_path_data.json: Coordinates for the path optimizer.
+/ai_path_data.json – Coordinates for the path optimizer
 
-/api/solar.xml: XML feed of solar data for third-party integration.
+/api/solar.xml – XML feed of solar data for third-party integration
 
 📸 Preview
 
-(Legend: Spot visualization with SPD scores and AI trajectories)
-🛠️ Quick Installation
-Bash
+(Caption: Spot visualization with SPD scores and AI-calculated paths)
 
+🛠️ Installation
+Bash
 # Clone the repository
 git clone https://github.com/Eric738/Spot-Watcher-DX.git
 cd Spot-Watcher-DX
 
-# Create virtual environment
+# Create the virtual environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the application
+# Run the application
 python webapp.py
 
-Then open your browser at: http://localhost:8000
 
-🧩 Future Enhancements
+Then open your browser at:
+👉 http://localhost:8000
 
-    [ ] Integration of a cognitive correlation engine (Pattern Matching).
+🧩 Upcoming Features
 
-[ ] ADIF format log export for station logs.
+Full integration of the cognitive correlation engine (pattern matching)
 
-[ ] Propagation heatmap based on signal-to-noise ratio.
+ADIF log import/export for logbook analysis
 
-Developed by F1SMV Eric with assistance from Gemini/ChatGPT for the Ham Radio community.
+Propagation heatmap based on signal-to-noise ratio (when available from clusters)
 
-73's and good DX!
+Developed by F1SMV Eric, with assistance from Gemini3 / ChatGPT v5.2, for the radio amateur community.
+
+73’s and good DX!
+
+
+
+
+ChatGPT can make mistakes. Check important info. See Cookie Preferences.

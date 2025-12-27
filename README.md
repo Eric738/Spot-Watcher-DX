@@ -1,8 +1,12 @@
-📡 DX Cluster Dashboard – v4.7 (Neural AI Edition)
+📡 DX Cluster Dashboard – v4.8 (Neural AI Edition)
 
 Dashboard web temps réel nouvelle génération pour radioamateurs, piloté par un moteur d'analyse statistique et connecté à un DX Cluster via Telnet.
 
 Conçu pour la veille DX proactive, la visualisation géographique avancée, et l'optimisation de propagation.
+🚀Quoi de neuf dans la 4.8 ?
+
+horodatage des spots dans la page analyse et son pavé "detecteur d'anomalies" et raz régulière
+
 🚀 Quoi de neuf dans la v4.7 ?
 
 Cette version introduit le label "Neural AI", ajoutant une couche d'intelligence et d'analyse aux données brutes du cluster :
@@ -103,6 +107,7 @@ pip install -r requirements.txt
 python webapp.py
 
 Puis ouvrez votre navigateur sur : http://localhost:8000
+
 🧩 Évolutions à venir
 
     [ ] Intégration réelle du moteur de corrélation cognitive (Pattern Matching).
@@ -111,6 +116,6 @@ Puis ouvrez votre navigateur sur : http://localhost:8000
 
     [ ] Heatmap de propagation basée sur le rapport signal/bruit (si disponible via cluster).
 
-Développé par F1SMV Eric avec l'assistance de Gemini/ChatGPT pour la communauté Radioamateur.
+Développé par F1SMV Eric avec l'assistance de Gemini3/ChatGPT version 5.2 pour la communauté Radioamateur.
 
 73's et bon DX !

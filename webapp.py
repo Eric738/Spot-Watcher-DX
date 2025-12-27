@@ -19,7 +19,7 @@ tn_lock = threading.Lock()
 tn_current = None  # telnetlib.Telnet when connected
 # --- FIN CLUSTER TX ---
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL AI v4.7 - corrections mineures + DXCC update"
+APP_VERSION = "NEURAL AI v4.8 - Rare Activity + 6m timestamp + auto reset"
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -32,7 +32,7 @@ RARE_PREFIXES = [
     '3Y', '3C', 'P5', 'BS7', 'BV9', 'CE0', 'CY9', 'EZ', 'FT5', 'FT8', 'VK0', 'VK7',
     'HV', '1A', '4U', 'E4', 'SV/A', 'T88', '9J', 'XU', '3D2', 'S21', 'H40',
     'KH0', 'KH1', 'KH3', 'KH4', 'KH7', 'KH9', 'KP1', 'KP5', 'T5', 'T31', 'T33', 'YV0',
-    'YK', 'VK0', 'VK9', 'VP0' , 'V21', 'XF4', 'XZ', 'ZK', 'ZL8', 'ZL7', 'ZL9',
+    'YK', 'VK0', 'VK9', 'VP0', 'V21', 'XF4', 'XZ', 'ZK', 'ZL8', 'ZL7', 'ZL9',
 ]
 
 TOP_RANKING_LIMIT = 10
@@ -884,6 +884,42 @@ def dxcc_stats_24h():
     freq6 = [s.get('freq') for s in recent_spots if s.get('band') == '6m' and s.get('freq')]
     top6 = Counter(freq6).most_common(1)
     top_freq_6m = top6[0][0] if top6 else None
+    # Dernier spot 6m sur la fenêtre courte (2h) : permet une expiration fiable après 2h sans activité
+    last6 = None
+    for sp in recent_spots:
+        if sp.get('band') == '6m':
+            if (last6 is None) or (sp.get('timestamp', 0) > last6.get('timestamp', 0)):
+                last6 = sp
+    last6_age_sec = int(now - last6['timestamp']) if last6 and last6.get('timestamp') else None
+    last6_time = last6.get('time') if last6 else None
+    last6_call = last6.get('dx_call') if last6 else None
+    last6_freq = last6.get('freq') if last6 else None
+
+    # Activités rares : liste "call + heure + fréquence" avec raz naturelle via fenêtre glissante
+    RARE_WINDOW_SEC = 3 * 3600  # 3 heures
+    rare_recent = [sp for sp in all_spots_history if (now - sp.get('timestamp', 0)) < RARE_WINDOW_SEC and sp.get('is_rare')]
+    last_by_call = {}
+    for sp in rare_recent:
+        c = sp.get('dx_call')
+        if not c:
+            continue
+        prev = last_by_call.get(c)
+        if (prev is None) or (sp.get('timestamp', 0) > prev.get('timestamp', 0)):
+            last_by_call[c] = sp
+    rare_spots_list = sorted(last_by_call.values(), key=lambda x: x.get('timestamp', 0), reverse=True)[:20]
+    recent_rare_spots = [
+        {
+            'call': sp.get('dx_call'),
+            'time': sp.get('time'),
+            'freq': sp.get('freq'),
+            'band': sp.get('band'),
+            'mode': sp.get('mode'),
+            'country': sp.get('country'),
+            'timestamp': sp.get('timestamp')
+        }
+        for sp in rare_spots_list
+    ]
+
 
 
     return jsonify({
@@ -898,6 +934,8 @@ def dxcc_stats_24h():
         # Fenêtre courte (2h) pour anomalies
         "recent_by_band": dict(recent_by_band),
         "recent_top_freq": {"6m": top_freq_6m},
+        "last_6m": {"age_sec": last6_age_sec, "time": last6_time, "call": last6_call, "freq": last6_freq},
+        "recent_rare_spots": recent_rare_spots,
         
         # Clés pour les listes dynamiques
         "rare_dxcc_entities": sorted(list(rare_dxcc_entities)), 
