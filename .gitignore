@@ -1,3 +1,27 @@
 __pycache__/
 *.pyc
 cty.dat
+# venv
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# logs / runtime
+*.log
+logs/
+data/
+cache/
+
+# secrets / local config
+.env
+.env.*
+config_local.py
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
