@@ -25,3 +25,18 @@ config_local.py
 Thumbs.db
 .vscode/
 .idea/
+watchlist.json
+watchlist.txt
+# Logs
+*.log
+
+# Downloaded/cache files
+*_cache.json
+dxcc_*.json
+dxcc_latest.json
+baseline_openings.json
+most_wanted_cache.json
+
+# Runtime data (à adapter)
+data/*.json
+!data/ai_presets.json
