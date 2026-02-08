@@ -1,0 +1,37 @@
+[
+  {
+    "id": "dxworld",
+    "name": "DX-World",
+    "url": "https://www.dx-world.net/feed/",
+    "site": "https://www.dx-world.net/",
+    "type": "rss"
+  },
+  {
+    "id": "dxnews",
+    "name": "DXNews",
+    "url": "https://dxnews.com/",
+    "site": "https://dxnews.com/",
+    "type": "html"
+  },
+  {
+    "id": "ng3k",
+    "name": "NG3K ADXO",
+    "url": "https://www.ng3k.com/misc/adxo.html",
+    "site": "https://www.ng3k.com/misc/adxo.html",
+    "type": "html"
+  },
+  {
+    "id": "dxmaps",
+    "name": "DXMaps DX Calendar",
+    "url": "https://www.dxmaps.com/dxcalendar.html",
+    "site": "https://www.dxmaps.com/dxcalendar.html",
+    "type": "html"
+  },
+  {
+    "id": "qo100dx",
+    "name": "QO-100 DX Club",
+    "url": "https://qo100dx.club",
+    "site": "https://qo100dx.club",
+    "type": "html"
+  }
+]

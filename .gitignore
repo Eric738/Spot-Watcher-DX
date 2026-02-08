@@ -12,7 +12,9 @@ __pycache__/
 # logs / runtime
 *.log
 logs/
-data/
+data/*
+!data/ai_presets.json
+!data/briefing_sources.json
 cache/
 
 # secrets / local config
@@ -38,5 +40,3 @@ baseline_openings.json
 most_wanted_cache.json
 
 # Runtime data (à adapter)
-data/*.json
-!data/ai_presets.json
