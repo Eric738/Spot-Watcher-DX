@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Briefing DX — Spot Watcher</title>
+  <link rel="stylesheet" href="/static/base.css">
+  <style>
+    :root{
+      --bg-color: #050505;
+      --panel-bg: #0e0e0e;
+      --text-main: #a0a0a0;
+      --accent: #00f3ff;
+      --alert: #ff003c;
+      --border: 1px solid #333;
+      --success: #00ff80;
+    }
+    body[data-theme='dark']{
+      --bg-color: #1a1a1a;
+      --panel-bg: #2a2a2a;
+      --text-main: #f0f0f0;
+      --accent: #00ff80;
+      --alert: #ff6347;
+      --border: 1px solid #555;
+      --success: #00ff80;
+    }
+    body[data-theme='matrix']{
+      --bg-color: #000000;
+      --panel-bg: #031503;
+      --text-main: #00ff41;
+      --accent: #00ff41;
+      --alert: #ff004c;
+      --border: 1px solid #005500;
+      --success: #00ff80;
+    }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 700px at 30% -10%, rgba(0,243,255,.10), transparent 55%),
+                  radial-gradient(900px 600px at 90% 10%, rgba(255,0,60,.06), transparent 55%),
+                  var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+    }
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      border: var(--border);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 0 6px rgba(0,243,255,.13);
+    }
+    .brand h1{
+      font-size:16px;
+      margin:0;
+      color: var(--text-main);
+      letter-spacing:.3px;
+      font-family: var(--font-display);
+    }
+    .brand .sub{
+      font-size:12px;
+      opacity:.9;
+    }
+    .nav{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .nav a{
+      color: var(--text-main);
+      text-decoration:none;
+      font-size:13px;
+      padding:8px 10px;
+      border: var(--border);
+      border-radius:12px;
+    }
+    .nav a.active{
+      border-color: rgba(0,243,255,.55);
+      background: rgba(0,243,255,.08);
+    }
+    .briefing-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-top:16px;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .briefing-header h1{
+      margin:0;
+      font-family: var(--font-display);
+      color: var(--accent);
+      letter-spacing: .06em;
+      font-size: 1.4rem;
+    }
+    .meta{
+      font-size: 0.85rem;
+      opacity: .8;
+      margin-top:4px;
+    }
+    .meta span{
+      display:block;
+    }
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .btn{
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .btn:hover{
+      background: var(--accent);
+      color:#000;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap:16px;
+      margin-top:16px;
+    }
+    .panel{
+      background: var(--panel-bg);
+      border: var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.55);
+      max-height: 360px;
+      overflow: auto;
+    }
+    .panel.dragging{
+      opacity: 0.7;
+    }
+    .panel-handle{
+      cursor: grab;
+    }
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size: 0.75rem;
+      padding:2px 8px;
+      border-radius:999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .status.ok{
+      border-color: rgba(0,255,128,0.5);
+      color: var(--success);
+    }
+    .status.error{
+      border-color: rgba(255,0,60,0.5);
+      color: var(--alert);
+    }
+    .item{
+      padding:10px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.1);
+    }
+    .item:last-child{
+      border-bottom: none;
+    }
+    .item a{
+      color: var(--text-main);
+      text-decoration:none;
+      font-weight: 600;
+    }
+    .item small{
+      display:block;
+      opacity: .7;
+      margin-top:4px;
+      font-size: 0.75rem;
+    }
+    .summary{
+      font-size: 0.8rem;
+      opacity: .85;
+      margin-top:6px;
+      line-height: 1.4;
+    }
+    .empty{
+      font-size: 0.85rem;
+      opacity: .6;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>NEURAL DX BRIEFING</h1>
+        <div class="sub">Mise à jour toutes les 12 heures.</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/">Dashboard</a>
+      <a href="/map">Map</a>
+      <a href="/world">World</a>
+      <a href="/analysis">Analysis</a>
+      <a class="active" href="/briefing">Briefing</a>
+    </nav>
+  </div>
+
+  <div class="briefing-header">
+    <div>
+      <h1>Briefing dynamique DX</h1>
+      <div class="meta" id="briefing-meta">
+        <span>Chargement des flux…</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="refresh">Actualiser</button>
+    </div>
+  </div>
+
+  <div class="grid draggable-grid" id="summary-grid">
+    <div class="panel">
+      <h2 class="panel-handle">📡 Points chauds (toutes sources)</h2>
+      <div id="briefing-items" class="list"></div>
+    </div>
+  </div>
+
+  <div class="grid draggable-grid" id="sources-grid"></div>
+
+  <div class="grid draggable-grid" id="status-grid">
+    <div class="panel">
+      <h2 class="panel-handle">🧭 Sources & statut</h2>
+      <div id="briefing-sources"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  (function () {
+    const theme =
+      localStorage.getItem('theme') ||
+      localStorage.getItem('selectedTheme') ||
+      localStorage.getItem('themeName');
+    if (!theme) return;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.addEventListener('DOMContentLoaded', () => {
+      document.body.setAttribute('data-theme', theme);
+    });
+  })();
+
+  const metaEl = document.getElementById('briefing-meta');
+  const itemsEl = document.getElementById('briefing-items');
+  const sourcesEl = document.getElementById('briefing-sources');
+  const sourcesGrid = document.getElementById('sources-grid');
+  const summaryGrid = document.getElementById('summary-grid');
+  const statusGrid = document.getElementById('status-grid');
+
+  function formatAge(seconds) {
+    if (!seconds && seconds !== 0) return '—';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${hrs}h${String(mins).padStart(2, '0')}`;
+  }
+
+  function renderItems(container, items) {
+    container.innerHTML = '';
+    if (!items.length) {
+      container.innerHTML = '<div class="empty">Aucun item disponible pour le moment.</div>';
+      return;
+    }
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      const title = document.createElement('a');
+      title.href = item.link || '#';
+      title.target = '_blank';
+      title.rel = 'noopener';
+      title.textContent = item.title;
+      div.appendChild(title);
+
+      if (item.summary) {
+        const summary = document.createElement('div');
+        summary.className = 'summary';
+        summary.innerHTML = item.summary.replace(/\n/g, '<br>');
+        div.appendChild(summary);
+      }
+
+      const meta = document.createElement('small');
+      meta.textContent = `${item.source_id || 'source'} · ${item.published_utc || '—'}`;
+      div.appendChild(meta);
+      container.appendChild(div);
+    });
+  }
+
+  function renderSourcesSummary(sources) {
+    sourcesEl.innerHTML = '';
+    sources.forEach(source => {
+      const line = document.createElement('div');
+      line.className = 'item';
+      const name = document.createElement('strong');
+      name.textContent = source.name;
+      line.appendChild(name);
+
+      const status = document.createElement('span');
+      status.className = `status ${source.status === 'ok' ? 'ok' : 'error'}`;
+      status.textContent = source.status === 'ok' ? 'OK' : 'ERROR';
+      line.appendChild(status);
+
+      const meta = document.createElement('small');
+      meta.textContent = `Dernière vérification: ${source.fetched_utc || '—'}`;
+      line.appendChild(meta);
+      sourcesEl.appendChild(line);
+    });
+  }
+
+  function renderSourcePanels(sources) {
+    sourcesGrid.innerHTML = '';
+    sources.forEach(source => {
+      const panel = document.createElement('div');
+      panel.className = 'panel';
+      const title = document.createElement('h2');
+      title.className = 'panel-handle';
+      title.textContent = `🛰️ ${source.name}`;
+      panel.appendChild(title);
+
+      if (source.site) {
+        const link = document.createElement('a');
+        link.href = source.site;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = source.site;
+        link.style.fontSize = '0.75rem';
+        link.style.opacity = '0.7';
+        panel.appendChild(link);
+      }
+
+      const list = document.createElement('div');
+
+      if (!source.items || !source.items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = source.error ? `Erreur: ${source.error}` : 'Pas de nouvelles récentes.';
+        list.appendChild(empty);
+      } else {
+        renderItems(list, source.items);
+      }
+
+      panel.appendChild(list);
+      sourcesGrid.appendChild(panel);
+    });
+  }
+
+  async function loadBriefing(force = false) {
+    metaEl.textContent = 'Chargement des flux…';
+    const url = new URL('/api/briefing.json', window.location.origin);
+    url.searchParams.set('limit', '6');
+    if (force) {
+      url.searchParams.set('force', '1');
+    }
+    const response = await fetch(url);
+    const data = await response.json();
+    const cache = data.cache || {};
+    metaEl.innerHTML = `
+      <span>Généré: ${data.generated_utc || '—'}</span>
+      <span>Âge du cache: ${formatAge(cache.age_seconds)} | Prochaine MAJ: ${cache.next_refresh_utc || '—'}</span>
+      <span>Sources actives: ${data.total_sources || 0}</span>
+    `;
+    renderItems(itemsEl, data.items || []);
+    renderSourcesSummary(data.sources || []);
+    renderSourcePanels(data.sources || []);
+  }
+
+  document.getElementById('refresh').addEventListener('click', () => loadBriefing(true));
+  loadBriefing();
+  setInterval(() => loadBriefing(false), 12 * 60 * 60 * 1000);
+
+  [summaryGrid, sourcesGrid, statusGrid].forEach(grid => {
+    Sortable.create(grid, {
+      animation: 150,
+      draggable: '.panel',
+      handle: '.panel-handle',
+      ghostClass: 'dragging'
+    });
+  });
+</script>
+</body>
+</html>
