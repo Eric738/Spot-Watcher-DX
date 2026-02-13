@@ -249,12 +249,37 @@
 
         /* Maps */
         .map-panel {
-            min-height: 250px;
+            min-height: 320px;
+            padding: 12px !important;
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.20) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 14px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06) inset !important;
         }
         .map-area {
-            height: 220px;
-            border: 1px solid #555;
-            border-radius: 3px;
+            height: 320px;
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #070b12;
+        }
+        .map-area .leaflet-control-zoom a {
+            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,.14) !important;
+            background: rgba(8, 12, 20, 0.88) !important;
+            color: var(--text-main) !important;
+        }
+        .map-area .leaflet-control-zoom a:hover {
+            color: var(--accent) !important;
+            border-color: rgba(0,243,255,.55) !important;
+        }
+        .map-area .leaflet-control-attribution {
+            background: rgba(8, 12, 20, 0.72) !important;
+            color: #9bb0bf !important;
+            border-top-left-radius: 10px;
+        }
+        .map-area .leaflet-control-attribution a {
+            color: var(--accent) !important;
         }
 
         /* Formulaire QRA */
@@ -526,6 +551,7 @@
 <div class="indicator-item">LOC: <span id="local-time"></span></div>
 <div class="indicator-item">MODE: <span id="display-mode">SoftTech</span></div>
 <a class="icon-button" href="analysis.html" title="Visualiser les algorithmes d'analyse">📊 AI INSIGHT</a>
+<a class="icon-button" href="/briefing" title="Briefing DX">🛰️ BRIEFING</a>
 <a class="icon-button" href="/map" title="DX Activity Map"> 🗺 MAP</a>
 <a class="icon-button" href="/world" title="World"> 🗺 World</a>
 </span>
