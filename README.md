@@ -97,7 +97,7 @@ La page **World** est **fondamentalement différente** de la page Map.
 
 ### 5️⃣ « Briefing » qui se met a jour toutes les 12 heures, reprenant les infos dx essentielles et surtout maintenant 
 la possibilite d'ajouter automatiquement les call (si vous voulez) dans la "watching list" de la page Index. 
-Donc vous ne raterez aucune expedition car des que le call d'un expedition sera spoté il s'afficher en jaune  
+Donc vous ne raterez aucune expedition car des que le call d'un expedition sera spoté il s'affichera en jaune  
 ---
 📸 Aperçu
 
