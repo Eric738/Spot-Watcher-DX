@@ -1,30 +1,27 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="/static/base.css">
-<title>NEURAL DX v6.1</title>
+<title>NEURAL DX v6.2</title>
 <link href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet"/>
 <style>
-        /* Variables de Thème par Défaut (SoftTech V4.1 Original) */
         :root {
             --bg-color: #050505;
             --panel-bg: #0e0e0e;
             --text-main: #a0a0a0;
             --accent: #00f3ff;
-            --alert: #ff003c; /* Rouge vif pour Surge */
+            --alert: #ff003c;
             --border: 1px solid #333;
             --wl-bg: #ffeb3b;
             --wl-text: #000000;
             --open-color: #d35400;
         }
-        /* Thème Nuit (DarkMode V4.1 Original) */
         body[data-theme='dark'] {
             --bg-color: #1a1a1a;
             --panel-bg: #2a2a2a;
@@ -36,11 +33,10 @@
             --wl-text: #000000;
             --open-color: #ffd700;
         }
-        /* NOUVEAU: Thème Matrix (Hackergreen V4.2) */
         body[data-theme='matrix'] {
             --bg-color: #000000;
             --panel-bg: #031503;
-            --text-main: #00ff41; /* Vert Matrix */
+            --text-main: #00ff41;
             --accent: #00ff41;
             --alert: #ff004c;
             --border: 1px solid #005500;
@@ -48,7 +44,6 @@
             --wl-text: #000000;
             --open-color: #00aa00;
         }
-        /* NOUVEAU: Thème Sunset (Orange/Violet V4.2) */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -75,7 +70,6 @@
             color: var(--accent);
             text-shadow: 0 0 5px var(--accent);
         }
-        /* Ticker */
         #ticker-container {
             background-color: #0d0d0d;
             color: var(--text-main);
@@ -90,7 +84,6 @@
             padding-left: 100%;
             animation: ticker-roll 60s linear infinite;
         }
-
         @keyframes ticker-roll {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100%, 0); }
@@ -133,8 +126,6 @@
             align-items: center;
             cursor: grab;
         }
-
-        /* Handle de Drag & Drop (le "crochet") */
         .dd-handle {
             font-size: 1.5em;
             cursor: grab;
@@ -146,8 +137,6 @@
             opacity: 1;
             color: var(--accent);
         }
-
-        /* ALERTE SURGE (clignotant ROUGE) */
         #surge-panel.active-surge {
             border: 3px solid var(--alert);
             box-shadow: 0 0 15px var(--alert);
@@ -157,26 +146,18 @@
             from { box-shadow: 0 0 10px var(--alert); }
             to { box-shadow: 0 0 20px var(--alert), 0 0 5px var(--alert); }
         }
-        /* Tableaux */
         .spot-table, .wl-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85em;
         }
-
-        /* Callsign en gras blanc (sauf Watchlist) */
         .spot-call-white-bold {
             color: #ffffff;
             font-weight: bold;
         }
-
-        /* Assurer que le lien QRZ à l'intérieur est également en blanc */
         .spot-call-white-bold a {
             color: inherit !important;
         }
-
-
-        /* Callsign Watchlist dans tableaux spots (fond jaune, lisible, sans "surbrillance") */
         .spot-call-watchlist {
             background-color: var(--wl-bg);
             color: var(--wl-text) !important;
@@ -188,8 +169,6 @@
         .spot-call-watchlist a {
             color: var(--wl-text) !important;
         }
-
-        /* Watchlist dans tableaux spots (ligne complète en fond jaune) */
         tr.spot-row-watchlist > td {
             background-color: #ffd54a !important;
             color: #000000 !important;
@@ -200,9 +179,15 @@
         tr.spot-row-watchlist td {
             border-bottom-color: rgba(0,0,0,0.12) !important;
         }
-
-
-        /* Étiquettes de bande dans le tableau */
+        .dx-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: rgba(0,243,255,0.15);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            margin-left: 6px;
+            display: inline-block;
+        }
         .band-tag {
             display: inline-block;
             padding: 2px 5px;
@@ -212,8 +197,6 @@
             color: #000;
             text-shadow: none;
         }
-
-        /* Liens QRZ */
         .spot-table a {
             color: inherit;
             text-decoration: none;
@@ -229,12 +212,10 @@
             position: sticky;
             top: 0;
         }
-
         .high-spd {
             color: var(--alert);
             font-weight: bold;
         }
-
         .wl-table td.call {
             color: var(--wl-text);
             background-color: var(--wl-bg);
@@ -246,8 +227,6 @@
             overflow-y: auto;
             margin-top: 5px;
         }
-
-        /* Maps */
         .map-panel {
             min-height: 320px;
             padding: 12px !important;
@@ -281,8 +260,6 @@
         .map-area .leaflet-control-attribution a {
             color: var(--accent) !important;
         }
-
-        /* Formulaire QRA */
         #qra-form {
             display: flex;
             gap: 10px;
@@ -304,14 +281,11 @@
             border: none;
             cursor: pointer;
         }
-
-        /* Contrôles Header */
         #controls {
             display: flex;
             align-items: center;
-            gap: 10px; /* Espace entre les éléments de contrôle */
+            gap: 10px;
         }
-
         .icon-button {
             background: none;
             border: none;
@@ -319,8 +293,8 @@
             font-size: 1.2em;
             cursor: pointer;
             margin-left: 10px;
-            text-decoration: none; /* Ajout pour la balise <a> */
-            display: inline-block; /* Ajout pour la balise <a> */
+            text-decoration: none;
+            display: inline-block;
             font-family: 'Orbitron', sans-serif;
             padding: 5px 10px;
         }
@@ -328,7 +302,6 @@
              background-color: rgba(0, 243, 255, 0.1);
              border-radius: 3px;
         }
-        /* Style spécifique pour le bouton Synthèse Vocale et Filtres */
         #synth-toggle-button, #voice-distance-filter, #voice-language-filter {
             background-color: #333;
             padding: 5px 10px;
@@ -339,7 +312,6 @@
             border: 1px solid #555;
             font-family: 'Share Tech Mono', monospace;
         }
-
         #indicators {
             display: flex;
             gap: 15px;
@@ -369,7 +341,6 @@
         .ranking-score {
             color: var(--alert);
         }
-
         #surge-container {
             font-size: 1em;
             padding: 5px;
@@ -384,7 +355,6 @@
             font-family: 'Orbitron', sans-serif;
             font-weight: bold;
         }
-
         .filter-controls {
             display: flex;
             gap: 10px;
@@ -396,8 +366,6 @@
             color: var(--text-main);
             border: 1px solid #555;
         }
-
-        /* Style pour le panel du graphique d'historique */
         #chart-history-panel {
             min-height: 300px;
         }
@@ -406,10 +374,6 @@
             height: 250px;
             width: 100%;
         }
-
-        /* =========================
-           SOLAR panel : couleurs + micro animation + explications
-           ========================= */
         .solar-chip{
             display:inline-flex;
             align-items:center;
@@ -435,17 +399,14 @@
             0%,100%{ transform: scale(1); opacity:.65; }
             50%{ transform: scale(1.35); opacity:1; }
         }
-
         .chip-poor{ color:#ff4d4d; border-color:rgba(255,77,77,.35); background:rgba(255,77,77,.08); }
         .chip-fair{ color:#ffd24d; border-color:rgba(255,210,77,.35); background:rgba(255,210,77,.08); }
         .chip-good{ color:#4dff88; border-color:rgba(77,255,136,.35); background:rgba(77,255,136,.08); }
         .chip-exc{  color:#00eaff; border-color:rgba(0,234,255,.35); background:rgba(0,234,255,.08); }
-
         .solar-value-color-poor{ color:#ff4d4d !important; }
         .solar-value-color-fair{ color:#ffd24d !important; }
         .solar-value-color-good{ color:#4dff88 !important; }
         .solar-value-color-exc{  color:#00eaff !important; }
-
         .solar-updated{
             margin-top:6px;
             font-size:0.85em;
@@ -459,7 +420,6 @@
             line-height:1.35;
         }
         .solar-explain b{ color: #ddd; }
-
         .hf-pred{
             margin-top:6px;
             font-size:0.85em;
@@ -469,46 +429,6 @@
             color: var(--accent);
             font-weight:bold;
         }
-    
-        /* === V4 LOOK (pavés plus lisibles) === */
-        .panel{
-            border-radius: 14px !important;
-            border: 1px solid rgba(255,255,255,0.18) !important;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset !important;
-            overflow: hidden;
-        }
-        body[data-theme='light'] .panel{
-            border: 1px solid rgba(0,0,0,0.14) !important;
-            box-shadow: 0 12px 26px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.70) inset !important;
-        }
-        body[data-theme='matrix'] .panel{
-            border: 1px solid rgba(0,255,65,0.45) !important;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,255,65,0.10) inset !important;
-        }
-
-        .panel-header{
-            padding: 10px 14px !important;
-            border-bottom: 1px solid rgba(255,255,255,0.12) !important;
-            letter-spacing: .06em !important;
-            text-transform: uppercase !important;
-        }
-        body[data-theme='light'] .panel-header{
-            border-bottom: 1px solid rgba(0,0,0,0.10) !important;
-        }
-
-        /* séparateurs internes */
-        .meta-row, .list-item, .spot-row, .row{
-            border-bottom-color: rgba(255,255,255,0.12) !important;
-        }
-        body[data-theme='light'] .meta-row, 
-        body[data-theme='light'] .list-item,
-        body[data-theme='light'] .spot-row,
-        body[data-theme='light'] .row{
-            border-bottom-color: rgba(0,0,0,0.10) !important;
-        }
-
-
-        /* === V4.0 LOOK (FORCÉ) : pavés très lisibles === */
         .panel{
             background: var(--panel-bg) !important;
             border: 1px solid rgba(255,255,255,0.22) !important;
@@ -534,16 +454,14 @@
         body[data-theme='light'] .panel-header{
             border-bottom: 1px solid rgba(0,0,0,0.10) !important;
         }
-        /* espace entre colonnes/pavés */
         .dashboard-grid, .grid, .container{
             gap: 14px !important;
         }
-
 </style>
 </head>
 <body>
 <div id="header">
-<div id="title">NEURAL DX WATCHER V6.1</div>
+<div id="title">NEURAL DX WATCHER V6.2</div>
 <div id="controls">
 <span id="indicators">
 <div class="indicator-item">QRA: <span id="qra-display">{{ user_qra }}</span></div>
@@ -582,7 +500,6 @@
     <span class="dd-handle">⋮⋮</span>
     WATCHLIST · TRACKING
   </div>
-
   <div style="display:flex; gap:8px; margin-bottom:8px;">
     <input id="wl-track-filter"
            placeholder="Filtre call (ex: JA, /P)"
@@ -596,15 +513,12 @@
       ⟳
     </button>
   </div>
-
   <div id="wl-track-status" style="font-size:0.8em; opacity:.8; margin-bottom:6px;">
     Initialisation…
   </div>
-
   <div id="wl-track-body" style="display:flex; flex-direction:column; gap:8px;">
   </div>
 </div>
-
 <div class="panel-header"><span class="dd-handle" title="Drag &amp; Drop">⋮⋮</span> WATCHLIST</div>
 <form id="add-wl-form" style="display: flex; gap: 5px; margin-bottom: 10px;">
 <input id="wl_callsign" placeholder="Callsign à ajouter" required="" style="flex-grow: 1; padding: 5px; border: 1px solid #555; background-color: #333; color: var(--text-main); text-transform: uppercase;" type="text"/>
@@ -650,7 +564,7 @@
 </div>
 </div>
 <div style="margin-top:8px; font-size:.8em; opacity:.65;">
-                        Astuce : si tu saisis <b>14.074</b> (MHz), ça sera envoyé au cluster en <b>14074.0</b>. Si tu saisis déjà <b>14074.0</b>, c’est envoyé tel quel.
+                        Astuce : si tu saisis <b>14.074</b> (MHz), ça sera envoyé au cluster en <b>14074.0</b>. Si tu saisis déjà <b>14074.0</b>, c'est envoyé tel quel.
                     </div>
 </div>
 </div>
@@ -665,13 +579,16 @@
                     </select>
 <select id="hf-mode-filter">
 <option value="All">All Modes</option>
-<option value="FT8">FT8</option>
 <option value="CW">CW</option>
 <option value="SSB">SSB</option>
+<option value="FT2">FT2</option>
 <option value="FT4">FT4</option>
+<option value="FT8">FT8</option>
+<option value="JT65">JT65</option>
 <option value="RTTY">RTTY</option>
 <option value="SSTV">SSTV</option>
-<option value="DIGI">DIGI</option>
+<option value="PSK31">PSK31</option>
+<option value="PACTOR">PACTOR</option>
 </select>
 </div>
 <div id="spots-container-hf">
@@ -758,20 +675,15 @@
 <div class="indicator-item">A: <span id="solar-a">--</span></div>
 <div class="indicator-item">K: <span id="solar-k">--</span></div>
 </div>
-
 <div id="solar-chip" class="solar-chip">SFI Status: --</div>
-
 <div id="hf-prediction" class="hf-pred">HF: <span>--</span></div>
-
 <div class="solar-updated">
                         Updated (UTC): <span id="solar-updated">--</span>
 </div>
-
 <div class="solar-explain">
-<b>FR</b> : <b>SFI</b> élevé = plus de chances d’ouverture HF (10–12–15m). <b>A</b> et <b>K</b> mesurent l’agitation géomagnétique : plus c’est haut, plus la propagation peut devenir instable.<br/>
+<b>FR</b> : <b>SFI</b> élevé = plus de chances d'ouverture HF (10–12–15m). <b>A</b> et <b>K</b> mesurent l'agitation géomagnétique : plus c'est haut, plus la propagation peut devenir instable.<br/>
 <b>EN</b> : Higher <b>SFI</b> often helps HF openings (10–12–15m). <b>A</b> and <b>K</b> indicate geomagnetic disturbance: higher values can mean less stable propagation.
 </div>
-
 <div id="solar-error" style="margin-top:6px; font-size:0.85em; color: var(--alert); display:none;"></div>
 </div>
 </div>
@@ -808,12 +720,10 @@
 </div>
 
 <script>
-        // --- VARIABLES GLOBALES (DU BACKEND) ---
         const MY_CALL = '{{ my_call }}';
         const SPD_THRESHOLD = {{ spd_threshold }};
         const DEFAULT_QRA = '{{ user_qra }}';
 
-        // --- ÉTATS GLOBAUX (CLIENT) ---
         let userLatLng = [43.10, 5.88];
         let mapHF, mapVHF;
         let userMarkerHF, userMarkerVHF;
@@ -824,9 +734,13 @@
         let isVoiceEnabled = true;
         let voiceDistanceFilter = 'ALL';
         let voiceLanguageFilter = 'fr-FR'; 
-        let announcedSpots = new Set(); 
+        let announcedSpots = new Set();
 
-        // --- UTILITAIRES ---
+        window.addEventListener('watchingListUpdated', () => {
+            console.log('✅ Watchlist updated from briefing - reloading...');
+            loadWatchlist();
+        });
+
         function qraToLatLng(qra) {
             try {
                 qra = qra.toUpperCase().trim();
@@ -866,12 +780,10 @@
             return watchlist.has(call.toUpperCase());
         }
         
-        // UTILITY: Récupère la valeur d'une variable CSS
         function getCssVar(name) {
              return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#a0a0a0';
         }
 
-        // --- Synthèse vocale ---
         function toggleVoiceSynth() {
             isVoiceEnabled = !isVoiceEnabled;
             const button = document.getElementById('synth-toggle-button');
@@ -942,7 +854,6 @@
             window.speechSynthesis.speak(message);
         }
 
-        // --- WATCHLIST ---
         async function loadWatchlist() {
             try {
                 const response = await fetch('/watchlist.json');
@@ -956,22 +867,40 @@
         }
 
         function displayWatchlist() {
-             const body = document.getElementById('watchlist-body');
-             body.innerHTML = '';
-             if (watchlist.size === 0) {
-                 body.innerHTML = '<tr><td colspan="4" style="text-align: center;">Watchlist is empty.</td></tr>';
-                 return;
-             }
+            const body = document.getElementById('watchlist-body');
+            body.innerHTML = '';
+            
+            if (watchlist.size === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align: center;">Watchlist is empty.</td></tr>';
+                return;
+            }
 
-             watchlist.forEach(call => {
-                 const row = body.insertRow();
-                 row.innerHTML = `
-                    <td class="call"><a href="https://qrz.com/db/${call}" target="_blank" style="color: inherit;">${call}</a></td>
+            let watchListData = [];
+            try {
+                watchListData = JSON.parse(localStorage.getItem('watchingList') || '[]');
+            } catch(e) {
+                console.error('Erreur lecture localStorage watchingList:', e);
+            }
+
+            watchlist.forEach(call => {
+                const row = body.insertRow();
+                
+                const itemData = watchListData.find(item => 
+                    (item.call === call || item.callsign === call) && item.autoadded === true
+                );
+                
+                const dxBadge = itemData ? '<span class="dx-badge">📡 DX</span>' : '';
+                
+                row.innerHTML = `
+                    <td class="call">
+                        <a href="https://qrz.com/db/${call}" target="_blank" style="color: inherit;">${call}</a>
+                        ${dxBadge}
+                    </td>
                     <td>-</td>
                     <td>-</td>
                     <td><button onclick="removeFromWatchlist('${call}')" style="color: var(--alert); border: none; background: none; cursor: pointer;">[X]</button></td>
-                 `;
-             });
+                `;
+            });
         }
 
         async function removeFromWatchlist(call) {
@@ -983,6 +912,13 @@
                 });
                 if (response.ok) {
                     watchlist.delete(call.toUpperCase());
+                    
+                    let watchListData = JSON.parse(localStorage.getItem('watchingList') || '[]');
+                    watchListData = watchListData.filter(item => 
+                        item.call !== call && item.callsign !== call
+                    );
+                    localStorage.setItem('watchingList', JSON.stringify(watchListData));
+                    
                     displayWatchlist();
                 }
             } catch (e) {
@@ -1006,7 +942,6 @@
             }
         }
 
-        // --- CARTOGRAPHIE (LEAFLET) ---
         function initMap(mapId) {
             const map = L.map(mapId, {
                 worldCopyJump: true,
@@ -1058,8 +993,6 @@
                     } else if (spot.type === 'VHF') {
                         markersVHF.addLayer(marker);
                     }
-                } else {
-                    console.warn(`Coordonnées invalides pour ${spot.dx_call}: Lat=${spot.lat}, Lon=${spot.lon}`);
                 }
             });
             if (!markersHF.getLayers().length) { mapHF.setView(userLatLng, 3); }
@@ -1069,7 +1002,6 @@
             markersVHF.addTo(mapVHF);
         }
 
-        // --- GRAPHIQUES (CHARTS.JS) ---
         function initCharts() {
             const mainColor = getCssVar('--text-main');
             const accentColor = getCssVar('--accent');
@@ -1197,9 +1129,6 @@
              announcedSpots = newAnnouncedSpots; 
         }
 
-        // =========================
-        // SOLAR: status + HF prediction + update time robust
-        // =========================
         function pickSolarUpdated(d){
             return d.updated_utc || d.ts_utc || d.ts || d.timestamp || d.time || d.updated || d.last_update || null;
         }
@@ -1210,8 +1139,6 @@
             return ["EXCELLENT", "chip-exc", "solar-value-color-exc"];
         }
         function geomagStatusAK(a, k){
-            // simple & lisible: on prend le "pire" des deux
-            // Quiet: A<=10 & K<=2 / Unsettled: A<=20 & K<=4 / Storm: sinon
             const aNum = Number(a);
             const kNum = Number(k);
             if (!Number.isNaN(aNum) && !Number.isNaN(kNum)) {
@@ -1228,7 +1155,6 @@
             return "10–12m: WIDE OPEN · 15–20m: EXCELLENT · 40–80m: LIMITED";
         }
 
-        // --- SOLAR INDICES ---
         async function fetchSolar() {
             try {
                 const r = await fetch('/solar.json', { cache: 'no-store' });
@@ -1239,7 +1165,6 @@
                 const aRaw   = (d.a   === null || d.a   === undefined) ? 'N/A' : d.a;
                 const kRaw   = (d.k   === null || d.k   === undefined) ? 'N/A' : d.k;
 
-                // Heure: robuste (corrige ton bug "updated_utc uniquement")
                 const updated = pickSolarUpdated(d) || 'N/A';
 
                 const elSfi = document.getElementById('solar-sfi');
@@ -1251,12 +1176,10 @@
                 elK.textContent   = kRaw;
                 document.getElementById('solar-updated').textContent = updated;
 
-                // Reset classes
                 elSfi.className = "";
                 elA.className = "";
                 elK.className = "";
 
-                // SFI status
                 const sfiNum = Number(sfiRaw);
                 const chip = document.getElementById('solar-chip');
                 const pred = document.getElementById('hf-prediction');
@@ -1273,13 +1196,11 @@
                     pred.innerHTML = `HF: <span>--</span>`;
                 }
 
-                // A/K status tint (simple)
                 const [akLabel, akCls] = geomagStatusAK(aRaw, kRaw);
                 if (akCls) {
                     elA.classList.add(akCls);
                     elK.classList.add(akCls);
                 }
-                // (optionnel) tu pourrais afficher akLabel si tu veux, mais tu n’as pas demandé.
 
                 const err = document.getElementById('solar-error');
                 err.style.display = 'none';
@@ -1365,18 +1286,17 @@
                             const row = tbody.insertRow();
                             const isWantedCall = isWanted(spot.dx_call);
                             const callsignClass = isWantedCall ? 'spot-call-watchlist' : 'spot-call-white-bold';
-                const rowClass = isWantedCall ? 'spot-row-watchlist' : '';
+                            const rowClass = isWantedCall ? 'spot-row-watchlist' : '';
 
-                            
                             if (rowClass) row.classList.add(rowClass);
-row.innerHTML = `
+                            row.innerHTML = `
                                 <td>${spot.time}</td>
                                 <td>${spot.freq}</td>
                                 <td><span class="${callsignClass}"><a href="https://qrz.com/db/${spot.dx_call}" target="_blank" title="Look up on QRZ.com">${spot.dx_call}</a></span></td>
                                 <td><span class="band-tag" style="background-color: ${spot.color};">${spot.band}</span></td>
                                 <td>${spot.mode}</td>
                                 <td class="${(spot.score >= SPD_THRESHOLD) ? 'high-spd' : ''}">${spot.score}</td>
-                                <td>${spot.distance_km.toFixed(0)}</td> `;
+                                <td>${spot.distance_km.toFixed(0)}</td>`;
                             row.querySelector('td:nth-child(3)').onclick = () => {
                                 if (!isWantedCall) {
                                      addToWatchlist(spot.dx_call);
@@ -1433,7 +1353,6 @@ row.innerHTML = `
             });
         }
 
-        // --- DRAG & DROP / PERSISTANCE ---
         function savePanelOrder(columnId) {
             const col = document.getElementById(columnId);
             if (!col) return;
@@ -1476,7 +1395,6 @@ row.innerHTML = `
             });
         }
 
-        // --- THÈME ---
         function toggleTheme() {
             const themes = ['light','dark','matrix','softtech'];
             const currentTheme = document.body.getAttribute('data-theme') || 'softtech';
@@ -1498,12 +1416,11 @@ row.innerHTML = `
             switch(savedTheme) {
                 case 'dark': displayName = 'Dark'; break;
                 case 'matrix': displayName = 'Matrix'; break;
-default: displayName = 'SoftTech';
+                default: displayName = 'SoftTech';
             }
             document.getElementById('display-mode').textContent = displayName;
         }
 
-        // --- FILTRES ---
         function populateFilterOptions() {
             const hfBandSelect = document.getElementById('hf-band-filter');
             const vhfBandSelect = document.getElementById('vhf-band-filter');
@@ -1541,7 +1458,6 @@ default: displayName = 'SoftTech';
             });
         }
 
-        // --- INITIALISATION SÉCURISÉE ---
         async function initApp() {
              console.log("Starting client-side initialization...");
 
@@ -1603,7 +1519,6 @@ default: displayName = 'SoftTech';
 
              setInterval(updateData, 30000);
 
-             // Solar indices: initial load + hourly refresh
              try { await fetchSolar(); } catch(e) {}
              setInterval(fetchSolar, 3600000);
 
@@ -1648,7 +1563,6 @@ default: displayName = 'SoftTech';
 
         document.addEventListener('DOMContentLoaded', initApp);
     
-// --- Spot manuel vers DX Cluster ---
 (function(){
   const elCall = document.getElementById('spot-call');
   const elFreq = document.getElementById('spot-freq');
@@ -1704,9 +1618,7 @@ default: displayName = 'SoftTech';
     });
   });
 })();
-// =========================
-// WATCHLIST TRACKING PANEL
-// =========================
+
 async function loadWatchlistTracking(){
   const body = document.getElementById('wl-track-body');
   const status = document.getElementById('wl-track-status');
@@ -1715,16 +1627,17 @@ async function loadWatchlistTracking(){
 
   body.innerHTML = '';
   status.textContent = 'Chargement…';
-// ⛔ Champ filtre vide → pavé neutre
-if (!filter) {
-  body.innerHTML = `
-    <div style="opacity:.7; font-size:0.85em;">
-      Tapez un filtre pour suivre un indicatif (ex: 9, VK, /P)
-    </div>
-  `;
-  status.textContent = 'Aucun filtre actif';
-  return;
-}
+
+  if (!filter) {
+    body.innerHTML = `
+      <div style="opacity:.7; font-size:0.85em;">
+        Tapez un filtre pour suivre un indicatif (ex: 9, VK, /P)
+      </div>
+    `;
+    status.textContent = 'Aucun filtre actif';
+    return;
+  }
+
   try{
     const url = `/api/watchlist/tracking.json?limit=${limit}&q=${encodeURIComponent(filter)}`;
     const r = await fetch(url, {cache:'no-store'});
@@ -1764,7 +1677,6 @@ if (!filter) {
   }
 }
 
-// hooks
 document.getElementById('wl-track-refresh').onclick = loadWatchlistTracking;
 document.getElementById('wl-track-filter').oninput = () => {
   clearTimeout(window._wlTrackDebounce);
@@ -1772,7 +1684,6 @@ document.getElementById('wl-track-filter').oninput = () => {
 };
 document.getElementById('wl-track-limit').onchange = loadWatchlistTracking;
 
-// refresh auto toutes les 30s
 setInterval(loadWatchlistTracking, 30000);
 
 </script>

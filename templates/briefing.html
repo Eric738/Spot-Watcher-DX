@@ -1,447 +1,716 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Briefing DX — Spot Watcher</title>
-  <link rel="stylesheet" href="/static/base.css">
-  <style>
-    :root{
-      --bg-color: #050505;
-      --panel-bg: #0e0e0e;
-      --text-main: #a0a0a0;
-      --accent: #00f3ff;
-      --alert: #ff003c;
-      --border: 1px solid #333;
-      --success: #00ff80;
-    }
-    body[data-theme='dark']{
-      --bg-color: #1a1a1a;
-      --panel-bg: #2a2a2a;
-      --text-main: #f0f0f0;
-      --accent: #00ff80;
-      --alert: #ff6347;
-      --border: 1px solid #555;
-      --success: #00ff80;
-    }
-    body[data-theme='matrix']{
-      --bg-color: #000000;
-      --panel-bg: #031503;
-      --text-main: #00ff41;
-      --accent: #00ff41;
-      --alert: #ff004c;
-      --border: 1px solid #005500;
-      --success: #00ff80;
-    }
-    body{
-      margin:0;
-      background: radial-gradient(1200px 700px at 30% -10%, rgba(0,243,255,.10), transparent 55%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(255,0,60,.06), transparent 55%),
-                  var(--bg-color);
-      color: var(--text-main);
-      font-family: var(--font-sans);
-    }
-    .wrap{
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 18px;
-    }
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      padding:12px 16px;
-      border: var(--border);
-      border-radius: 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      box-shadow: 0 14px 40px rgba(0,0,0,0.55);
-    }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .dot{
-      width:12px;
-      height:12px;
-      border-radius:999px;
-      background:var(--accent);
-      box-shadow:0 0 0 6px rgba(0,243,255,.13);
-    }
-    .brand h1{
-      font-size:16px;
-      margin:0;
-      color: var(--text-main);
-      letter-spacing:.3px;
-      font-family: var(--font-display);
-    }
-    .brand .sub{
-      font-size:12px;
-      opacity:.9;
-    }
-    .nav{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .nav a{
-      color: var(--text-main);
-      text-decoration:none;
-      font-size:13px;
-      padding:8px 10px;
-      border: var(--border);
-      border-radius:12px;
-    }
-    .nav a.active{
-      border-color: rgba(0,243,255,.55);
-      background: rgba(0,243,255,.08);
-    }
-    .briefing-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      margin-top:16px;
-      gap:16px;
-      flex-wrap:wrap;
-    }
-    .briefing-header h1{
-      margin:0;
-      font-family: var(--font-display);
-      color: var(--accent);
-      letter-spacing: .06em;
-      font-size: 1.4rem;
-    }
-    .meta{
-      font-size: 0.85rem;
-      opacity: .8;
-      margin-top:4px;
-    }
-    .meta span{
-      display:block;
-    }
-    .actions{
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    .btn{
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 6px 12px;
-      border-radius: 10px;
-      background: transparent;
-      cursor: pointer;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }
-    .btn:hover{
-      background: var(--accent);
-      color:#000;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap:16px;
-      margin-top:16px;
-    }
-    .panel{
-      background: var(--panel-bg);
-      border: var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      box-shadow: 0 14px 34px rgba(0,0,0,0.55);
-      max-height: 360px;
-      overflow: auto;
-      scrollbar-width: thin;
-      scrollbar-color: color-mix(in srgb, var(--accent) 70%, #222 30%) rgba(255,255,255,0.06);
-    }
-    .panel::-webkit-scrollbar{ width: 10px; height: 10px; }
-    .panel::-webkit-scrollbar-track{ background: rgba(255,255,255,0.06); border-radius: 10px; }
-    .panel::-webkit-scrollbar-thumb{
-      background: color-mix(in srgb, var(--accent) 70%, #222 30%);
-      border-radius: 10px;
-      border: 2px solid rgba(0,0,0,0.2);
-    }
-    .panel::-webkit-scrollbar-thumb:hover{
-      background: color-mix(in srgb, var(--accent) 85%, #222 15%);
-    }
-    .panel.dragging{
-      opacity: 0.7;
-    }
-    .panel-handle{
-      cursor: grab;
-      user-select: none;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .panel-handle::before{
-      content:'⋮⋮';
-      font-size: 0.85rem;
-      opacity: .65;
-      letter-spacing: -1px;
-    }
-    .panel h2{
-      margin:0 0 10px 0;
-      font-size: 1rem;
-      color: var(--accent);
-    }
-    .status{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-size: 0.75rem;
-      padding:2px 8px;
-      border-radius:999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }
-    .status.ok{
-      border-color: rgba(0,255,128,0.5);
-      color: var(--success);
-    }
-    .status.error{
-      border-color: rgba(255,0,60,0.5);
-      color: var(--alert);
-    }
-    .item{
-      padding:10px 0;
-      border-bottom: 1px dashed rgba(255,255,255,0.1);
-    }
-    .item:last-child{
-      border-bottom: none;
-    }
-    .item a{
-      color: var(--text-main);
-      text-decoration:none;
-      font-weight: 600;
-    }
-    .item small{
-      display:block;
-      opacity: .7;
-      margin-top:4px;
-      font-size: 0.75rem;
-    }
-    .summary{
-      font-size: 0.8rem;
-      opacity: .85;
-      margin-top:6px;
-      line-height: 1.4;
-    }
-    .empty{
-      font-size: 0.85rem;
-      opacity: .6;
-      font-style: italic;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DX Briefing v6.2</title>
+    <link rel="stylesheet" href="/static/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #0e0e0e;
+            --text-main: #a0a0a0;
+            --accent: #00f3ff;
+            --alert: #ff003c;
+            --border: 1px solid #333;
+            --success: #00ff80;
+        }
+        body[data-theme='dark'] {
+            --bg-color: #1a1a1a;
+            --panel-bg: #2a2a2a;
+            --text-main: #f0f0f0;
+            --accent: #00ff80;
+            --alert: #ff6347;
+        }
+        body[data-theme='matrix'] {
+            --bg-color: #000000;
+            --panel-bg: #031503;
+            --text-main: #00ff41;
+            --accent: #00ff41;
+            --alert: #ff004c;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #header {
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            border-bottom: var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        #title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            background-color: var(--accent);
+            color: var(--panel-bg);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 243, 255, 0.3);
+        }
+        .btn-nav {
+            background: rgba(0, 243, 255, 0.2);
+            border: 1px solid var(--accent);
+        }
+        #meta {
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            border-bottom: var(--border);
+            font-size: 0.9em;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        #meta span {
+            color: var(--accent);
+            padding: 5px 10px;
+            background: rgba(0, 243, 255, 0.1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        #items {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .item {
+            background-color: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        .item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .item-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1em;
+            color: var(--accent);
+            flex: 1;
+        }
+        .item-time {
+            font-size: 0.85em;
+            opacity: 0.7;
+            white-space: nowrap;
+        }
+        .item-content {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .item-source {
+            font-size: 0.85em;
+            opacity: 0.6;
+            border-top: 1px dotted #333;
+            padding-top: 8px;
+        }
+        .item-source a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .item-source a:hover {
+            text-decoration: underline;
+        }
+        .callsign {
+            background: rgba(0, 243, 255, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .sources-summary {
+            background-color: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .sources-summary h3 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .source-badge {
+            padding: 8px 12px;
+            background: rgba(0, 243, 255, 0.1);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .source-badge.error {
+            background: rgba(255, 0, 60, 0.1);
+            border-color: var(--alert);
+        }
+        .source-badge .status {
+            font-size: 1.2em;
+        }
+        .source-badge .name {
+            font-weight: bold;
+            flex: 1;
+        }
+        .source-badge .count {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .source-badge .error-msg {
+            font-size: 0.85em;
+            color: var(--alert);
+            margin-top: 4px;
+            width: 100%;
+        }
+        .source-panels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .source-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .source-panel h4 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .source-item {
+            padding: 8px 0;
+            border-bottom: 1px dotted #333;
+        }
+        .source-item:last-child {
+            border-bottom: none;
+        }
+        .source-item-title {
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        .source-item-time {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+        .notification.success {
+            background: var(--success);
+            color: #000;
+        }
+        .notification.error {
+            background: var(--alert);
+            color: #fff;
+        }
+        .notification.warning {
+            background: #ff6600;
+            color: #fff;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .dx-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dx-mode-toggle:hover {
+            background: rgba(0, 243, 255, 0.2);
+        }
+        .dx-mode-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .dx-mode-toggle.active {
+            background: rgba(0, 243, 255, 0.25);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+        @media (max-width: 768px) {
+            #header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            #title {
+                font-size: 1.4em;
+            }
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+            #meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>
-        <h1>NEURAL DX BRIEFING</h1>
-        <div class="sub">Mise à jour toutes les 12 heures.</div>
-      </div>
+    <div id="header">
+        <div id="title">
+            🛰️ DX BRIEFING v6.2
+        </div>
+        <div class="controls">
+            <label class="dx-mode-toggle" id="dx-mode-container">
+                <input type="checkbox" id="dx-mode-checkbox">
+                <span>📡 Mode DXpedition</span>
+            </label>
+            <button class="btn" onclick="loadBriefing(true)">🔄 Actualiser</button>
+            <a class="btn btn-nav" href="/">← Dashboard</a>
+            <a class="btn btn-nav" href="/map">🗺 Map</a>
+            <a class="btn btn-nav" href="/world">🌍 World</a>
+            <a class="btn btn-nav" href="/analysis.html">📊 Analyse</a>
+            <button class="btn" onclick="toggleTheme()">🔆</button>
+        </div>
     </div>
-    <nav class="nav">
-      <a href="/">Dashboard</a>
-      <a href="/map">Map</a>
-      <a href="/world">World</a>
-      <a href="/analysis">Analysis</a>
-      <a class="active" href="/briefing">Briefing</a>
-    </nav>
-  </div>
 
-  <div class="briefing-header">
-    <div>
-      <h1>Briefing dynamique DX</h1>
-      <div class="meta" id="briefing-meta">
-        <span>Chargement des flux…</span>
-      </div>
+    <div id="meta">
+        <span>⏳ Chargement...</span>
     </div>
-    <div class="actions">
-      <button class="btn" id="refresh">Actualiser</button>
+
+    <div class="container">
+        <div class="sources-summary" id="sources-summary"></div>
+
+        <div id="items"></div>
+
+        <div class="source-panels" id="source-panels"></div>
     </div>
-  </div>
 
-  <div class="grid draggable-grid" id="summary-grid">
-    <div class="panel">
-      <h2 class="panel-handle">📡 Points chauds (toutes sources)</h2>
-      <div id="briefing-items" class="list"></div>
-    </div>
-  </div>
+    <script>
+        const metaEl = document.getElementById('meta');
+        const itemsEl = document.getElementById('items');
+        const dxModeCheckbox = document.getElementById('dx-mode-checkbox');
+        const dxModeContainer = document.getElementById('dx-mode-container');
 
-  <div class="grid draggable-grid" id="sources-grid"></div>
+        // ==================== GESTION DU MODE DX ====================
+        function saveDxMode(enabled) {
+            localStorage.setItem('dxModeEnabled', enabled ? 'true' : 'false');
+            console.log('Mode DX sauvegardé:', enabled);
+        }
 
-  <div class="grid draggable-grid" id="status-grid">
-    <div class="panel">
-      <h2 class="panel-handle">🧭 Sources & statut</h2>
-      <div id="briefing-sources"></div>
-    </div>
-  </div>
-</div>
+        function loadDxMode() {
+            const saved = localStorage.getItem('dxModeEnabled');
+            const enabled = saved === 'true';
+            dxModeCheckbox.checked = enabled;
+            if (enabled) {
+                dxModeContainer.classList.add('active');
+            } else {
+                dxModeContainer.classList.remove('active');
+            }
+            console.log('Mode DX chargé:', enabled);
+            return enabled;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script>
-  (function () {
-    const theme =
-      localStorage.getItem('theme') ||
-      localStorage.getItem('selectedTheme') ||
-      localStorage.getItem('themeName');
-    if (!theme) return;
-    document.documentElement.setAttribute('data-theme', theme);
-    window.addEventListener('DOMContentLoaded', () => {
-      document.body.setAttribute('data-theme', theme);
-    });
-  })();
+        dxModeCheckbox.addEventListener('change', function() {
+            const enabled = this.checked;
+            saveDxMode(enabled);
+           
+            if (enabled) {
+                dxModeContainer.classList.add('active');
+                showNotification('Mode DXpedition activé - Les calls seront ajoutés automatiquement', 'success');
+            } else {
+                dxModeContainer.classList.remove('active');
+                showNotification('Mode DXpedition désactivé', 'warning');
+            }
+        });
 
-  const metaEl = document.getElementById('briefing-meta');
-  const itemsEl = document.getElementById('briefing-items');
-  const sourcesEl = document.getElementById('briefing-sources');
-  const sourcesGrid = document.getElementById('sources-grid');
-  const summaryGrid = document.getElementById('summary-grid');
-  const statusGrid = document.getElementById('status-grid');
+        // ==================== EXTRACTION DES CALLSIGNS ====================
+        function extractCallsigns(items) {
+            const callsignPattern = /\b([A-Z0-9]{1,3}[0-9][A-Z0-9]{0,3}[A-Z])\b/g;
+            const callsigns = new Set();
 
-  function formatAge(seconds) {
-    if (!seconds && seconds !== 0) return '—';
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    return `${hrs}h${String(mins).padStart(2, '0')}`;
-  }
+            items.forEach(item => {
+                const text = `${item.title || ''} ${item.summary || ''}`;
+                const matches = text.match(callsignPattern);
+               
+                if (matches) {
+                    matches.forEach(call => {
+                        if (call.length >= 3 && call.length <= 8) {
+                            callsigns.add(call.toUpperCase());
+                        }
+                    });
+                }
+            });
 
-  function renderItems(container, items) {
-    container.innerHTML = '';
-    if (!items.length) {
-      container.innerHTML = '<div class="empty">Aucun item disponible pour le moment.</div>';
-      return;
-    }
-    items.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'item';
-      const title = document.createElement('a');
-      title.href = item.link || '#';
-      title.target = '_blank';
-      title.rel = 'noopener';
-      title.textContent = item.title;
-      div.appendChild(title);
+            return Array.from(callsigns);
+        }
 
-      if (item.summary) {
-        const summary = document.createElement('div');
-        summary.className = 'summary';
-        summary.innerHTML = item.summary.replace(/\n/g, '<br>');
-        div.appendChild(summary);
-      } else {
-        const summary = document.createElement('div');
-        summary.className = 'summary';
-        summary.style.opacity = '0.6';
-        summary.textContent = 'Ouvrir le lien pour les détails.';
-        div.appendChild(summary);
-      }
+        // ==================== AJOUT À LA WATCHING LIST ====================
+        function addToWatchingList(callsigns) {
+            if (!Array.isArray(callsigns) || callsigns.length === 0) {
+                console.log('Aucun callsign à ajouter');
+                return 0;
+            }
 
-      const meta = document.createElement('small');
-      const sourceLabel = item.source_name || item.source_id || 'source';
-      meta.textContent = `${sourceLabel} · ${item.published_utc || 'récemment'}`;
-      div.appendChild(meta);
-      container.appendChild(div);
-    });
-  }
+            let watchingList = [];
+            try {
+                watchingList = JSON.parse(localStorage.getItem('watchingList') || '[]');
+            } catch(e) {
+                console.error('Erreur lecture localStorage:', e);
+            }
 
-  function renderSourcesSummary(sources) {
-    sourcesEl.innerHTML = '';
-    sources.forEach(source => {
-      const line = document.createElement('div');
-      line.className = 'item';
-      const name = document.createElement('strong');
-      name.textContent = source.name;
-      line.appendChild(name);
+            const existingCalls = new Set(
+                watchingList.map(item => (item.call || item.callsign || '').toUpperCase())
+            );
 
-      const status = document.createElement('span');
-      status.className = `status ${source.status === 'ok' ? 'ok' : 'error'}`;
-      status.textContent = source.status === 'ok' ? 'OK' : 'ERROR';
-      line.appendChild(status);
+            let addedCount = 0;
 
-      const meta = document.createElement('small');
-      meta.textContent = `Dernière vérification: ${source.fetched_utc || '—'}`;
-      line.appendChild(meta);
-      sourcesEl.appendChild(line);
-    });
-  }
+            callsigns.forEach(call => {
+                const cleanCall = call.trim().toUpperCase();
+               
+                if (!cleanCall || existingCalls.has(cleanCall)) {
+                    console.log(`⏭️ ${cleanCall} déjà présent, ignoré`);
+                    return;
+                }
 
-  function renderSourcePanels(sources) {
-    sourcesGrid.innerHTML = '';
-    sources.forEach(source => {
-      const panel = document.createElement('div');
-      panel.className = 'panel';
-      const title = document.createElement('h2');
-      title.className = 'panel-handle';
-      title.textContent = `🛰️ ${source.name}`;
-      panel.appendChild(title);
+                watchingList.push({
+                    call: cleanCall,
+                    callsign: cleanCall,
+                    autoadded: true,
+                    addedAt: new Date().toISOString()
+                });
 
-      if (source.site) {
-        const link = document.createElement('a');
-        link.href = source.site;
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.textContent = source.site;
-        link.style.fontSize = '0.75rem';
-        link.style.opacity = '0.7';
-        panel.appendChild(link);
-      }
+                existingCalls.add(cleanCall);
+                addedCount++;
+               
+                console.log(`✅ ${cleanCall} ajouté à la Watching List`);
 
-      const list = document.createElement('div');
+                fetch('/watchlist.json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ call: cleanCall })
+                }).catch(err => console.error('Erreur API watchlist:', err));
+            });
 
-      if (!source.items || !source.items.length) {
-        const empty = document.createElement('div');
-        empty.className = 'empty';
-        empty.textContent = source.error ? `Erreur: ${source.error}` : 'Pas de nouvelles récentes.';
-        list.appendChild(empty);
-      } else {
-        renderItems(list, source.items);
-      }
+            try {
+                localStorage.setItem('watchingList', JSON.stringify(watchingList));
+                console.log(`💾 ${addedCount} nouveau(x) call(s) sauvegardé(s)`);
+            } catch(e) {
+                console.error('Erreur sauvegarde localStorage:', e);
+            }
 
-      panel.appendChild(list);
-      sourcesGrid.appendChild(panel);
-    });
-  }
+            return addedCount;
+        }
 
-  async function loadBriefing(force = false) {
-    metaEl.textContent = 'Chargement des flux…';
-    const url = new URL('/api/briefing.json', window.location.origin);
-    url.searchParams.set('limit', '6');
-    if (force) {
-      url.searchParams.set('force', '1');
-    }
-    const response = await fetch(url);
-    const data = await response.json();
-    const cache = data.cache || {};
-    metaEl.innerHTML = `
-      <span>Généré: ${data.generated_utc || '—'}</span>
-      <span>Âge du cache: ${formatAge(cache.age_seconds)} | Prochaine MAJ: ${cache.next_refresh_utc || '—'}</span>
-      <span>Sources actives: ${data.total_sources || 0}</span>
-    `;
-    renderItems(itemsEl, data.items || []);
-    renderSourcesSummary(data.sources || []);
-    renderSourcePanels(data.sources || []);
-  }
+        // ==================== CHARGEMENT DU BRIEFING ====================
+        async function loadBriefing(force = false) {
+            console.log('🔄 Chargement du briefing...', force ? '(force)' : '');
+            metaEl.innerHTML = '<span>⏳ Chargement des flux…</span>';
+           
+            const url = new URL('/api/briefing.json', window.location.origin);
+            url.searchParams.set('limit', '20');
+            if (force) {
+                url.searchParams.set('force', '1');
+            }
+           
+            try {
+                console.log('📡 Fetch:', url.toString());
+                const response = await fetch(url);
+               
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+               
+                const data = await response.json();
+                console.log('📦 Données reçues:', data);
+               
+                const cache = data.cache || {};
+               
+                metaEl.innerHTML = `
+                    <span>📅 Généré: ${data.generated_utc || '—'}</span>
+                    <span>⏱ Âge du cache: ${formatAge(cache.age_seconds)}</span>
+                    <span>🔄 Prochaine MAJ: ${cache.next_refresh_utc || '—'}</span>
+                    <span>📡 Sources actives: ${data.total_sources || 0}</span>
+                `;
+               
+                renderItems(itemsEl, data.items || []);
+                renderSourcesSummary(data.sources || []);
+                renderSourcePanels(data.sources || []);
 
-  document.getElementById('refresh').addEventListener('click', () => loadBriefing(true));
-  loadBriefing();
-  setInterval(() => loadBriefing(false), 12 * 60 * 60 * 1000);
+                const isDxModeActive = loadDxMode();
+               
+                if (isDxModeActive && data.items && data.items.length > 0) {
+                    console.log('📡 Mode DX actif - Extraction des callsigns...');
+                    const callsigns = extractCallsigns(data.items);
+                    console.log('🔍 Callsigns extraits:', callsigns);
+                   
+                    const addedCount = addToWatchingList(callsigns);
+                   
+                    if (addedCount > 0) {
+                        showNotification(
+                            `✅ ${addedCount} nouveau${addedCount > 1 ? 'x' : ''} call${addedCount > 1 ? 's' : ''} ajouté${addedCount > 1 ? 's' : ''} à la Watching List`,
+                            'success'
+                        );
+                       
+                        window.dispatchEvent(new Event('watchingListUpdated'));
+                    }
+                }
+               
+            } catch(error) {
+                console.error('❌ Erreur lors du chargement du briefing:', error);
+                metaEl.innerHTML = '<span style="color:var(--alert);">❌ Erreur de chargement</span>';
+                showNotification('Erreur lors du chargement du briefing: ' + error.message, 'error');
+            }
+        }
 
-  [summaryGrid, sourcesGrid, statusGrid].forEach(grid => {
-    Sortable.create(grid, {
-      group: 'briefing-panels',
-      animation: 150,
-      draggable: '.panel',
-      handle: '.panel-handle',
-      ghostClass: 'dragging'
-    });
-  });
-</script>
+        // ==================== RENDU DES ITEMS ====================
+        function renderItems(container, items) {
+            console.log('🎨 Rendu de', items.length, 'items');
+            container.innerHTML = '';
+           
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p style="text-align:center; opacity:0.6; padding:40px;">Aucun item disponible</p>';
+                return;
+            }
+
+            items.forEach((item, index) => {
+                console.log(`  Item ${index + 1}:`, item.title);
+                const div = document.createElement('div');
+                div.className = 'item';
+               
+                const content = highlightCallsigns(item.summary || '');
+               
+                div.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-title">${escapeHtml(item.title || 'Sans titre')}</div>
+                        <div class="item-time">${formatTime(item.published)}</div>
+                    </div>
+                    <div class="item-content">${content}</div>
+                    <div class="item-source">
+                        📡 Source: ${escapeHtml(item.source || 'Inconnue')}
+                        ${item.link ? `| <a href="${escapeHtml(item.link)}" target="_blank">Lien →</a>` : ''}
+                    </div>
+                `;
+               
+                container.appendChild(div);
+            });
+        }
+
+        function highlightCallsigns(text) {
+            const callsignPattern = /\b([A-Z0-9]{1,3}[0-9][A-Z0-9]{0,3}[A-Z])\b/g;
+            return escapeHtml(text).replace(callsignPattern, '<span class="callsign">$1</span>');
+        }
+
+        function renderSourcesSummary(sources) {
+            console.log('📊 Rendu du résumé des sources:', sources.length);
+            const container = document.getElementById('sources-summary');
+           
+            if (!sources || sources.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<h3>📡 Sources RSS actives</h3><div class="sources-grid">';
+           
+            sources.forEach(src => {
+                const hasError = !!src.error;
+                const status = hasError ? '❌' : '✅';
+                const count = src.count || 0;
+                const errorClass = hasError ? 'error' : '';
+               
+                html += `
+                    <div class="source-badge ${errorClass}">
+                        <span class="status">${status}</span>
+                        <span class="name">${escapeHtml(src.name || 'Sans nom')}</span>
+                        <span class="count">${count} item${count > 1 ? 's' : ''}</span>
+                        ${hasError ? `<div class="error-msg">${escapeHtml(src.error)}</div>` : ''}
+                    </div>
+                `;
+            });
+           
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderSourcePanels(sources) {
+            console.log('📋 Rendu des panneaux de sources');
+            const container = document.getElementById('source-panels');
+            container.innerHTML = '';
+           
+            sources.forEach(src => {
+                if (!src.items || src.items.length === 0) return;
+
+                const panel = document.createElement('div');
+                panel.className = 'source-panel';
+               
+                let itemsHtml = '';
+                src.items.slice(0, 5).forEach(item => {
+                    itemsHtml += `
+                        <div class="source-item">
+                            <div class="source-item-title">${escapeHtml(item.title || '')}</div>
+                            <div class="source-item-time">${formatTime(item.published)}</div>
+                        </div>
+                    `;
+                });
+
+                panel.innerHTML = `
+                    <h4>📡 ${escapeHtml(src.name || 'Source')}</h4>
+                    ${itemsHtml}
+                `;
+               
+                container.appendChild(panel);
+            });
+        }
+
+        // ==================== UTILITAIRES ====================
+        function formatTime(dateStr) {
+            if (!dateStr) return '—';
+            try {
+                const date = new Date(dateStr);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+               
+                if (diffMins < 1) return 'À l\'instant';
+                if (diffMins < 60) return `il y a ${diffMins}min`;
+                if (diffHours < 24) return `il y a ${diffHours}h`;
+                if (diffDays < 7) return `il y a ${diffDays}j`;
+                return date.toLocaleDateString('fr-FR');
+            } catch {
+                return dateStr;
+            }
+        }
+
+        function formatAge(seconds) {
+            if (!seconds) return '—';
+            const mins = Math.floor(seconds / 60);
+            const hours = Math.floor(mins / 60);
+            const days = Math.floor(hours / 24);
+           
+            if (mins < 1) return '< 1min';
+            if (mins < 60) return `${mins}min`;
+            if (hours < 24) return `${hours}h ${mins % 60}min`;
+            return `${days}j ${hours % 24}h`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+           
+            setTimeout(() => {
+                notif.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => notif.remove(), 300);
+            }, 4000);
+        }
+
+        function toggleTheme() {
+            const themes = ['softtech', 'dark', 'matrix'];
+            const currentTheme = document.body.getAttribute('data-theme') || 'softtech';
+            const currentIndex = themes.indexOf(currentTheme);
+            const nextIndex = (currentIndex + 1) % themes.length;
+            const newTheme = themes[nextIndex];
+           
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // ==================== INITIALISATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initialisation de la page');
+           
+            const savedTheme = localStorage.getItem('theme') || 'softtech';
+            document.body.setAttribute('data-theme', savedTheme);
+           
+            loadDxMode();
+            loadBriefing();
+           
+            // Actualisation automatique toutes les 12h
+            setInterval(() => loadBriefing(false), 12 * 60 * 60 * 1000);
+        });
+    </script>
 </body>
 </html>

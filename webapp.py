@@ -32,7 +32,7 @@ tn_lock = threading.Lock()
 tn_current = None  # telnetlib.Telnet when connected
 # --- FIN CLUSTER TX ---
 # --- CONFIGURATION GENERALE ---
-APP_VERSION = "NEURAL v6.1"
+APP_VERSION = "NEURAL v6.2"
 MY_CALL = "F1SMV"
 WEB_PORT = 8000
 KEEP_ALIVE = 60
@@ -359,6 +359,7 @@ FT8_VHF_FREQ_RANGE_KHZ = (144171, 144177)
 # --- FRÉQUENCES PSK31 (en kHz) ---
 PSK31_HF_FREQ_RANGE_KHZ = (14.069, 14.071)
 
+
 # --- SSL BYPASS ---
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -548,80 +549,127 @@ def is_rare_prefix(call: str) -> bool:
             return True
     return False
 
+def find_band(freq_khz):
+    if 1800 <= freq_khz <= 2000:
+        return "160m"
+    if 3500 <= freq_khz <= 3800:
+        return "80m"
+    if 5300 <= freq_khz <= 5450:
+        return "60m"
+    if 7000 <= freq_khz <= 7300:
+        return "40m"
+    if 10100 <= freq_khz <= 10150:
+        return "30m"
+    if 14000 <= freq_khz <= 14350:
+        return "20m"
+    if 18068 <= freq_khz <= 18168:
+        return "17m"
+    if 21000 <= freq_khz <= 21450:
+        return "15m"
+    if 24890 <= freq_khz <= 24990:
+        return "12m"
+    if 28000 <= freq_khz <= 29700:
+        return "10m"
+    if 50000 <= freq_khz <= 54000:
+        return "6m"
+    if 70000 <= freq_khz <= 70500:
+        return "4m"
+    if 144000 <= freq_khz <= 146000:
+        return "2m"
+    if 430000 <= freq_khz <= 440000:
+        return "70cm"
+    if 1240000 <= freq_khz <= 1300000:
+        return "23cm"
+    if 10489000 <= freq_khz <= 10499000:
+        return "QO-100"
+    return "Unknown"
+
 
 def get_band_and_mode_smart(freq_float, comment):
     comment = (comment or "").upper()
     f = float(freq_float)
+
     if f < 1000:
         f = f * 1000.0
     elif f > 20000000:
         f = f / 1000.0
-    freq_khz = f
 
-    def find_band(freq_khz):
-        if 1800 <= freq_khz <= 2000:
-            return "160m"
-        if 3500 <= freq_khz <= 3800:
-            return "80m"
-        if 5300 <= freq_khz <= 5450:
-            return "60m"
-        if 7000 <= freq_khz <= 7300:
-            return "40m"
-        if 10100 <= freq_khz <= 10150:
-            return "30m"
-        if 14000 <= freq_khz <= 14350:
-            return "20m"
-        if 18068 <= freq_khz <= 18168:
-            return "17m"
-        if 21000 <= freq_khz <= 21450:
-            return "15m"
-        if 24890 <= freq_khz <= 24990:
-            return "12m"
-        if 28000 <= freq_khz <= 29700:
-            return "10m"
-        if 50000 <= freq_khz <= 54000:
-            return "6m"
-        if 70000 <= freq_khz <= 70500:
-            return "4m"
-        if 144000 <= freq_khz <= 146000:
-            return "2m"
-        if 430000 <= freq_khz <= 440000:
-            return "70cm"
-        if 1240000 <= freq_khz <= 1300000:
-            return "23cm"
-        if 10489000 <= freq_khz <= 10499000:
-            return "QO-100"
-        return "Unknown"
+    freq_khz = f
 
     band = find_band(freq_khz)
     f_mhz = freq_khz / 1000.0
-    mode = "SSB"
-    TOLERANCE_KHZ = 1
-    FT4_HF_FREQS_KHZ = [7047, 10140, 14080, 18104, 21180, 24919, 28180]
-    is_ft4_hf = any(abs(freq_khz - ft4_f) <= TOLERANCE_KHZ for ft4_f in FT4_HF_FREQS_KHZ)
-    FT4_VHF_FREQ_KHZ = 144170
-    is_ft4_vhf = band == "2m" and abs(freq_khz - FT4_VHF_FREQ_KHZ) <= TOLERANCE_KHZ
-    ft8_vhf_min, ft8_vhf_max = FT8_VHF_FREQ_RANGE_KHZ
-    is_ft8_vhf = band == "2m" and ft8_vhf_min <= freq_khz <= ft8_vhf_max
 
-    if is_ft4_hf or is_ft4_vhf:
+    mode = "SSB"
+
+    # -----------------------------
+    # INITIALISATION
+    # -----------------------------
+    TOLERANCE_KHZ = 0.2
+
+    is_ft2_hf = False
+    is_ft4_hf = False
+    is_ft4_vhf = False
+    is_ft8_vhf = False
+
+    # -----------------------------
+    # FT2 HF
+    # -----------------------------
+    FT2_HF_FREQS_KHZ = [14082]
+    is_ft2_hf = any(
+        abs(freq_khz - ft2_f) <= TOLERANCE_KHZ
+        for ft2_f in FT2_HF_FREQS_KHZ
+    )
+
+    # -----------------------------
+    # FT4 HF
+    # -----------------------------
+    FT4_HF_FREQS_KHZ = [7047, 10140, 14080, 18104, 21180, 24919, 28180]
+
+    is_ft4_hf = any(
+        abs(freq_khz - ft4_f) <= TOLERANCE_KHZ
+        for ft4_f in FT4_HF_FREQS_KHZ
+    )
+
+    # FT4 VHF
+    FT4_VHF_FREQ_KHZ = 144170
+    is_ft4_vhf = (
+        band == "2m" and
+        abs(freq_khz - FT4_VHF_FREQ_KHZ) <= TOLERANCE_KHZ
+    )
+
+    # FT8 VHF
+    ft8_vhf_min, ft8_vhf_max = FT8_VHF_FREQ_RANGE_KHZ
+    is_ft8_vhf = (
+        band == "2m" and
+        ft8_vhf_min <= freq_khz <= ft8_vhf_max
+    )
+
+    # PRIORITE
+    if is_ft2_hf:
+        mode = "FT2"
+    elif is_ft4_hf or is_ft4_vhf:
         mode = "FT4"
     elif is_ft8_vhf:
         mode = "FT8"
 
+    # CW
     if mode == "SSB":
         for cw_band, min_mhz, max_mhz in CW_RANGES:
             if cw_band == band and min_mhz <= f_mhz <= max_mhz:
                 mode = "CW"
                 break
 
-    if band == "2m" and abs(f_mhz - MSK144_FREQ) <= MSK144_TOLERANCE_KHZ:
+    # MSK144
+    if band == "2m" and abs(freq_khz - (MSK144_FREQ * 1000)) <= MSK144_TOLERANCE_KHZ:
         mode = "MSK144"
 
-    if "FT8" in comment and mode != "FT4":
-        mode = "FT8"
-    elif "FT4" in comment and mode != "FT8":
+    # OVERRIDE COMMENT
+    if "FT2" in comment:
+        mode = "FT2"
+    elif "FT4" in comment:
         mode = "FT4"
+    elif "FT8" in comment:
+        mode = "FT8"
     elif "CW" in comment and mode == "SSB":
         mode = "CW"
     elif "FM" in comment:

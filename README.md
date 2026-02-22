@@ -1,4 +1,4 @@
-﻿# 📡 Radio Spot Watcher DX — v6.1
+﻿# 📡 Radio Spot Watcher DX — v6.2
 
 **DX Cluster Dashboard & Advanced Radio Analysis Engine**
 
@@ -79,7 +79,7 @@ Outil volontairement **non temps réel**, basé sur l’analyse du log applicati
 
 ---
 
-### 4️⃣ Page **World** — Forecast & Anomalies (nouveauté v6)
+### 4️⃣ Page **World** — Forecast & Anomalies
 
 La page **World** est **fondamentalement différente** de la page Map.
 
@@ -95,7 +95,9 @@ La page **World** est **fondamentalement différente** de la page Map.
 
 👉 **World décide, Map exécute.**
 
-### 5️⃣ nouvelle page « Briefing » qui se met a jour toutes les 12, reprenant les infos dx essentielles
+### 5️⃣ « Briefing » qui se met a jour toutes les 12 heures, reprenant les infos dx essentielles et surtout maintenant 
+la possibilite d'ajouter automatiquement les call (si vous voulez) dans la "watching list" de la page Index. 
+Donc vous ne raterez aucune expedition car des que le call d'un expedition sera spoté il s'afficher en jaune  
 ---
 📸 Aperçu
 
@@ -114,6 +116,8 @@ Aucune dépendance cloud.
 ---
 
 ## 🗂️ Historique des versions
+
+### v6.2 ajout sur option des calls dans la watching list du dashboard et rajout du nouveau mode FT2
 
 ### v6.1 nouvelle page « briefing dxpeditions » et modification des cartes de la page index.html
 
